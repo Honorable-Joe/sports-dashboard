@@ -95,9 +95,9 @@ with col_left:
                                 text=["Current Operating Point"], textposition="top center"))
 
     fig_fv.update_layout(
-        xaxis=dict(title="Velocity (m/s)"),
-        yaxis=dict(title="Force (N)", titlefont=dict(color='#0066CC')),
-        yaxis2=dict(title="Power (Watts)", titlefont=dict(color='#FF8800'), overlaying='y', side='right'),
+        xaxis_title="Velocity (m/s)",
+        yaxis_title="Force (N)",
+        yaxis2=dict(title=dict(text="Power (Watts)", font=dict(color='#FF8800')), overlaying='y', side='right'),
         legend=dict(x=0.05, y=0.1),
         margin=dict(l=20, r=20, t=30, b=20),
         height=380
@@ -140,7 +140,7 @@ with col_p1:
     if fms_asymmetry or ankle_dorsiflexion < 10.0:
         st.error("⚠️ Corrective Priority")
         if ankle_dorsiflexion < 10.0:
-            st.write(f"- Ankle ankle restriction ({ankle_dorsiflexion} cm vs 10 cm target). Perform soleus/gastrocnemius myofascial release and dorsiflexion glides.")
+            st.write(f"- Ankle restriction ({ankle_dorsiflexion} cm vs 10 cm target). Perform soleus/gastrocnemius myofascial release and dorsiflexion glides.")
         if fms_asymmetry:
             st.write("- Clear joint pain / unilateral asymmetries prior to heavy dynamic loading.")
     else:
