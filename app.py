@@ -19,7 +19,7 @@ DEVELOPER_NAME = "[Coach / Ahmed Youssef]"  # Replace with your full name or han
 # --- ENERGETIC RGB & GLASSMORPHISM THEME (CUSTOM CSS) ---
 custom_theme = """
 <style>
-/* Dark Athletic Background with Dark Overlay */
+/* Dark Athletic Background */
 .stApp {
     background: linear-gradient(rgba(10, 12, 18, 0.88), rgba(10, 12, 18, 0.94)), 
                 url('https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=1920&q=80');
@@ -44,17 +44,30 @@ h2, h3 {
 div[data-testid="stMetric"] {
     background: rgba(18, 22, 32, 0.85) !important;
     border: 1px solid rgba(0, 210, 255, 0.35) !important;
-    border-radius: 14px !important;
+    border-radius: 14px 14px 0px 0px !important;
     padding: 16px !important;
     backdrop-filter: blur(12px) !important;
     box-shadow: 0 0 20px rgba(0, 210, 255, 0.15) !important;
-    transition: all 0.3s ease-in-out !important;
 }
 
-div[data-testid="stMetric"]:hover {
-    transform: translateY(-4px) !important;
-    border-color: rgba(0, 210, 255, 0.8) !important;
-    box-shadow: 0 0 30px rgba(0, 210, 255, 0.4) !important;
+/* Glowing Progress Bars */
+.stProgress > div > div > div > div {
+    background: linear-gradient(90deg, #ff007f, #7f00ff, #00d2ff) !important;
+    border-radius: 10px !important;
+}
+
+/* Neon Sub-Rating Badge Box */
+.rating-badge {
+    background: rgba(10, 14, 23, 0.9) !important;
+    border: 1px solid rgba(255, 0, 128, 0.4) !important;
+    border-radius: 0px 0px 14px 14px !important;
+    padding: 8px 12px !important;
+    margin-top: -15px !important;
+    margin-bottom: 15px !important;
+    text-align: center !important;
+    font-size: 0.88rem !important;
+    color: #00d2ff !important;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5) !important;
 }
 
 /* Sidebar Dark Glass Styling */
@@ -91,19 +104,11 @@ st.markdown(custom_theme, unsafe_allow_html=True)
 
 # --- SCIENTIFIC 1-10 RATING ENGINE ---
 def calculate_ratings(rsr, dsd, mobility, fatigue):
-    # 1. Relative Strength (Stone et al., 2003) - Baseline 0.8x BW to Elite 2.5x BW
     score_rsr = max(1.0, min(10.0, 1.0 + ((rsr - 0.8) / 1.7) * 9.0))
-    
-    # 2. Dynamic Strength Deficit (Suchomel et al., 2016) - Optimal window around 0.70
     score_dsd = max(1.0, 10.0 - (abs(dsd - 0.70) / 0.25) * 9.0)
-    
-    # 3. Ankle Mobility (Bennell et al., 1998) - Range 4cm to 15cm
     score_mobility = max(1.0, min(10.0, 1.0 + ((mobility - 4.0) / 11.0) * 9.0))
-    
-    # 4. Fatigue Index (Bishop et al., 2011) - Drop-off range 2% (Elite) to 15% (Low)
     score_fatigue = max(1.0, min(10.0, 10.0 - ((fatigue - 2.0) / 13.0) * 9.0))
     
-    # Weighted Composite ATHLETE-IQ Rating
     overall_iq = (score_rsr * 0.30) + (score_dsd * 0.30) + (score_mobility * 0.20) + (score_fatigue * 0.20)
     
     return {
@@ -114,6 +119,10 @@ def calculate_ratings(rsr, dsd, mobility, fatigue):
         "overall": round(overall_iq, 1)
     }
 
+def render_stars(score):
+    filled = int(round(score))
+    return "★" * filled + "☆" * (10 - filled)
+
 # --- SESSION STATE SIMULATION ---
 if "history" not in st.session_state:
     base_date = datetime.today()
@@ -123,7 +132,7 @@ if "history" not in st.session_state:
         {"Date": (base_date - timedelta(days=30)).strftime("%Y-%m-%d"), "Weight": 75.0, "1RM": 118.0, "RSR": 1.57, "CMJ": 1710, "IMTP": 3150, "DSD": 0.54, "Fatigue": 8.5},
     ])
 
-# --- LANDING TITLE ---
+# --- LANDING TITLE & BRANDING ---
 st.title("🧠 ATHLETE-IQ Engine")
 st.caption(f"⚡ Lead Performance Architect: **{DEVELOPER_NAME}** | Evidence-Based Athletic Profiling")
 
@@ -136,17 +145,17 @@ test_date = st.sidebar.date_input("Assessment Date", datetime.today())
 body_weight = st.sidebar.number_input("Body Weight (kg)", min_value=40.0, max_value=150.0, value=75.0, step=0.5)
 
 st.sidebar.subheader("Mobility Screening")
-ankle_dorsiflexion = st.sidebar.number_input("Ankle Dorsiflexion (cm)", min_value=0.0, max_value=25.0, value=11.0)
+ankle_dorsiflexion = st.sidebar.number_input("Ankle Dorsiflexion (cm)", min_value=0.0, max_value=25.0, value=10.0)
 fms_asymmetry = st.sidebar.checkbox("FMS Asymmetry or Joint Pain Present?", value=False)
 
 st.sidebar.subheader("Force & Power Diagnostics")
-cmj_force = st.sidebar.number_input("CMJ Peak Force (N)", min_value=500, max_value=6000, value=2200)
-imtp_force = st.sidebar.number_input("IMTP Peak Force (N)", min_value=1000, max_value=8000, value=3100)
+cmj_force = st.sidebar.number_input("CMJ Peak Force (N)", min_value=500, max_value=6000, value=1850)
+imtp_force = st.sidebar.number_input("IMTP Peak Force (N)", min_value=1000, max_value=8000, value=3200)
 
 st.sidebar.subheader("Strength & Conditioning")
-one_rm_squat = st.sidebar.number_input("Estimated 1RM Squat/Trap Bar (kg)", min_value=0.0, max_value=400.0, value=140.0)
-best_sprint = st.sidebar.number_input("Best 30m Sprint Time (s)", min_value=3.0, max_value=10.0, value=4.10)
-worst_sprint = st.sidebar.number_input("Worst 30m Sprint Time (s)", min_value=3.0, max_value=10.0, value=4.35)
+one_rm_squat = st.sidebar.number_input("Estimated 1RM Squat/Trap Bar (kg)", min_value=0.0, max_value=400.0, value=125.0)
+best_sprint = st.sidebar.number_input("Best 30m Sprint Time (s)", min_value=3.0, max_value=10.0, value=4.20)
+worst_sprint = st.sidebar.number_input("Worst 30m Sprint Time (s)", min_value=3.0, max_value=10.0, value=4.51)
 
 # --- CALCULATIONS & RATINGS ---
 rsr = one_rm_squat / body_weight
@@ -172,29 +181,55 @@ if st.sidebar.button("💾 Save Assessment to History"):
 
 st.divider()
 
-# --- COMPOSITE OVERALL SCORE BANNER ---
-st.header("🏆 Composite Performance Score")
-c1, c2 = st.columns([1, 2])
-with c1:
-    st.metric("OVERALL ATHLETE-IQ RATING", f"{ratings['overall']} / 10.0", delta=f"{'ELITE' if ratings['overall'] >= 8.5 else ('OPTIMAL' if ratings['overall'] >= 6.5 else 'NEEDS WORK')}")
-with c2:
-    st.write(f"The **ATHLETE-IQ Composite Rating** is a weighted aggregate of the athlete's neuromuscular, structural, and metabolic capacity derived from published strength & conditioning research.")
+# --- CORE PERFORMANCE RATIOS WITH SUB-RATINGS ---
+st.header("1. Core Performance Ratios")
 
-st.divider()
-
-# --- SCIENTIFIC 1-10 RATINGS METRICS ---
-st.header("1. Peer-Reviewed Element Ratings (1–10 Scale)")
 kpi1, kpi2, kpi3, kpi4 = st.columns(4)
 
-kpi1.metric("Relative Strength", f"{ratings['rsr']} / 10", delta=f"Raw: {rsr:.2f}x BW (Stone 2003)")
-kpi2.metric("Explosive Power (DSD)", f"{ratings['dsd']} / 10", delta=f"Raw: {dsd:.2f} (Suchomel 2016)")
-kpi3.metric("Ankle Mobility", f"{ratings['mobility']} / 10", delta=f"Raw: {ankle_dorsiflexion} cm (Bennell 1998)")
-kpi4.metric("Anaerobic Buffer", f"{ratings['fatigue']} / 10", delta=f"Fatigue: {fatigue_index:.1f}% (Bishop 2011)")
+with kpi1:
+    st.metric("Relative Strength", f"{rsr:.2f} x BW", delta="Target ≥ 2.0x")
+    st.progress(ratings['rsr'] / 10.0)
+    st.markdown(f"""
+    <div class="rating-badge">
+        <b>RATING: {ratings['rsr']} / 10</b><br>
+        <span style="color:#ff007f;">{render_stars(ratings['rsr'])}</span>
+    </div>
+    """, unsafe_allow_html=True)
+
+with kpi2:
+    st.metric("Dynamic Strength Deficit", f"{dsd:.2f}", delta="Velocity-Deficient" if dsd > 0.80 else ("Strength-Deficient" if dsd < 0.60 else "Balanced"))
+    st.progress(ratings['dsd'] / 10.0)
+    st.markdown(f"""
+    <div class="rating-badge">
+        <b>RATING: {ratings['dsd']} / 10</b><br>
+        <span style="color:#ff007f;">{render_stars(ratings['dsd'])}</span>
+    </div>
+    """, unsafe_allow_html=True)
+
+with kpi3:
+    st.metric("Ankle Mobility", f"{ankle_dorsiflexion} cm", delta="Restricted" if ankle_dorsiflexion < 10.0 else "Passed ✅")
+    st.progress(ratings['mobility'] / 10.0)
+    st.markdown(f"""
+    <div class="rating-badge">
+        <b>RATING: {ratings['mobility']} / 10</b><br>
+        <span style="color:#ff007f;">{render_stars(ratings['mobility'])}</span>
+    </div>
+    """, unsafe_allow_html=True)
+
+with kpi4:
+    st.metric("Fatigue Index", f"{fatigue_index:.1f}%", delta="- High Fatigue" if fatigue_index > 8.0 else "Optimal Buffer", delta_color="inverse")
+    st.progress(ratings['fatigue'] / 10.0)
+    st.markdown(f"""
+    <div class="rating-badge">
+        <b>RATING: {ratings['fatigue']} / 10</b><br>
+        <span style="color:#ff007f;">{render_stars(ratings['fatigue'])}</span>
+    </div>
+    """, unsafe_allow_html=True)
 
 st.divider()
 
 # --- VISUALIZATIONS ---
-st.header("2. Interactive Profiling")
+st.header("2. Interactive Performance Profiling")
 
 col_left, col_right = st.columns(2)
 
@@ -207,7 +242,7 @@ dark_layout = dict(
 )
 
 with col_left:
-    st.subheader("⚡ Theoretical Force-Velocity Curve")
+    st.subheader("⚡ Theoretical Force-Velocity & Power Curve")
     v_max = 4.2  
     f_zero = imtp_force  
     v_range = np.linspace(0, v_max, 50)
@@ -234,13 +269,13 @@ with col_left:
     st.plotly_chart(fig_fv, use_container_width=True)
 
 with col_right:
-    st.subheader("🎯 1–10 Radar Profile vs. Elite Benchmark")
-    categories = ['Relative Strength', 'Explosive Power', 'Ankle Mobility', 'Anaerobic Buffer']
+    st.subheader("🎯 Athlete Radar vs. Elite Target Benchmarks")
+    categories = ['Relative Strength', 'Explosive Power', 'Ankle Mobility', 'Repeat Sprint Buffer']
     scores_10 = [ratings['rsr'], ratings['dsd'], ratings['mobility'], ratings['fatigue']]
 
     fig_radar = go.Figure()
     fig_radar.add_trace(go.Scatterpolar(r=scores_10, theta=categories, fill='toself', name='Athlete Score (1-10)', fillcolor='rgba(0, 210, 255, 0.35)', line=dict(color='#00D2FF', width=2)))
-    fig_radar.add_trace(go.Scatterpolar(r=[10, 10, 10, 10], theta=categories, mode='lines', name='Elite Standard (10/10)', line=dict(dash='dash', color='#FF007F')))
+    fig_radar.add_trace(go.Scatterpolar(r=[10, 10, 10, 10], theta=categories, mode='lines', name='Elite Benchmark (10/10)', line=dict(dash='dash', color='#FF007F')))
     
     fig_radar.update_layout(
         **dark_layout,
@@ -257,21 +292,8 @@ with col_right:
 
 st.divider()
 
-# --- SCIENTIFIC BENCHMARK BREAKDOWN TABLE ---
-st.header("3. Scientific Reference & Benchmark Matrix")
-st.markdown("""
-| Fitness Pillar | Tested Metric | Peer-Reviewed Reference | Target Standard (10/10 Rating) |
-| :--- | :--- | :--- | :--- |
-| **Relative Strength** | 1RM Squat / Body Mass | *Stone et al. (2003) & Baker (2001)* | $\ge 2.50\times\text{ Body Weight}$ |
-| **Dynamic Deficit** | CMJ Force / IMTP Force | *Suchomel et al. (2016)* | $0.65 - 0.75\text{ (Optimal Transfer)}$ |
-| **Ankle Mobility** | Weight-Bearing Lunge Test | *Bennell et al. (1998) & Pope (1998)* | $\ge 15.0\text{ cm Range of Motion}$ |
-| **Sprint Fatigue** | 30m Repeat Sprint Decay | *Bishop et al. (2011) & Girard (2011)* | $\le 2.0\%\text{ Speed Drop-off}$ |
-""")
-
-st.divider()
-
-# --- PROGRAMMING ENGINE ---
-st.header("4. Automated Program Recommendations")
+# --- DIAGNOSTIC & PROGRAMMING ENGINE ---
+st.header("3. Automated Program Recommendations")
 col_p1, col_p2, col_p3 = st.columns(3)
 
 with col_p1:
@@ -309,8 +331,8 @@ with col_p3:
 
 st.divider()
 
-# --- LONGITUDINAL TRENDS ---
-st.header("5. Longitudinal Trends")
+# --- HISTORICAL TRENDS SECTION ---
+st.header("4. Longitudinal Trends")
 if not st.session_state.history.empty:
     hist_df = st.session_state.history.sort_values(by="Date")
     tab1, tab2 = st.tabs(["Strength & Mass Progress", "Power Output"])
