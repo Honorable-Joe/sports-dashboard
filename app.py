@@ -5,11 +5,16 @@ import plotly.express as px
 import plotly.graph_objects as go
 from datetime import datetime, timedelta
 
+# --- PAGE CONFIGURATION ---
 st.set_page_config(
-    page_title="Athlete Performance Analytics & Programming Engine",
+    page_title="ATHLETE-IQ Engine",
+    page_icon="🧠",
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
+# --- USER BRANDING CONFIG ---
+DEVELOPER_NAME = "[Coach / Ahmed Youssef]"  # Replace with your full name or handle
 
 # --- SESSION STATE: HISTORICAL DATABASE SIMULATION ---
 if "history" not in st.session_state:
@@ -20,10 +25,15 @@ if "history" not in st.session_state:
         {"Date": (base_date - timedelta(days=30)).strftime("%Y-%m-%d"), "Weight": 75.0, "1RM": 118.0, "RSR": 1.57, "CMJ": 1710, "IMTP": 3150, "DSD": 0.54, "Fatigue": 8.5},
     ])
 
-st.title("🏋️ Sports Science Assessment & Analytics Engine")
+# --- HEADER & LANDING TITLE ---
+st.title("🧠 ATHLETE-IQ Engine")
+st.caption(f"🚀 Engineered by **{DEVELOPER_NAME}** | Sports Science & Athletic Intelligence")
 
-# --- SIDEBAR INPUTS ---
-st.sidebar.header("1. Athlete Current Assessment Data")
+# --- SIDEBAR INPUTS & BRANDING ---
+st.sidebar.markdown(f"### 👤 Lead Sports Scientist\n**{DEVELOPER_NAME}**")
+st.sidebar.divider()
+
+st.sidebar.header("1. Assessment Inputs")
 test_date = st.sidebar.date_input("Assessment Date", datetime.today())
 body_weight = st.sidebar.number_input("Body Weight (kg)", min_value=40.0, max_value=150.0, value=75.0, step=0.5)
 
@@ -59,6 +69,8 @@ if st.sidebar.button("💾 Save Assessment to History"):
     }])
     st.session_state.history = pd.concat([st.session_state.history, new_entry], ignore_index=True)
     st.sidebar.success("Saved successfully!")
+
+st.divider()
 
 # --- KPI METRICS ---
 st.header("1. Core Performance Ratios")
