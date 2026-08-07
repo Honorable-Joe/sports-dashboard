@@ -287,3 +287,26 @@ if not st.session_state.history.empty:
         fig_power = px.line(hist_df, x="Date", y=["CMJ", "IMTP"], markers=True, title="Force Output (N)")
         fig_power.update_layout(**dark_layout)
         st.plotly_chart(fig_power, use_container_width=True)
+def calculate_ratings(rsr, dsd, mobility, fatigue):
+    # 1. Relative Strength Score (Scale: 0.8x to 2.5x BW)
+    score_rsr = max(1.0, min(10.0, 1.0 + ((rsr - 0.8) / 1.7) * 9.0))
+    
+    # 2. Dynamic Strength Deficit Score (Optimal window around 0.70)
+    score_dsd = max(1.0, 10.0 - (abs(dsd - 0.70) / 0.25) * 9.0)
+    
+    # 3. Ankle Mobility Score (Scale: 4cm to 15cm)
+    score_mobility = max(1.0, min(10.0, 1.0 + ((mobility - 4.0) / 11.0) * 9.0))
+    
+    # 4. Fatigue Index Score (Scale: 2% to 15% drop-off)
+    score_fatigue = max(1.0, min(10.0, 10.0 - ((fatigue - 2.0) / 13.0) * 9.0))
+    
+    # Composite ATHLETE-IQ Rating (Weighted Average)
+    overall_iq = (score_rsr * 0.30) + (score_dsd * 0.30) + (score_mobility * 0.20) + (score_fatigue * 0.20)
+    
+    return {
+        "rsr": round(score_rsr, 1),
+        "dsd": round(score_dsd, 1),
+        "mobility": round(score_mobility, 1),
+        "fatigue": round(score_fatigue, 1),
+        "overall": round(overall_iq, 1)
+    }
