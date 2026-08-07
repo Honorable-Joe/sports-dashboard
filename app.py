@@ -13,7 +13,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- DEVELOPER & STAFF BRANDING ---
+# --- DEVELOPER BRANDING ---
 DEVELOPER_NAME = "Coach / Ahmed Youssef"
 
 # --- ENERGETIC RGB & GLASSMORPHISM THEME ---
@@ -71,6 +71,12 @@ section[data-testid="stSidebar"] {
     backdrop-filter: blur(10px) !important;
 }
 
+.stCheckbox label {
+    color: #ffffff !important;
+    font-weight: 600 !important;
+    font-size: 1.05rem !important;
+}
+
 .stButton > button {
     background: linear-gradient(45deg, #ff007f, #7f00ff, #00d2ff) !important;
     background-size: 200% 200% !important;
@@ -78,7 +84,7 @@ section[data-testid="stSidebar"] {
     font-weight: 700 !important;
     border: none !important;
     border-radius: 12px !important;
-    padding: 12px 24px !important;
+    padding: 10px 20px !important;
     box-shadow: 0 0 20px rgba(255, 0, 128, 0.4) !important;
     transition: all 0.3s ease !important;
 }
@@ -116,52 +122,14 @@ def render_stars(score):
     filled = int(round(score))
     return "★" * filled + "☆" * (10 - filled)
 
-# --- INITIALIZE DATABASE / SESSION STATE ---
+# --- DYNAMIC PLAYER & HISTORY MANAGEMENT ---
+if "players" not in st.session_state:
+    st.session_state.players = []
+
 if "history" not in st.session_state:
-    base_date = datetime.today()
-    st.session_state.history = pd.DataFrame([
-        {
-            "Date": (base_date - timedelta(days=60)).strftime("%Y-%m-%d"),
-            "Coach": DEVELOPER_NAME,
-            "Player": "Marcus Vance",
-            "Weight": 78.0,
-            "1RM": 110.0,
-            "RSR": 1.41,
-            "CMJ": 1600,
-            "IMTP": 3000,
-            "DSD": 0.53,
-            "Mobility": 8.0,
-            "Fatigue": 10.5,
-            "Pain_VAS": 0
-        },
-        {
-            "Date": (base_date - timedelta(days=30)).strftime("%Y-%m-%d"),
-            "Coach": DEVELOPER_NAME,
-            "Player": "Marcus Vance",
-            "Weight": 77.5,
-            "1RM": 125.0,
-            "RSR": 1.61,
-            "CMJ": 1800,
-            "IMTP": 3150,
-            "DSD": 0.57,
-            "Mobility": 10.0,
-            "Fatigue": 8.2,
-            "Pain_VAS": 1
-        },
-        {
-            "Date": (base_date - timedelta(days=30)).strftime("%Y-%m-%d"),
-            "Coach": "Coach Sarah",
-            "Player": "Jordan Lee",
-            "Weight": 68.0,
-            "1RM": 130.0,
-            "RSR": 1.91,
-            "CMJ": 2100,
-            "IMTP": 2900,
-            "DSD": 0.72,
-            "Mobility": 12.0,
-            "Fatigue": 4.1,
-            "Pain_VAS": 0
-        }
+    st.session_state.history = pd.DataFrame(columns=[
+        "Date", "Coach", "Player", "Weight", "1RM", "RSR",
+        "CMJ", "IMTP", "DSD", "Mobility", "Fatigue", "Pain_VAS"
     ])
 
 # --- NAVIGATION SIDEBAR ---
@@ -170,14 +138,29 @@ app_mode = st.sidebar.radio("Select View", ["1. Live Assessment Dashboard", "2. 
 
 st.sidebar.divider()
 st.sidebar.header("📋 Staff & Athlete Selection")
-selected_coach = st.sidebar.text_input("Coach Name", value=DEVELOPER_NAME)
+selected_coach = st.sidebar.text_input("Active Coach Name", value=DEVELOPER_NAME)
 
-# Get list of unique players from history + option to add new
-existing_players = list(st.session_state.history["Player"].unique())
-selected_player = st.sidebar.selectbox("Select Active Player", options=existing_players + ["+ Add New Athlete"])
+# Dynamic Player Add / Select Dropdown
+player_options = ["+ Add New Athlete"] + st.session_state.players
+selected_option = st.sidebar.selectbox("Select Active Athlete Profile", options=player_options)
 
-if selected_player == "+ Add New Athlete":
-    selected_player = st.sidebar.text_input("Enter New Athlete Name", value="New Athlete")
+if selected_option == "+ Add New Athlete":
+    new_player_input = st.sidebar.text_input("Enter Athlete Name", value="")
+    if st.sidebar.button("➕ Save New Athlete"):
+        clean_name = new_player_input.strip()
+        if clean_name != "" and clean_name not in st.session_state.players:
+            st.session_state.players.append(clean_name)
+            st.sidebar.success(f"Added {clean_name}!")
+            st.rerun()
+        elif clean_name == "":
+            st.sidebar.error("Please enter a valid name.")
+    selected_player = new_player_input.strip() if new_player_input.strip() != "" else "Unassigned Athlete"
+else:
+    selected_player = selected_option
+    if st.sidebar.button("🗑️ Remove Selected Athlete"):
+        st.session_state.players.remove(selected_player)
+        st.sidebar.warning(f"Removed {selected_player}!")
+        st.rerun()
 
 st.sidebar.divider()
 
@@ -195,7 +178,7 @@ dark_layout = dict(
 # ==========================================
 if app_mode == "1. Live Assessment Dashboard":
     st.title("🧠 ATHLETE-IQ Assessment Engine")
-    st.caption(f"⚡ Lead Architect: **{DEVELOPER_NAME}** | Active Coach: **{selected_coach}** | Athlete: **{selected_player}**")
+    st.caption(f"Lead Developer: **{DEVELOPER_NAME}**")
 
     st.sidebar.header("Testing Inputs")
     test_date = st.sidebar.date_input("Assessment Date", datetime.today())
@@ -215,7 +198,7 @@ if app_mode == "1. Live Assessment Dashboard":
     worst_sprint = st.sidebar.number_input("Worst 30m Sprint Time (s)", min_value=3.0, max_value=10.0, value=4.51)
 
     # Core Calculations
-    rsr = one_rm_squat / body_weight
+    rsr = one_rm_squat / body_weight if body_weight > 0 else 0
     dsd = cmj_force / imtp_force if imtp_force > 0 else 0
     fatigue_index = ((worst_sprint - best_sprint) / best_sprint) * 100 if best_sprint > 0 else 0
 
@@ -223,24 +206,30 @@ if app_mode == "1. Live Assessment Dashboard":
 
     # Save Session Action
     if st.sidebar.button("💾 Save Assessment to History"):
-        new_entry = pd.DataFrame([{
-            "Date": test_date.strftime("%Y-%m-%d"),
-            "Coach": selected_coach,
-            "Player": selected_player,
-            "Weight": body_weight,
-            "1RM": one_rm_squat,
-            "RSR": round(rsr, 2),
-            "CMJ": cmj_force,
-            "IMTP": imtp_force,
-            "DSD": round(dsd, 2),
-            "Mobility": ankle_dorsiflexion,
-            "Fatigue": round(fatigue_index, 1),
-            "Pain_VAS": pain_vas
-        }])
-        st.session_state.history = pd.concat([st.session_state.history, new_entry], ignore_index=True)
-        st.sidebar.success(f"Saved entry for {selected_player}!")
+        if selected_player != "Unassigned Athlete":
+            new_entry = pd.DataFrame([{
+                "Date": test_date.strftime("%Y-%m-%d"),
+                "Coach": selected_coach,
+                "Player": selected_player,
+                "Weight": body_weight,
+                "1RM": one_rm_squat,
+                "RSR": round(rsr, 2),
+                "CMJ": cmj_force,
+                "IMTP": imtp_force,
+                "DSD": round(dsd, 2),
+                "Mobility": ankle_dorsiflexion,
+                "Fatigue": round(fatigue_index, 1),
+                "Pain_VAS": pain_vas
+            }])
+            st.session_state.history = pd.concat([st.session_state.history, new_entry], ignore_index=True)
+            st.sidebar.success(f"Saved entry for {selected_player}!")
+        else:
+            st.sidebar.error("Please select or add an athlete before saving!")
 
     st.divider()
+
+    # ACTIVE COACH & PLAYER DISPLAY BEFORE NUMBERS
+    st.info(f"📋 **Active Testing Session** — Coach: **{selected_coach}** | Athlete: **{selected_player}**")
 
     # CORE METRICS WITH 1-10 SUB-RATINGS
     st.header(f"1. Performance Metrics: {selected_player}")
@@ -355,7 +344,7 @@ if app_mode == "1. Live Assessment Dashboard":
         fig_progress.update_layout(**dark_layout)
         st.plotly_chart(fig_progress, use_container_width=True)
     else:
-        st.info("No recorded history for this athlete yet. Complete an assessment and click 'Save Assessment to History'.")
+        st.info(f"No recorded history for {selected_player} yet. Complete an assessment and click 'Save Assessment to History'.")
 
 
 # ==========================================
@@ -363,7 +352,12 @@ if app_mode == "1. Live Assessment Dashboard":
 # ==========================================
 elif app_mode == "2. 1-Month Plan Generator":
     st.title("🏋️ 1-Month Periodized Plan Generator")
-    st.caption(f"⚡ Lead Architect: **{DEVELOPER_NAME}** | Prescribed for Athlete: **{selected_player}**")
+    st.caption(f"Lead Developer: **{DEVELOPER_NAME}**")
+
+    st.divider()
+
+    # ACTIVE COACH & PLAYER DISPLAY BEFORE NUMBERS
+    st.info(f"📋 **Prescription Profile** — Coach: **{selected_coach}** | Athlete: **{selected_player}**")
 
     # Get latest athlete stats from history or defaults
     player_history = st.session_state.history[st.session_state.history["Player"] == selected_player].sort_values(by="Date")
@@ -375,19 +369,19 @@ elif app_mode == "2. 1-Month Plan Generator":
 
     ratings = calculate_ratings(p_rsr, p_dsd, p_mob, p_fatigue)
 
-    st.divider()
-
-    # SETUP OPTIONS & INJURY CHECKBOXES
+    st.header("1. Training Setup & Injury Screening")
+    
     col_opt1, col_opt2 = st.columns(2)
 
     with col_opt1:
-        st.subheader("1. Training Parameters")
+        st.subheader("⚙️ Training Parameters")
         season_phase = st.selectbox("Season Phase", ["Off-Season Hypertrophy/Strength", "In-Season Maintenance"])
         days_per_week = st.radio("Frequency", ["3 Days / Week", "4 Days / Week"], horizontal=True)
         equip_available = st.checkbox("Barbell & Free Weights Available", value=True)
 
     with col_opt2:
-        st.subheader("2. Medical & Injury Screen (Auto Substitutions)")
+        st.subheader("🩹 Injury Screen (Auto Substitutions)")
+        st.markdown("*Select active injuries to automatically replace high-risk exercises:*")
         knee_pain = st.checkbox("Anterior Knee Pain / Patellofemoral Strain", value=False)
         back_pain = st.checkbox("Lumbar Spine / Low Back Strain", value=False)
         shoulder_pain = st.checkbox("Shoulder Impingement / AC Joint Pain", value=False)
@@ -426,7 +420,7 @@ elif app_mode == "2. 1-Month Plan Generator":
         st.divider()
 
     # GENERATED 4-WEEK PROGRAM TABLE
-    st.header(f"3. Prescribed 1-Month Program for {selected_player}")
+    st.header(f"2. Prescribed 1-Month Program for {selected_player}")
     st.write(f"**Primary Limiter Identified:** {'Maximal Strength' if ratings['rsr'] < 6.0 else ('Rate of Force Development' if ratings['dsd'] < 6.0 else 'Balanced Maintenance')}")
 
     tab_w1, tab_w2, tab_w3, tab_w4 = st.tabs(["Week 1: Accumulation", "Week 2: Intensification", "Week 3: Peak Load", "Week 4: Deload & Re-Test"])
