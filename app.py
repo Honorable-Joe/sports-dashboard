@@ -16,6 +16,80 @@ st.set_page_config(
 # --- USER BRANDING CONFIG ---
 DEVELOPER_NAME = "[Coach / Ahmed Youssef]"  # Replace with your full name or handle
 
+# --- ENERGETIC RGB & GLASSMORPHISM THEME (CUSTOM CSS) ---
+custom_theme = """
+<style>
+/* Dark Athletic Background with Dark Overlay */
+.stApp {
+    background: linear-gradient(rgba(10, 12, 18, 0.88), rgba(10, 12, 18, 0.94)), 
+                url('https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=1920&q=80');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+}
+
+/* Glowing Neon Headers */
+h1 {
+    color: #ffffff !important;
+    text-shadow: 0 0 15px rgba(0, 210, 255, 0.6), 0 0 30px rgba(0, 210, 255, 0.2);
+    font-weight: 800 !important;
+}
+
+h2, h3 {
+    color: #e0e6ed !important;
+    text-shadow: 0 0 10px rgba(255, 0, 128, 0.4);
+}
+
+/* Glassmorphism KPI Metric Cards with Cyan RGB Glow */
+div[data-testid="stMetric"] {
+    background: rgba(18, 22, 32, 0.75) !important;
+    border: 1px solid rgba(0, 210, 255, 0.3) !important;
+    border-radius: 14px !important;
+    padding: 16px !important;
+    backdrop-filter: blur(12px) !important;
+    box-shadow: 0 0 20px rgba(0, 210, 255, 0.15), inset 0 0 10px rgba(0, 210, 255, 0.05) !important;
+    transition: all 0.3s ease-in-out !important;
+}
+
+div[data-testid="stMetric"]:hover {
+    transform: translateY(-4px) !important;
+    border-color: rgba(0, 210, 255, 0.8) !important;
+    box-shadow: 0 0 30px rgba(0, 210, 255, 0.4), inset 0 0 15px rgba(0, 210, 255, 0.2) !important;
+}
+
+/* Sidebar Dark Glass Styling */
+section[data-testid="stSidebar"] {
+    background-color: rgba(12, 15, 23, 0.92) !important;
+    border-right: 1px solid rgba(255, 0, 128, 0.3) !important;
+    backdrop-filter: blur(10px) !important;
+}
+
+/* Glowing RGB Gradient Primary Button */
+.stButton > button {
+    background: linear-gradient(45deg, #ff007f, #7f00ff, #00d2ff) !important;
+    background-size: 200% 200% !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    border: none !important;
+    border-radius: 12px !important;
+    padding: 12px 24px !important;
+    box-shadow: 0 0 20px rgba(255, 0, 128, 0.4) !important;
+    transition: all 0.3s ease !important;
+}
+
+.stButton > button:hover {
+    transform: scale(1.03) !important;
+    box-shadow: 0 0 30px rgba(0, 210, 255, 0.8) !important;
+}
+
+/* Divider Glow */
+hr {
+    border-color: rgba(0, 210, 255, 0.2) !important;
+}
+</style>
+"""
+st.markdown(custom_theme, unsafe_allow_html=True)
+
 # --- SESSION STATE: HISTORICAL DATABASE SIMULATION ---
 if "history" not in st.session_state:
     base_date = datetime.today()
@@ -27,7 +101,7 @@ if "history" not in st.session_state:
 
 # --- HEADER & LANDING TITLE ---
 st.title("🧠 ATHLETE-IQ Engine")
-st.caption(f"🚀 Engineered by **{DEVELOPER_NAME}** | Sports Science & Athletic Intelligence")
+st.caption(f"⚡ Lead Performance Architect: **{DEVELOPER_NAME}** | Advanced Biomechanics & Analytics")
 
 # --- SIDEBAR INPUTS & BRANDING ---
 st.sidebar.markdown(f"### 👤 Lead Sports Scientist\n**{DEVELOPER_NAME}**")
@@ -87,29 +161,39 @@ st.header("2. Interactive Performance Profiling")
 
 col_left, col_right = st.columns(2)
 
+# Dark Plotly Template Styling
+dark_layout = dict(
+    paper_bgcolor='rgba(0,0,0,0)',
+    plot_bgcolor='rgba(0,0,0,0)',
+    font=dict(color='#E0E6ED'),
+    xaxis=dict(gridcolor='rgba(255,255,255,0.1)'),
+    yaxis=dict(gridcolor='rgba(255,255,255,0.1)')
+)
+
 with col_left:
     st.subheader("⚡ Theoretical Force-Velocity & Power Curve")
     
-    v_max = 4.2  # Max velocity (m/s)
-    f_zero = imtp_force  # Max theoretical isometric force
+    v_max = 4.2  
+    f_zero = imtp_force  
     
     v_range = np.linspace(0, v_max, 50)
     f_range = f_zero * (1 - v_range / v_max)
-    p_range = f_range * v_range  # Power = Force * Velocity
+    p_range = f_range * v_range  
 
     est_v_cmj = (1 - (cmj_force / f_zero)) * v_max if f_zero > cmj_force else 1.5
 
     fig_fv = go.Figure()
-    fig_fv.add_trace(go.Scatter(x=v_range, y=f_range, mode='lines', name='Force-Velocity Line', line=dict(color='#0066CC', width=3)))
-    fig_fv.add_trace(go.Scatter(x=v_range, y=p_range, mode='lines', name='Power Curve', line=dict(color='#FF8800', width=3, dash='dash'), yaxis='y2'))
+    fig_fv.add_trace(go.Scatter(x=v_range, y=f_range, mode='lines', name='Force-Velocity Line', line=dict(color='#00D2FF', width=3)))
+    fig_fv.add_trace(go.Scatter(x=v_range, y=p_range, mode='lines', name='Power Curve', line=dict(color='#FF007F', width=3, dash='dash'), yaxis='y2'))
     fig_fv.add_trace(go.Scatter(x=[est_v_cmj], y=[cmj_force], mode='markers+text', name='CMJ Operating Point',
-                                marker=dict(size=14, color='red', symbol='diamond'),
+                                marker=dict(size=14, color='#7F00FF', symbol='diamond'),
                                 text=["Current Operating Point"], textposition="top center"))
 
     fig_fv.update_layout(
+        **dark_layout,
         xaxis_title="Velocity (m/s)",
         yaxis_title="Force (N)",
-        yaxis2=dict(title=dict(text="Power (Watts)", font=dict(color='#FF8800')), overlaying='y', side='right'),
+        yaxis2=dict(title=dict(text="Power (Watts)", font=dict(color='#FF007F')), overlaying='y', side='right', gridcolor='rgba(0,0,0,0)'),
         legend=dict(x=0.05, y=0.1),
         margin=dict(l=20, r=20, t=30, b=20),
         height=380
@@ -129,11 +213,16 @@ with col_right:
     athlete_scores = [score_rsr, score_dsd, score_mobility, score_fatigue]
 
     fig_radar = go.Figure()
-    fig_radar.add_trace(go.Scatterpolar(r=athlete_scores, theta=categories, fill='toself', name='Athlete Profile', fillcolor='rgba(0, 102, 204, 0.4)', line=dict(color='#0066CC')))
-    fig_radar.add_trace(go.Scatterpolar(r=[100, 100, 100, 100], theta=categories, mode='lines', name='Target Benchmark (100%)', line=dict(dash='dash', color='gray')))
+    fig_radar.add_trace(go.Scatterpolar(r=athlete_scores, theta=categories, fill='toself', name='Athlete Profile', fillcolor='rgba(0, 210, 255, 0.35)', line=dict(color='#00D2FF', width=2)))
+    fig_radar.add_trace(go.Scatterpolar(r=[100, 100, 100, 100], theta=categories, mode='lines', name='Target Benchmark (100%)', line=dict(dash='dash', color='#FF007F')))
     
     fig_radar.update_layout(
-        polar=dict(radialaxis=dict(visible=True, range=[0, 100])),
+        **dark_layout,
+        polar=dict(
+            bgcolor='rgba(0,0,0,0)',
+            radialaxis=dict(visible=True, range=[0, 100], gridcolor='rgba(255,255,255,0.1)'),
+            angularaxis=dict(gridcolor='rgba(255,255,255,0.1)')
+        ),
         showlegend=True,
         margin=dict(l=40, r=40, t=30, b=20),
         height=380
@@ -191,8 +280,10 @@ if not st.session_state.history.empty:
     
     with tab1:
         fig_str = px.line(hist_df, x="Date", y=["RSR", "1RM"], markers=True, title="Relative Strength (RSR) vs 1RM (kg)")
+        fig_str.update_layout(**dark_layout)
         st.plotly_chart(fig_str, use_container_width=True)
         
     with tab2:
         fig_power = px.line(hist_df, x="Date", y=["CMJ", "IMTP"], markers=True, title="Force Output (N)")
+        fig_power.update_layout(**dark_layout)
         st.plotly_chart(fig_power, use_container_width=True)
