@@ -10,39 +10,86 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Dark-Mode Compatible Custom CSS
+# Energetic RGB Cyberpunk / Sports-Tech CSS Theme
 st.markdown("""
 <style>
-    .main-header { font-size: 2.4rem; font-weight: 800; color: #2196F3; margin-bottom: 0px; }
-    .sub-header { font-size: 1.1rem; color: #B0BEC5; margin-bottom: 20px; font-weight: 500; }
+    /* Main Background Dark Mesh Gradient */
+    .stApp {
+        background: radial-gradient(circle at 50% -20%, #151d30 0%, #080a0f 80%) !important;
+        color: #F0F6FC;
+    }
     
-    /* Explicit dark/light mode compatible card containers */
+    /* Energetic RGB Title Styling */
+    .main-header { 
+        font-size: 2.8rem; 
+        font-weight: 900; 
+        background: linear-gradient(90deg, #00E5FF 0%, #7C4DFF 50%, #FF4081 100%); 
+        -webkit-background-clip: text; 
+        -webkit-text-fill-color: transparent; 
+        text-shadow: 0 0 25px rgba(0, 229, 255, 0.4);
+        margin-bottom: 0px; 
+        letter-spacing: -0.5px;
+    }
+    
+    .sub-header { 
+        font-size: 1.2rem; 
+        color: #00E5FF; 
+        font-weight: 700; 
+        margin-bottom: 25px; 
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        text-shadow: 0 0 10px rgba(0, 229, 255, 0.3);
+    }
+    
+    /* Neon RGB Glowing Card Containers */
     .card { 
-        background-color: #1E222A; 
+        background: rgba(18, 22, 31, 0.85) !important; 
+        backdrop-filter: blur(12px);
         color: #E0E0E0; 
-        border-radius: 10px; 
-        padding: 18px; 
-        border-left: 5px solid #2196F3; 
-        margin-bottom: 18px; 
-        box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        border-radius: 12px; 
+        padding: 20px; 
+        border: 1px solid rgba(0, 229, 255, 0.25);
+        border-left: 5px solid #00E5FF; 
+        margin-bottom: 20px; 
+        box-shadow: 0 0 18px rgba(0, 229, 255, 0.15);
     }
+    
     .alert-card { 
-        background-color: #2C1819; 
+        background: rgba(35, 12, 18, 0.9) !important; 
+        backdrop-filter: blur(12px);
         color: #FFCDD2; 
-        border-radius: 10px; 
-        padding: 18px; 
-        border-left: 5px solid #E53935; 
-        margin-bottom: 18px; 
-        box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        border-radius: 12px; 
+        padding: 20px; 
+        border: 1px solid rgba(255, 64, 129, 0.4);
+        border-left: 5px solid #FF4081; 
+        margin-bottom: 20px; 
+        box-shadow: 0 0 22px rgba(255, 64, 129, 0.25);
     }
+    
     .warning-card { 
-        background-color: #2A2500; 
+        background: rgba(35, 28, 5, 0.9) !important; 
+        backdrop-filter: blur(12px);
         color: #FFF59D; 
-        border-radius: 10px; 
-        padding: 18px; 
-        border-left: 5px solid #FBC02D; 
-        margin-bottom: 18px; 
-        box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        border-radius: 12px; 
+        padding: 20px; 
+        border: 1px solid rgba(255, 215, 0, 0.4);
+        border-left: 5px solid #FFD700; 
+        margin-bottom: 20px; 
+        box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
+    }
+
+    /* Custom Sidebar Glow */
+    section[data-testid="stSidebar"] {
+        background-color: #0a0d14 !important;
+        border-right: 1px solid rgba(124, 77, 255, 0.25) !important;
+    }
+
+    /* Metric Display Highlight */
+    div[data-testid="stMetricValue"] {
+        font-size: 2.2rem !important;
+        font-weight: 800 !important;
+        color: #00E5FF !important;
+        text-shadow: 0 0 12px rgba(0, 229, 255, 0.5);
     }
 </style>
 """, unsafe_allow_html=True)
@@ -140,9 +187,9 @@ with st.sidebar:
         ]
     )
     st.markdown("---")
-    st.caption("Athlete-IQ Diagnostics")
+    st.caption("⚡ Powered by Athlete-IQ Engine")
 
-# Initialize Session States for Cross-Tab Interactions
+# Initialize Session States
 if "blacklisted_movements" not in st.session_state:
     st.session_state.blacklisted_movements = []
 if "in_season" not in st.session_state:
@@ -190,7 +237,7 @@ if page == "1. Demographics & Workload":
         club_hours = st.number_input("Avg Hours / Practice Day", min_value=0.0, max_value=8.0, value=0.0 if is_general_fitness else 2.5, step=0.5, disabled=is_general_fitness)
     with col_c3:
         st.session_state.total_external_hours = club_days * club_hours
-        st.metric("Total External Sport Load", f"{st.session_state.total_external_hours:.1f} hrs/week")
+        st.metric("Total External Sport Load", f"{st.session_state.total_external_hours:.1f} hrs/wk")
         if st.session_state.total_external_hours >= 10:
             st.warning("⚡ High External Load: Gym volume will be auto-adjusted to micro-dosing.")
         elif st.session_state.total_external_hours > 0:
