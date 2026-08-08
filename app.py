@@ -4,19 +4,46 @@ import numpy as np
 
 # Set Streamlit Page Configuration
 st.set_page_config(
-    page_title="ATHLETE-IQ | Comprehensive Diagnostic Platform",
+    page_title="Athlete-IQ",
     page_icon="🧠",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
-# Custom CSS for styling
+# Dark-Mode Compatible Custom CSS
 st.markdown("""
 <style>
-    .main-header { font-size: 2.2rem; font-weight: 700; color: #1E88E5; margin-bottom: 0px; }
-    .sub-header { font-size: 1.0rem; color: #666; margin-bottom: 20px; }
-    .card { background-color: #f8f9fa; border-radius: 8px; padding: 15px; border-left: 5px solid #1E88E5; margin-bottom: 15px; }
-    .alert-card { background-color: #ffebee; border-radius: 8px; padding: 15px; border-left: 5px solid #e53935; margin-bottom: 15px; }
-    .warning-card { background-color: #fffde7; border-radius: 8px; padding: 15px; border-left: 5px solid #fbc02d; margin-bottom: 15px; }
+    .main-header { font-size: 2.4rem; font-weight: 800; color: #2196F3; margin-bottom: 0px; }
+    .sub-header { font-size: 1.1rem; color: #B0BEC5; margin-bottom: 20px; font-weight: 500; }
+    
+    /* Explicit dark/light mode compatible card containers */
+    .card { 
+        background-color: #1E222A; 
+        color: #E0E0E0; 
+        border-radius: 10px; 
+        padding: 18px; 
+        border-left: 5px solid #2196F3; 
+        margin-bottom: 18px; 
+        box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    }
+    .alert-card { 
+        background-color: #2C1819; 
+        color: #FFCDD2; 
+        border-radius: 10px; 
+        padding: 18px; 
+        border-left: 5px solid #E53935; 
+        margin-bottom: 18px; 
+        box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    }
+    .warning-card { 
+        background-color: #2A2500; 
+        color: #FFF59D; 
+        border-radius: 10px; 
+        padding: 18px; 
+        border-left: 5px solid #FBC02D; 
+        margin-bottom: 18px; 
+        box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -94,22 +121,41 @@ INJURY_DATABASE = {
 }
 
 # Header Banner
-st.markdown("<p class='main-header'>🧠 ATHLETE-IQ Assessment Platform</p>", unsafe_allow_html=True)
-st.markdown("<p class='sub-header'>Clinical Diagnostics • Load Management • Periodized Programming</p>", unsafe_allow_html=True)
-
-# Main Navigation Tabs
-tab1, tab2, tab3, tab4, tab5 = st.tabs([
-    "1. Demographics & Workload",
-    "2. Clinical Medical Engine",
-    "3. Posture & Mobility",
-    "4. Power & Performance",
-    "5. 1-Month Plan Generator"
-])
+st.markdown("<p class='main-header'>🧠 Athlete-IQ</p>", unsafe_allow_html=True)
+st.markdown("<p class='sub-header'>Coach Ahmed Youssef</p>", unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------
-# TAB 1: DEMOGRAPHICS & WORKLOAD
+# COLLAPSIBLE SIDEBAR MENU
 # -----------------------------------------------------------------------------
-with tab1:
+with st.sidebar:
+    st.title("⚙️ Navigation")
+    page = st.radio(
+        "Select Section:",
+        [
+            "1. Demographics & Workload",
+            "2. Clinical Medical Engine",
+            "3. Posture & Mobility",
+            "4. Power & Performance",
+            "5. 1-Month Plan Generator"
+        ]
+    )
+    st.markdown("---")
+    st.caption("Athlete-IQ Diagnostics")
+
+# Initialize Session States for Cross-Tab Interactions
+if "blacklisted_movements" not in st.session_state:
+    st.session_state.blacklisted_movements = []
+if "in_season" not in st.session_state:
+    st.session_state.in_season = False
+if "sport_category" not in st.session_state:
+    st.session_state.sport_category = "General Fitness / Body Recomp"
+if "total_external_hours" not in st.session_state:
+    st.session_state.total_external_hours = 0.0
+
+# -----------------------------------------------------------------------------
+# PAGE 1: DEMOGRAPHICS & WORKLOAD
+# -----------------------------------------------------------------------------
+if page == "1. Demographics & Workload":
     st.subheader("1. Athlete Profile & Sport Context")
     
     col1, col2, col3 = st.columns(3)
@@ -122,38 +168,38 @@ with tab1:
         weight = st.number_input("Weight (kg)", min_value=30.0, max_value=200.0, value=80.0)
         level = st.selectbox("Competitive Level", ["Pro/Elite", "College", "Youth", "General Fitness / Gen Pop"])
     with col3:
-        sport_category = st.selectbox("Primary Sport Focus", [
+        st.session_state.sport_category = st.selectbox("Primary Sport Focus", [
             "Field & Court (Football, Basketball, Soccer, Rugby)",
             "Overhead & Racket (Tennis, Volleyball, Swimming)",
             "Combat & Contact (MMA, Boxing, Wrestling)",
             "Endurance (Running, Cycling)",
             "General Fitness / Body Recomp"
         ])
-        in_season = st.checkbox("Athlete is Currently IN-SEASON", value=False)
+        st.session_state.in_season = st.checkbox("Athlete is Currently IN-SEASON", value=st.session_state.in_season)
         readiness = st.slider("Daily Readiness Score (1-10)", 1, 10, 8)
 
     st.markdown("---")
     st.subheader("2. External Club & Training Load")
     col_c1, col_c2, col_c3 = st.columns(3)
     
-    is_general_fitness = "General Fitness" in sport_category
+    is_general_fitness = "General Fitness" in st.session_state.sport_category
     
     with col_c1:
         club_days = st.number_input("Club Practice Days / Week", min_value=0, max_value=7, value=0 if is_general_fitness else 4, disabled=is_general_fitness)
     with col_c2:
         club_hours = st.number_input("Avg Hours / Practice Day", min_value=0.0, max_value=8.0, value=0.0 if is_general_fitness else 2.5, step=0.5, disabled=is_general_fitness)
     with col_c3:
-        total_external_hours = club_days * club_hours
-        st.metric("Total External Sport Load", f"{total_external_hours:.1f} hrs/week")
-        if total_external_hours >= 10:
+        st.session_state.total_external_hours = club_days * club_hours
+        st.metric("Total External Sport Load", f"{st.session_state.total_external_hours:.1f} hrs/week")
+        if st.session_state.total_external_hours >= 10:
             st.warning("⚡ High External Load: Gym volume will be auto-adjusted to micro-dosing.")
-        elif total_external_hours > 0:
+        elif st.session_state.total_external_hours > 0:
             st.info("ℹ️ Moderate External Load: Moderate gym volume recommended.")
 
 # -----------------------------------------------------------------------------
-# TAB 2: CLINICAL MEDICAL ENGINE
+# PAGE 2: CLINICAL MEDICAL ENGINE
 # -----------------------------------------------------------------------------
-with tab2:
+elif page == "2. Clinical Medical Engine":
     st.subheader("Clinical Injury & Pathology Logging")
     
     st.markdown("#### 3-Tier Cascading Pathology Picker")
@@ -179,28 +225,28 @@ with tab2:
         manual_cause = st.text_input("Specific Trigger / Exercise Cause (e.g., Heavy Back Squat at 90% 1RM)", "")
     
     with o_col2:
-        blacklisted_movements = st.multiselect(
+        st.session_state.blacklisted_movements = st.multiselect(
             "Blacklist Movement Patterns (Auto-substitutions will apply)",
             ["Barbell Back Squat", "Axial Compression", "Floor Deadlift / Spinal Shear", 
              "Overhead Pressing", "Max-Velocity Sprinting", "Deep Knee Flexion", "High-Impact Plyometrics"],
-            default=["Barbell Back Squat", "Axial Compression"] if "squat" in manual_cause.lower() else []
+            default=["Barbell Back Squat", "Axial Compression"] if "squat" in manual_cause.lower() else st.session_state.blacklisted_movements
         )
         coach_override = st.checkbox("Enable Executive Coach Manual Override", value=True)
 
-    if pain_score > 3 or len(selected_injuries) > 0 or len(blacklisted_movements) > 0:
+    if pain_score > 3 or len(selected_injuries) > 0 or len(st.session_state.blacklisted_movements) > 0:
         st.markdown(f"""
         <div class='alert-card'>
             <b>🔴 CLINICAL RED FLAGS ACTIVE</b><br>
             <b>Tagged Pathologies:</b> {', '.join(selected_injuries) if selected_injuries else 'None'}<br>
             <b>Stated Trigger:</b> {manual_cause if manual_cause else 'Unspecified'}<br>
-            <b>Barred Patterns:</b> {', '.join(blacklisted_movements) if blacklisted_movements else 'None'}
+            <b>Barred Patterns:</b> {', '.join(st.session_state.blacklisted_movements) if st.session_state.blacklisted_movements else 'None'}
         </div>
         """, unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------
-# TAB 3: POSTURE & MOBILITY
+# PAGE 3: POSTURE & MOBILITY
 # -----------------------------------------------------------------------------
-with tab3:
+elif page == "3. Posture & Mobility":
     st.subheader("Structural Posture & Range of Motion (ROM)")
     
     p_col1, p_col2 = st.columns(2)
@@ -231,19 +277,18 @@ with tab3:
         sh_l = st.number_input("Shoulder Flexion Left (°)", value=175.0)
         sh_r = st.number_input("Shoulder Flexion Right (°)", value=180.0)
 
-    # Auto calculation of ankle asymmetry
     if ank_l > 0 and ank_r > 0:
         ankle_diff = abs(ank_l - ank_r) / max(ank_l, ank_r) * 100
         if ankle_diff > 10:
-            st.markdown(f"<div class='warning-card'>⚠️ <b>Asymmetry Alert:</b> {ankle_diff:.1f}% Ankle Dorsiflexion Asymmetry detected. Auto-populating ankle mobility interventions.</div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='warning-card'>⚠️ <b>Asymmetry Alert:</b> {ankle_diff:.1f}% Ankle Dorsiflexion Asymmetry detected. Auto-populating mobility interventions.</div>", unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------
-# TAB 4: POWER & PERFORMANCE
+# PAGE 4: POWER & PERFORMANCE
 # -----------------------------------------------------------------------------
-with tab4:
+elif page == "4. Power & Performance":
     st.subheader("Neuromuscular Power & Diagnostic Testing")
     
-    if in_season:
+    if st.session_state.in_season:
         st.info("ℹ️ IN-SEASON MODE: High-fatigue maximal tests are greyed out to preserve match readiness.")
 
     f_col1, f_col2, f_col3 = st.columns(3)
@@ -251,35 +296,33 @@ with tab4:
         cmj_height = st.number_input("CMJ Height (cm)", value=42.0)
         sj_height = st.number_input("Squat Jump Height (cm)", value=38.0)
     with f_col2:
-        imtp_force = st.number_input("IMTP Peak Force (N)", value=2800.0, disabled=in_season or "Axial Compression" in blacklisted_movements)
+        imtp_force = st.number_input("IMTP Peak Force (N)", value=2800.0, disabled=st.session_state.in_season or "Axial Compression" in st.session_state.blacklisted_movements)
         rsi_index = st.number_input("Reactive Strength Index (RSI)", value=2.1)
     with f_col3:
         eur_ratio = cmj_height / sj_height if sj_height > 0 else 0
         st.metric("Eccentric Utilization Ratio (EUR)", f"{eur_ratio:.2f}")
-        rsr = imtp_force / (weight * 9.81) if weight > 0 else 0
-        st.metric("Relative Strength Ratio (RSR)", f"{rsr:.2f} x BW")
 
     st.markdown("---")
     st.subheader("Sport-Specific Functional Battery")
     
-    if "General Fitness" in sport_category:
+    is_gen_fit = "General Fitness" in st.session_state.sport_category
+    if is_gen_fit:
         st.warning("🔒 Sport-specific high-level metrics are greyed out for General Fitness profile.")
         
     s_col1, s_col2 = st.columns(2)
     with s_col1:
-        pro_agility = st.number_input("5-10-5 Pro Agility Time (s)", value=4.35, disabled=is_general_fitness)
-        rsa_fatigue = st.number_input("Sprint Fatigue Index (%)", value=5.2, disabled=is_general_fitness)
+        pro_agility = st.number_input("5-10-5 Pro Agility Time (s)", value=4.35, disabled=is_gen_fit)
+        rsa_fatigue = st.number_input("Sprint Fatigue Index (%)", value=5.2, disabled=is_gen_fit)
     with s_col2:
-        gird_deficit = st.number_input("GIRD Shoulder IR Deficit (°)", value=4.0, disabled=is_general_fitness or "Field" in sport_category)
-        grip_str = st.number_input("Grip Dynamometry (kg)", value=55.0, disabled=is_general_fitness)
+        gird_deficit = st.number_input("GIRD Shoulder IR Deficit (°)", value=4.0, disabled=is_gen_fit or "Field" in st.session_state.sport_category)
+        grip_str = st.number_input("Grip Dynamometry (kg)", value=55.0, disabled=is_gen_fit)
 
 # -----------------------------------------------------------------------------
-# TAB 5: 1-MONTH PERIODIZED PLAN GENERATOR
+# PAGE 5: 1-MONTH PERIODIZED PLAN GENERATOR
 # -----------------------------------------------------------------------------
-with tab5:
+elif page == "5. 1-Month Plan Generator":
     st.subheader("Periodized 1-Month Program Builder")
     
-    # Custom Coach Control: Gym Days Per Week
     plan_col1, plan_col2, plan_col3 = st.columns(3)
     with plan_col1:
         gym_days = st.selectbox("Gym Training Days / Week (Coach Choice)", [2, 3, 4, 5], index=1)
@@ -290,39 +333,34 @@ with tab5:
 
     st.markdown("---")
     
-    # Active Constraint Badges
     st.markdown("##### Active Programming Rules Applied:")
-    rule_text = f"• **Gym Days:** {gym_days} Days/Week | **External Practice:** {total_external_hours} hrs/week\n"
-    if in_season:
+    rule_text = f"• **Gym Days:** {gym_days} Days/Week | **External Practice:** {st.session_state.total_external_hours} hrs/week\n"
+    if st.session_state.in_season:
         rule_text += "• **In-Season Capping:** Overall volume reduced by 35%. Peak intensity limited to 82.5% 1RM.\n"
-    if len(blacklisted_movements) > 0:
-        rule_text += f"• **Exercise Blacklist Active:** Replacing {', '.join(blacklisted_movements)} with safe joint-friendly patterns.\n"
+    if len(st.session_state.blacklisted_movements) > 0:
+        rule_text += f"• **Exercise Blacklist Active:** Replacing {', '.join(st.session_state.blacklisted_movements)} with safe patterns.\n"
     st.markdown(rule_text)
 
-    # Dynamic Exercise Selection Engine
     main_squat_sub = "Barbell Back Squat"
     main_hinge_sub = "Barbell Deadlift"
     
-    if "Barbell Back Squat" in blacklisted_movements or "Axial Compression" in blacklisted_movements:
+    if "Barbell Back Squat" in st.session_state.blacklisted_movements or "Axial Compression" in st.session_state.blacklisted_movements:
         main_squat_sub = "Belt Squat OR Banded Spanish Box Squat (Zero Axial Load)"
-    if "Floor Deadlift / Spinal Shear" in blacklisted_movements or "Axial Compression" in blacklisted_movements:
+    if "Floor Deadlift / Spinal Shear" in st.session_state.blacklisted_movements or "Axial Compression" in st.session_state.blacklisted_movements:
         main_hinge_sub = "Elevated Trap Bar Deadlift OR Single-Leg RDL"
 
-    # Generate 4-Week Matrix
     st.markdown(f"### 4-Week Microcycle Matrix ({gym_days} Days / Week)")
-    
     weeks = ["Week 1: Accumulation / Isometrics", "Week 2: Intensification / Eccentrics", "Week 3: Peak Load / Explosive", "Week 4: Deload & Re-Test"]
     
     for w_idx, week_title in enumerate(weeks):
         with st.expander(f"📌 {week_title}", expanded=(w_idx == 0)):
-            # Build daily schedule based on coach selected gym_days
             days_data = []
             for d in range(1, gym_days + 1):
                 if d == 1:
                     focus = "Lower Body Force & Trunk"
                     ex1 = f"Lower Compound: {main_squat_sub}"
-                    ex2 = "Unilateral: Bulgarian Split Squat (Submaximal)"
-                    ex3 = "Inhibit/Lengthen: Foam Roll Quads & Hip Flexors"
+                    ex2 = "Unilateral: Bulgarian Split Squat"
+                    ex3 = "SMR Quads & Hip Flexors"
                 elif d == 2:
                     focus = "Upper Body Power & Core"
                     ex1 = "Upper Press: Neutral Grip DB Bench Press"
@@ -336,7 +374,7 @@ with tab5:
                 else:
                     focus = "Full Body Dynamic / Conditioning"
                     ex1 = "Multi-planar Lunge Complex"
-                    ex2 = "SMR & Active Mobility Circuit"
+                    ex2 = "Active Mobility Circuit"
                     ex3 = "Low-Impact Bike Ergometer HIIT"
                     
                 days_data.append({
@@ -345,8 +383,8 @@ with tab5:
                     "Primary Exercise Pattern": ex1,
                     "Accessory / Corrective": ex2,
                     "Recovery / Mobility": ex3,
-                    "Volume / Sets": "2-3 Sets" if (in_season or total_external_hours >= 10) else "3-4 Sets",
-                    "Intensity RPE": "RPE 6-7" if w_idx == 3 else ("RPE 7" if in_season else "RPE 8-9")
+                    "Volume": "2-3 Sets" if (st.session_state.in_season or st.session_state.total_external_hours >= 10) else "3-4 Sets",
+                    "Intensity": "RPE 6-7" if w_idx == 3 else ("RPE 7" if st.session_state.in_season else "RPE 8-9")
                 })
             
             df_plan = pd.DataFrame(days_data)
@@ -354,8 +392,8 @@ with tab5:
 
     st.markdown("---")
     st.download_button(
-        label="📥 Export Full Assessment & 1-Month Plan (PDF/CSV)",
+        label="📥 Export Full Assessment & 1-Month Plan (CSV)",
         data=df_plan.to_csv(index=False),
-        file_name=f"{athlete_name}_Assessment_and_Plan.csv",
+        file_name="Athlete_IQ_Plan.csv",
         mime="text/csv"
     )
