@@ -9,7 +9,6 @@ st.set_page_config(
     page_title="Athlete-IQ Performance Engine", page_icon="⚡", layout="wide"
 )
 
-# Custom CSS Styling
 st.markdown(
     """
     <style>
@@ -44,7 +43,7 @@ st.markdown(
 )
 
 # ------------------------------------------
-# SESSION STATE INITIALIZATION (MOCK DATA)
+# SESSION STATE INITIALIZATION
 # ------------------------------------------
 if "form_data" not in st.session_state:
     st.session_state.form_data = {
@@ -61,30 +60,188 @@ if "form_data" not in st.session_state:
         "sleep_quality": 8,
         "muscle_soreness": 3,
         "stress_level": 3,
+        "equipment_selected": [
+            "Barbells & Plates",
+            "Dumbbells",
+            "Kettlebells",
+            "Landmine Attachment",
+        ],
     }
 
-# Sidebar Navigation / Controls
+# ------------------------------------------
+# SIDEBAR NAVIGATION
+# ------------------------------------------
 st.sidebar.title("⚡ Navigation")
 active_module = st.sidebar.radio(
-    "Select Module:", ["🚀 7. GENERATE ADAPTIVE PROGRAM & CARD"]
+    "Select Module:",
+    [
+        "👤 1. ATHLETE BIO & PROFILE",
+        "📊 2. EXPOSURE & TRAINING VOLUME",
+        "🏥 3. INJURY SCREENING & PROTOCOL",
+        "🏋️ 4. PERFORMANCE TESTING METRICS",
+        "💤 5. DAILY WELLNESS & READINESS",
+        "🛠️ 6. EQUIPMENT & FACILITY SETUP",
+        "🚀 7. GENERATE ADAPTIVE PROGRAM & CARD",
+    ],
 )
-plan_months = st.sidebar.slider("Program Duration (Months):", 1, 3, 2)
-equipment_selected = st.sidebar.multiselect(
-    "Available Equipment:",
-    ["Barbells & Plates", "Dumbbells", "Kettlebells", "Landmine Attachment"],
-    default=["Barbells & Plates", "Dumbbells"],
-)
+
+d = st.session_state.form_data
+
+# ------------------------------------------
+# MODULE 1: ATHLETE BIO & PROFILE
+# ------------------------------------------
+if active_module == "👤 1. ATHLETE BIO & PROFILE":
+    st.markdown(
+        "<div class='banner-header'>👤 Module 1: Athlete Bio & Profile</div>",
+        unsafe_allow_html=True,
+    )
+    d["athlete_name"] = st.text_input("Athlete Name", value=d["athlete_name"])
+    d["evaluating_coach"] = st.text_input(
+        "Evaluating Coach", value=d["evaluating_coach"]
+    )
+    d["sport_type"] = st.selectbox(
+        "Primary Sport",
+        [
+            "Basketball",
+            "Soccer",
+            "Tennis",
+            "Volleyball",
+            "Track & Field",
+            "Combat Sports (MMA/Boxing)",
+            "Racket Sports (Squash/Padel)",
+        ],
+        index=0,
+    )
+    d["weight_kg"] = st.number_input(
+        "Body Weight (kg)", value=float(d["weight_kg"]), step=0.5
+    )
+    st.success("Athlete profile updated.")
+
+# ------------------------------------------
+# MODULE 2: EXPOSURE & TRAINING VOLUME
+# ------------------------------------------
+elif active_module == "📊 2. EXPOSURE & TRAINING VOLUME":
+    st.markdown(
+        "<div class='banner-header'>📊 Module 2: Exposure & External Volume</div>",
+        unsafe_allow_html=True,
+    )
+    d["club_days"] = st.slider(
+        "Sports Practice Days / Week", 1, 7, int(d["club_days"])
+    )
+    d["club_hours_per_day"] = st.slider(
+        "Average Practice Hours / Day",
+        0.5,
+        4.0,
+        float(d["club_hours_per_day"]),
+        step=0.5,
+    )
+    tot_hrs = d["club_days"] * d["club_hours_per_day"]
+    st.info(f"Total External Weekly Practice Volume: **{tot_hrs} Hours**")
+
+# ------------------------------------------
+# MODULE 3: INJURY SCREENING & PROTOCOL
+# ------------------------------------------
+elif active_module == "🏥 3. INJURY SCREENING & PROTOCOL":
+    st.markdown(
+        "<div class='banner-header'>🏥 Module 3: Injury Screening & Clinical Protocol</div>",
+        unsafe_allow_html=True,
+    )
+    d["has_injury"] = st.radio(
+        "Is the athlete currently recovering from an active injury?",
+        ["No", "Yes"],
+        index=0 if d["has_injury"] == "No" else 1,
+    )
+    if d["has_injury"] == "Yes":
+        d["injury_site"] = st.selectbox(
+            "Primary Injury Site",
+            ["Knee / ACL", "Ankle / Achilles", "Shoulder / Rotator Cuff", "Lower Back / Spine"],
+        )
+    else:
+        d["injury_site"] = "None"
+    st.success("Injury status updated.")
+
+# ------------------------------------------
+# MODULE 4: PERFORMANCE TESTING METRICS
+# ------------------------------------------
+elif active_module == "🏋️ 4. PERFORMANCE TESTING METRICS":
+    st.markdown(
+        "<div class='banner-header'>🏋️ Module 4: Performance Testing & Metrics</div>",
+        unsafe_allow_html=True,
+    )
+    d["max_pushups"] = st.number_input(
+        "Max Push-ups (Upper Body Endurance)",
+        value=int(d["max_pushups"]),
+        step=1,
+    )
+    d["cmj_cm"] = st.number_input(
+        "Countermovement Jump Height (cm)",
+        value=float(d["cmj_cm"]),
+        step=0.5,
+    )
+    st.success("Testing metrics saved.")
+
+# ------------------------------------------
+# MODULE 5: DAILY WELLNESS & READINESS
+# ------------------------------------------
+elif active_module == "💤 5. DAILY WELLNESS & READINESS":
+    st.markdown(
+        "<div class='banner-header'>💤 Module 5: Wellness & Readiness Auto-Regulation</div>",
+        unsafe_allow_html=True,
+    )
+    d["sleep_quality"] = st.slider(
+        "Sleep Quality (1 = Poor, 10 = Rested)", 1, 10, int(d["sleep_quality"])
+    )
+    d["muscle_soreness"] = st.slider(
+        "Muscle Soreness (1 = Fresh, 10 = Very Sore)",
+        1,
+        10,
+        int(d["muscle_soreness"]),
+    )
+    d["stress_level"] = st.slider(
+        "Life / Academic Stress (1 = Low, 10 = High)",
+        1,
+        10,
+        int(d["stress_level"]),
+    )
+
+    readiness = (
+        d["sleep_quality"] + (11 - d["muscle_soreness"]) + (11 - d["stress_level"])
+    ) / 30.0
+    st.metric("Calculated Daily Readiness Index", f"{int(readiness*100)}%")
+
+# ------------------------------------------
+# MODULE 6: EQUIPMENT & FACILITY SETUP
+# ------------------------------------------
+elif active_module == "🛠️ 6. EQUIPMENT & FACILITY SETUP":
+    st.markdown(
+        "<div class='banner-header'>🛠️ Module 6: Facility & Equipment Constraints</div>",
+        unsafe_allow_html=True,
+    )
+    d["equipment_selected"] = st.multiselect(
+        "Select Available Equipment:",
+        [
+            "Barbells & Plates",
+            "Dumbbells",
+            "Kettlebells",
+            "Landmine Attachment",
+            "Cable Machine",
+            "Plyo Boxes",
+        ],
+        default=d["equipment_selected"],
+    )
+    st.success("Equipment constraints updated.")
 
 # ------------------------------------------
 # MODULE 7: GENERATE PROGRAM & CARD
 # ------------------------------------------
-if active_module == "🚀 7. GENERATE ADAPTIVE PROGRAM & CARD":
+elif active_module == "🚀 7. GENERATE ADAPTIVE PROGRAM & CARD":
     st.markdown(
         "<div class='banner-header'>🚀 Dynamic Multi-Month Concurrent Program & Printable Card</div>",
         unsafe_allow_html=True,
     )
 
-    d = st.session_state.form_data
+    plan_months = st.sidebar.slider("Program Duration (Months):", 1, 3, 2)
+
     name = d["athlete_name"]
     coach = d["evaluating_coach"]
     weight = d["weight_kg"]
@@ -92,24 +249,22 @@ if active_module == "🚀 7. GENERATE ADAPTIVE PROGRAM & CARD":
     tot_club_hrs = d["club_days"] * d["club_hours_per_day"]
     has_injury = d["has_injury"]
     injury_site = d["injury_site"]
+    equipment_selected = d["equipment_selected"]
 
     # Frequency Logic
     if tot_club_hrs >= 10:
-        rec_days = 2
         freq_label = "2 Days/Week (Dense Full-Body Concurrent)"
     elif tot_club_hrs >= 6:
-        rec_days = 3
         freq_label = "3 Days/Week (Concurrent Undulating Split)"
     else:
-        rec_days = 4
         freq_label = "4 Days/Week (Upper/Lower Concurrent Split)"
 
     # Base Load Calculations with Readiness Auto-regulation
     pushups = d["max_pushups"]
-    cmj = d.get("cmj_cm", 40.0)
-    sleep = d.get("sleep_quality", 8)
-    soreness = d.get("muscle_soreness", 3)
-    stress = d.get("stress_level", 3)
+    cmj = d["cmj_cm"]
+    sleep = d["sleep_quality"]
+    soreness = d["muscle_soreness"]
+    stress = d["stress_level"]
     readiness = (sleep + (11 - soreness) + (11 - stress)) / 30.0
     readiness_mod = 0.90 if readiness < 0.6 else (1.05 if readiness > 0.85 else 1.00)
 
@@ -143,18 +298,10 @@ if active_module == "🚀 7. GENERATE ADAPTIVE PROGRAM & CARD":
                 ex_mob = "3-View Posture Flow (Thoracic Extension & Hip Capsule Priming)"
                 ex_pow = (
                     "Rotational Med-Ball Scoop Throws"
-                    if sport
-                    in [
-                        "Tennis",
-                        "Volleyball",
-                        "Combat Sports (MMA/Boxing)",
-                        "Racket Sports (Squash/Padel)",
-                    ]
+                    if sport in ["Tennis", "Volleyball", "Combat Sports (MMA/Boxing)", "Racket Sports (Squash/Padel)"]
                     else "Non-Countermovement Plyo Box Jump"
                 )
-                ex_agil = (
-                    "T-Drill Sharp Deceleration & Agility Ladder Quick-Feet"
-                )
+                ex_agil = "T-Drill Sharp Deceleration & Agility Ladder Quick-Feet"
                 ex_low = (
                     "Barbell Romanian Deadlift (RDL)"
                     if "Barbells & Plates" in equipment_selected
@@ -170,9 +317,7 @@ if active_module == "🚀 7. GENERATE ADAPTIVE PROGRAM & CARD":
                 tempo_str = "3-1-1-0 (Eccentric Control)"
             elif m_num == 2:
                 focus_desc = "Phase 2: Dynamic Force Production, Kinetic Chain Power & COD Velocity"
-                ex_mob = (
-                    "Multi-Planar Lunge with Thoracic-Hip Dissociation Reach"
-                )
+                ex_mob = "Multi-Planar Lunge with Thoracic-Hip Dissociation Reach"
                 ex_pow = (
                     "Rotational Landmine Explosive Punches"
                     if "Landmine Attachment" in equipment_selected
@@ -191,9 +336,7 @@ if active_module == "🚀 7. GENERATE ADAPTIVE PROGRAM & CARD":
             else:
                 focus_desc = "Phase 3: Rate of Force Development (RFD), Speed-Power Peak & Reactive Agility"
                 ex_mob = "Dynamic Elastic Priming & Ankling Pre-Activation Drops"
-                ex_pow = (
-                    "French Contrast Jumps / Dynamic Med-Ball Launch Drops"
-                )
+                ex_pow = "French Contrast Jumps / Dynamic Med-Ball Launch Drops"
                 ex_agil = "Reactive Light/Visual Trigger Sprints & Change-of-Direction Cuts"
                 ex_low = "Barbell Snatch-Grip High Pull / Dynamic Contrast Trap Bar Jumps"
                 ex_upp = "Explosive Banded Push Press / Plyometric Push-Ups"
@@ -291,9 +434,7 @@ if active_module == "🚀 7. GENERATE ADAPTIVE PROGRAM & CARD":
     # --- PRINTABLE GYM FLOOR WORKOUT CARD GENERATOR ---
     st.markdown("---")
     st.subheader("📋 Printable Gym Floor Workout Card")
-    st.caption(
-        "Generate a clean summary block to copy/print for clipboard use on the weight room floor."
-    )
+    st.caption("Generate a clean summary block to copy/print for clipboard use on the weight room floor.")
 
     with st.expander("📄 Click to View / Print Floor Card"):
         card_content = f"""================================================================================
