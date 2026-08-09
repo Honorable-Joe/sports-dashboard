@@ -83,7 +83,7 @@ st.markdown("""
         box-shadow: 0 0 25px rgba(59, 130, 246, 0.7);
     }
 </style>
-""", unsafe_allow_html=unsafe_allow_html)
+""", unsafe_allow_html=True)
 
 # ==========================================
 # 2. APPLICATION HEADER & SIDEBAR FILTERS
