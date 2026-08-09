@@ -74,7 +74,7 @@ if "form_data" not in st.session_state:
         "weight_kg": 75.0,
         "height_cm": 178.0,
         "sport_type": "Tennis",
-        "evaluating_coach": "Lead Strength & Conditioning Specialist",
+        "evaluating_coach": "Coach Ahmed Youssef 👑",
         "assessment_date": datetime.now().date(),
         "assessment_type": "Baseline (Initial)",
         "training_years": 3,
@@ -84,6 +84,7 @@ if "form_data" not in st.session_state:
         "injury_site": "None",
         "injury_mechanism": "N/A",
         "still_affects": "No",
+        # SFMA
         "cervical": "Functional Non-Painful",
         "shoulder": "Functional Non-Painful",
         "rotation": "Functional Non-Painful",
@@ -91,6 +92,7 @@ if "form_data" not in st.session_state:
         "extension": "Functional Non-Painful",
         "sl_stance": "Functional Non-Painful",
         "overhead_squat": "Functional Non-Painful",
+        # 3-View Posture
         "head_ant": "Symmetrical Alignment",
         "shoulder_elevation": "Symmetrical",
         "asis_height": "Level ASIS",
@@ -105,6 +107,7 @@ if "form_data" not in st.session_state:
         "spinal_scoliosis": "Straight Alignment",
         "psis_height": "Level PSIS",
         "heel_calcaneus": "Vertical Calcaneus",
+        # Performance
         "max_pushups": 38,
         "max_pullups": 12,
         "cooper_meters": 2650,
@@ -167,7 +170,7 @@ equipment_selected = st.sidebar.multiselect(
         "Medicine & Slam Balls", "Cable Systems & Selectorized",
         "Ergometers (AirBike/Rower/SkiErg)", "Plyo Boxes & Agility Ladders"
     ],
-    default=["Barbells & Plates", "Dumbbells", "Kettlebells", "Rigs & Suspension (TRX/Wood Rings)", "Sleds & Prowler", "Medicine & Slam Balls", "Cable Systems & Selectorized", "Ergometers (AirBike/Rower/SkiErg)"]
+    default=["Barbells & Plates", "Dumbbells", "Kettlebells", "Rigs & Suspension (TRX/Wood Rings)", "Sleds & Prowler", "Medicine & Slam Balls", "Cable Systems & Selectorized", "Ergometers (AirBike/Rower/SkiErg)", "Plyo Boxes & Agility Ladders"]
 )
 
 # ==========================================
@@ -248,7 +251,7 @@ elif active_module == "⚽ 2. Club Load & Injury Diagnostics":
         update_state("still_affects", v_affects)
 
 # ------------------------------------------
-# MODULE 3: SFMA & POSTURE
+# MODULE 3: SFMA & 3-VIEW POSTURE DIAGNOSTIC
 # ------------------------------------------
 elif active_module == "🩺 3. SFMA & 3-View Posture Diagnostic":
     st.markdown("<div class='banner-header'>🩺 SFMA Screen & Full 3-View Postural Diagnostic Matrix</div>", unsafe_allow_html=True)
@@ -274,6 +277,49 @@ elif active_module == "🩺 3. SFMA & 3-View Posture Diagnostic":
     update_state("extension", v_ext)
     update_state("sl_stance", v_sls)
     update_state("overhead_squat", v_ohs)
+
+    st.markdown("---")
+    st.subheader("2. Static Postural Assessment (3-View)")
+    
+    p_col1, p_col2, p_col3 = st.columns(3)
+    
+    with p_col1:
+        st.markdown("**🖼️ Anterior View (Front)**")
+        v_head_ant = st.selectbox("Head & Neck Alignment", ["Symmetrical Alignment", "Forward/Lateral Tilt"], index=0 if bind_input("head_ant")=="Symmetrical Alignment" else 1)
+        v_shld_elev = st.selectbox("Shoulder Line", ["Symmetrical", "Left Elevated", "Right Elevated"], index=0)
+        v_asis = st.selectbox("ASIS Level", ["Level ASIS", "Asymmetrical ASIS"], index=0 if bind_input("asis_height")=="Level ASIS" else 1)
+        v_q = st.selectbox("Knee / Q-Angle", ["Neutral Knee Alignment", "Genu Valgum (Knock-Knee)", "Genu Varum (Bow-Leg)"], index=0)
+        v_foot = st.selectbox("Foot Arch", ["Normal Arch", "Flat Foot (Pes Planus)", "High Arch (Pes Cavus)"], index=0)
+
+    with p_col2:
+        st.markdown("**🖼️ Lateral View (Side)**")
+        v_fhp = st.selectbox("Forward Head Posture", ["Neutral Alignment", "Mild FHP", "Severe FHP"], index=0)
+        v_kyph = st.selectbox("Thoracic Curve", ["Normal Curve", "Hyper-Kyphosis", "Flat Back"], index=0)
+        v_lord = st.selectbox("Lumbar Curve", ["Normal Curve", "Hyper-Lordosis", "Hypo-Lordosis"], index=0)
+        v_pelvis = st.selectbox("Pelvic Tilt", ["Neutral Pelvis", "Anterior Pelvic Tilt", "Posterior Pelvic Tilt"], index=0)
+        v_knee_rec = st.selectbox("Knee Stance", ["Neutral Stance", "Genu Recurvatum (Hyperextended)"], index=0)
+
+    with p_col3:
+        st.markdown("**🖼️ Posterior View (Back)**")
+        v_scap = st.selectbox("Scapular Alignment", ["Symmetrical Flat", "Scapular Winging", "Protracted Scapulae"], index=0)
+        v_scolio = st.selectbox("Spinal Symmetry", ["Straight Alignment", "Functional Scoliosis Curve"], index=0)
+        v_psis = st.selectbox("PSIS Level", ["Level PSIS", "Asymmetrical PSIS"], index=0)
+        v_calc = st.selectbox("Calcaneus Alignment", ["Vertical Calcaneus", "Rearfoot Valgus", "Rearfoot Varus"], index=0)
+
+    update_state("head_ant", v_head_ant)
+    update_state("shoulder_elevation", v_shld_elev)
+    update_state("asis_height", v_asis)
+    update_state("q_angle", v_q)
+    update_state("foot_arch_ant", v_foot)
+    update_state("fhp", v_fhp)
+    update_state("thoracic_kyph", v_kyph)
+    update_state("lumbar_lord", v_lord)
+    update_state("pelvic_tilt", v_pelvis)
+    update_state("knee_recurve", v_knee_rec)
+    update_state("scapular_winging", v_scap)
+    update_state("spinal_scoliosis", v_scolio)
+    update_state("psis_height", v_psis)
+    update_state("heel_calcaneus", v_calc)
 
 # ------------------------------------------
 # MODULE 4: POWER & SPEED ASSESSMENT
@@ -355,7 +401,7 @@ elif active_module == "🚀 6. GENERATE ADAPTIVE PROGRAM":
     has_injury = d["has_injury"]
     injury_site = d["injury_site"]
     
-    # Calculate Weekly Prescribed S&C Frequency
+    # Frequency
     if tot_club_hrs >= 10:
         rec_days = 2
         freq_label = "2 Days/Week (Dense Full-Body Concurrent)"
@@ -383,89 +429,114 @@ elif active_module == "🚀 6. GENERATE ADAPTIVE PROGRAM":
         st.markdown(f"<div class='injury-alert'>⚠️ <b>CLINICAL INJURY PROTOCOL ACTIVE ({injury_site})</b><br>Exercises adapted for eccentric control and structural safety. High impact loads restricted.</div>", unsafe_allow_html=True)
 
     # Dynamic Month Progression Logic
-    tabs = st.tabs([f"🗓️ MONTH {m}" for m in range(1, plan_months + 1)])
+    m_tabs = st.tabs([f"🗓️ MONTH {m}" for m in range(1, plan_months + 1)])
 
-    for m_idx, tab in enumerate(tabs):
+    for m_idx, m_tab in enumerate(m_tabs):
         m_num = m_idx + 1
-        with tab:
-            if plan_months == 1:
-                scheme_sets_reps = "3 x 8 Reps"
-                load_pct = 1.00
-                focus_desc = "Concentrated Concurrent Adaptation (All 6 components trained with rapid volume-to-load escalation)."
-            elif plan_months == 2:
-                if m_num == 1:
-                    scheme_sets_reps = "3 x 10 Reps"
-                    load_pct = 0.92
-                    focus_desc = "Volume Capacity & Hypertrophic Foundation across all 6 fitness components."
-                else:
-                    scheme_sets_reps = "4 x 6 Reps"
-                    load_pct = 1.08
-                    focus_desc = "Force Intensification & Velocity Overload across all 6 fitness components."
+        with m_tab:
+            # Exercise Variation by Month
+            if m_num == 1:
+                focus_desc = "Phase 1: Base Work Capacity, Postural Alignment & Movement Quality"
+                ex_mobility = "3-View Posture Correction Flow & Dynamic Mobility"
+                ex_power = "Rotational Med-Ball Slams" if sport in ["Tennis", "Volleyball", "Combat Sports (MMA/Boxing)", "Racket Sports (Squash/Padel)"] else "Non-Countermovement Box Jump"
+                ex_agility = "T-Drill Baseline & Agility Ladder Footwork"
+                ex_lower = "Goblet Squats & Romanian Deadlift"
+                ex_upper = "Barbell Strict Press" if "Barbells & Plates" in equipment_selected else "Dumbbell Overhead Press"
+                ex_pull = "Single-Arm TRX / Cable Row"
+                ex_esd = "AirBike / Shuttle Sprints (Extensive Intervals)"
+            elif m_num == 2:
+                focus_desc = "Phase 2: Heavy Force Production, Kinetic Chain Power & COD Velocity"
+                ex_mobility = "Thoracic-Hip Dissociation & Active Multi-Planar Mobility"
+                ex_power = "Overhead & Forehand/Backhand Med-Ball Explosive Launches" if sport in ["Tennis", "Volleyball", "Combat Sports (MMA/Boxing)", "Racket Sports (Squash/Padel)"] else "Explosive Depth Jumps"
+                ex_agility = "Pro Agility (5-10-5) Shuttle & Reactive Deceleration"
+                ex_lower = "Barbell Front Squat / Trap Bar Deadlift" if "Barbells & Plates" in equipment_selected else "Heavy Dumbbell Bulgarian Split Squat"
+                ex_upper = "Incline Dumbbell Press / Push Press"
+                ex_pull = "Chest-Supported T-Bar / Cable Row"
+                ex_esd = "High-Intensity Lactate Threshold Shuttle Repeats"
             else:
-                if m_num == 1:
-                    scheme_sets_reps = "3 x 10 Reps"
-                    load_pct = 0.88
-                    focus_desc = "Phase 1: Base Work Capacity, Postural Alignment & Movement Quality (All Components)."
-                elif m_num == 2:
-                    scheme_sets_reps = "4 x 6 Reps"
-                    load_pct = 1.05
-                    focus_desc = "Phase 2: Heavy Force Production & Unilateral Power (All Components)."
-                else:
-                    scheme_sets_reps = "4 x 4 Reps"
-                    load_pct = 1.15
-                    focus_desc = "Phase 3: Rate of Force Development (RFD), Speed-Power Peak & Explosive Realization."
+                focus_desc = "Phase 3: Rate of Force Development (RFD), Speed-Power Peak & Reactive Agility"
+                ex_mobility = "Dynamic Elastic Priming & Kinetic Chain Pre-Activation"
+                ex_power = "Rotational Med-Ball Step-and-Launch Drops" if sport in ["Tennis", "Volleyball", "Combat Sports (MMA/Boxing)", "Racket Sports (Squash/Padel)"] else "Contrast Trap Bar Jumps / Banded Plyometrics"
+                ex_agility = "Reactive Agility Drills (Visual Trigger Sprints & Cutting)"
+                ex_lower = "Barbell Snatch-Grip High Pull / Dynamic Trap Bar Deadlift"
+                ex_upper = "Explosive Banded Push Press / Plyo Push-Ups"
+                ex_pull = "Weighted Pull-Ups / Explosive High Rows"
+                ex_esd = "Tabata AirBike Repeats & Multi-Directional Anaerobic Sprints"
 
             st.subheader(f"📌 Month {m_num}: {focus_desc}")
 
-            # Sport-Specific Dynamic Power exercise selection
-            if sport in ["Tennis", "Volleyball", "Combat Sports (MMA/Boxing)", "Racket Sports (Squash/Padel)"]:
-                m_power_ex = "Rotational Med-Ball Slams & Overhead Velocity Throws"
-            else:
-                m_power_ex = "Explosive Box Jumps / Depth Jumps" if m_num >= 2 else "Non-Countermovement Box Jump"
+            # Sub-tabs for Weeks 1 to 4
+            w_tabs = st.tabs([f"Week {w}" for w in range(1, 5)])
+            
+            for w_idx, w_tab in enumerate(w_tabs):
+                w_num = w_idx + 1
+                with w_tab:
+                    if w_num == 1:
+                        w_label = "Week 1: Baseline Load Accumulation"
+                        sets_reps = "3 x 10 Reps"
+                        load_mod = 0.85
+                    elif w_num == 2:
+                        w_label = "Week 2: Volume & Intensity Escalation"
+                        sets_reps = "3 x 8 Reps"
+                        load_mod = 0.95
+                    elif w_num == 3:
+                        w_label = "Week 3: Peak Microcycle Load"
+                        sets_reps = "4 x 6 Reps"
+                        load_mod = 1.05
+                    else:
+                        w_label = "Week 4: Strategic Deload & Supercompensation"
+                        sets_reps = "2 x 8 Reps (Reduced Load)"
+                        load_mod = 0.70
 
-            # Master Concurrent Matrix
-            m_df = pd.DataFrame({
-                "Fitness Component": [
-                    "1. Mobility & Priming", 
-                    "2. Explosive Power", 
-                    "3. Lower Body Strength (Hinge/Squat)", 
-                    "4. Upper Body Press", 
-                    "5. Unilateral Pull & Core", 
-                    "6. Energy Systems (ESD)"
-                ],
-                "Prescribed Exercise": [
-                    "3-View Posture Correction Flow & Dynamic Mobility",
-                    m_power_ex,
-                    "Barbell Romanian Deadlift" if "Barbells & Plates" in equipment_selected else "Dumbbell Heavy RDL",
-                    "Barbell Overhead Strict Press" if "Barbells & Plates" in equipment_selected else "Dumbbell Overhead Press",
-                    "Single-Arm Cable / TRX Row",
-                    "AirBike Interval Repeats" if "Ergometers (AirBike/Rower/SkiErg)" in equipment_selected else "High-Intensity Shuttle Sprints"
-                ],
-                "Sets x Reps / Time": [
-                    "2 x 8 Reps / side",
-                    "4 x 4 Reps",
-                    scheme_sets_reps,
-                    scheme_sets_reps,
-                    scheme_sets_reps,
-                    "12-18 Mins (Zone 4-5 Intermittent)"
-                ],
-                "Prescribed Load": [
-                    "Bodyweight",
-                    "Max Intent / Speed",
-                    f"{round(base_hinge * load_pct, 1)} kg",
-                    f"{round(base_press * load_pct, 1)} kg",
-                    f"{round(base_press * 0.65 * load_pct, 1)} kg",
-                    "80-90% HRMax"
-                ],
-                "Rest Interval": ["30s", "90s", "120s", "90s", "60s", "45-60s"]
-            })
+                    st.markdown(f"#### 🗓️ {w_label}")
 
-            st.table(m_df)
+                    m_df = pd.DataFrame({
+                        "Fitness Component": [
+                            "1. Mobility & Priming", 
+                            "2. Explosive Power", 
+                            "3. Agility & Change of Direction (COD)",
+                            "4. Lower Body Strength (Hinge/Squat)", 
+                            "5. Upper Body Press", 
+                            "6. Unilateral Pull & Core", 
+                            "7. Energy Systems (ESD)"
+                        ],
+                        "Prescribed Exercise": [
+                            ex_mobility,
+                            ex_power,
+                            ex_agility,
+                            ex_lower,
+                            ex_upper,
+                            ex_pull,
+                            ex_esd
+                        ],
+                        "Sets x Reps / Time": [
+                            "2 x 8 Reps / side",
+                            "4 x 4 Reps" if w_num != 4 else "2 x 4 Reps",
+                            "4 x 3 Reps / direction" if w_num != 4 else "2 x 3 Reps",
+                            sets_reps,
+                            sets_reps,
+                            sets_reps,
+                            "12-18 Mins (Intermittent)" if w_num != 4 else "10 Mins (Light Zone 2/3)"
+                        ],
+                        "Prescribed Load": [
+                            "Bodyweight",
+                            "Max Intent / Speed",
+                            "Agility Ladder / Cones (Max Speed)",
+                            f"{round(base_hinge * load_mod, 1)} kg",
+                            f"{round(base_press * load_mod, 1)} kg",
+                            f"{round(base_press * 0.65 * load_mod, 1)} kg",
+                            "80-95% HRMax" if w_num != 4 else "60-70% HRMax"
+                        ],
+                        "Rest Interval": ["30s", "90s", "90s", "120s", "90s", "60s", "45-60s"]
+                    })
+
+                    st.table(m_df)
+            
             st.markdown(f"""
             <div class='scientific-note'>
                 <b>🧬 Month {m_num} Concurrent Programming Scientific Rationale:</b><br>
-                • <b>Complete Fitness Integration</b>: All 6 fitness components (Mobility, Power, Lower/Upper Strength, Unilateral Pull, ESD) are preserved in Month {m_num}.<br>
-                • <b>Adaptive Load Modulation</b>: Prescribed mechanical loads are calibrated to <b>{int(load_pct*100)}%</b> relative to baseline assessments.<br>
-                • <b>Frequency Density</b>: Program structured for <b>{rec_days} days/week</b> to balance external club exposure with neural recovery.
+                • <b>Agility & COD Integration</b>: Sport-specific acceleration, deceleration, and lateral change-of-direction drills included in every week.<br>
+                • <b>Undulating Microcycle Periodization</b>: Microcycles progress weekly from Week 1 (Base Load) $\rightarrow$ Week 2 (Build) $\rightarrow$ Week 3 (Peak Load) $\rightarrow$ Week 4 (Deload).<br>
+                • <b>Month-to-Month Exercise Progression</b>: Exercise selections evolve dynamically across macrocycle months to avoid adaptation plateaus.
             </div>
             """, unsafe_allow_html=True)
