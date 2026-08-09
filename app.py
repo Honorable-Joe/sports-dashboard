@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
+import plotly.graph_objects as go
 
 # ==========================================
 # 1. PAGE CONFIG & ATHLETIC STYLING
@@ -15,7 +16,7 @@ st.set_page_config(
 st.markdown("""
 <style>
     .stApp {
-        background: linear-gradient(rgba(15, 23, 42, 0.90), rgba(2, 6, 23, 0.95)), 
+        background: linear-gradient(rgba(15, 23, 42, 0.92), rgba(2, 6, 23, 0.96)), 
                     url('https://images.unsplash.com/photo-1517838277536-f5f99be501cd?q=80&w=1920&auto=format&fit=crop');
         background-size: cover;
         background-position: center;
@@ -60,6 +61,14 @@ st.markdown("""
         border-radius: 6px;
         margin-bottom: 15px;
     }
+    .print-card {
+        background-color: #ffffff;
+        color: #0f172a;
+        padding: 20px;
+        border-radius: 8px;
+        font-family: monospace;
+        border: 2px solid #000;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -68,6 +77,7 @@ st.markdown("""
 # ==========================================
 if "form_data" not in st.session_state:
     st.session_state.form_data = {
+        # Demographics
         "athlete_name": "Alex Morgan",
         "age": 22,
         "gender": "Female",
@@ -78,8 +88,12 @@ if "form_data" not in st.session_state:
         "assessment_date": datetime.now().date(),
         "assessment_type": "Baseline (Initial)",
         "training_years": 3,
+        # Load & Wellness
         "club_days": 4,
         "club_hours_per_day": 2.0,
+        "sleep_quality": 8,
+        "muscle_soreness": 3,
+        "stress_level": 3,
         "has_injury": "No",
         "injury_site": "None",
         "injury_mechanism": "N/A",
@@ -92,7 +106,7 @@ if "form_data" not in st.session_state:
         "extension": "Functional Non-Painful",
         "sl_stance": "Functional Non-Painful",
         "overhead_squat": "Functional Non-Painful",
-        # 3-View Posture
+        # 3-View Static Posture
         "head_ant": "Symmetrical Alignment",
         "shoulder_elevation": "Symmetrical",
         "asis_height": "Level ASIS",
@@ -107,7 +121,7 @@ if "form_data" not in st.session_state:
         "spinal_scoliosis": "Straight Alignment",
         "psis_height": "Level PSIS",
         "heel_calcaneus": "Vertical Calcaneus",
-        # Performance
+        # Performance Testing
         "max_pushups": 38,
         "max_pullups": 12,
         "cooper_meters": 2650,
@@ -142,11 +156,12 @@ active_module = st.sidebar.radio(
     "Jump to Module:",
     [
         "📋 1. Demographics & Coach Sign-off",
-        "⚽ 2. Club Load & Injury Diagnostics",
+        "⚽ 2. Club Load, Daily Readiness & Injury",
         "🩺 3. SFMA & 3-View Posture Diagnostic",
-        "💥 4. Sport-Specific Power & Speed Assessment",
-        "📈 5. Saved Records & Historical Progress",
-        "🚀 6. GENERATE ADAPTIVE PROGRAM"
+        "💥 4. Assessment & Radar Benchmarking",
+        "🥗 5. Sports Nutrition & Macro Engine",
+        "📈 6. Saved Records & Historical Progress",
+        "🚀 7. GENERATE ADAPTIVE PROGRAM & CARD"
     ]
 )
 
@@ -165,12 +180,12 @@ equipment_selected = st.sidebar.multiselect(
     "Available Gear:",
     [
         "Barbells & Plates", "Dumbbells", "Kettlebells", 
-        "Hydro-Inertial (Aqua Bags/Macebells)", "Instability (BOSU/Swiss Ball)",
+        "Landmine Attachment", "Flywheel / Inertial Training",
         "Rigs & Suspension (TRX/Wood Rings)", "Sleds & Prowler",
         "Medicine & Slam Balls", "Cable Systems & Selectorized",
-        "Ergometers (AirBike/Rower/SkiErg)", "Plyo Boxes & Agility Ladders"
+        "Ergometers (AirBike/Rower/SkiErg)", "Plyo Boxes & Agility Cones"
     ],
-    default=["Barbells & Plates", "Dumbbells", "Kettlebells", "Rigs & Suspension (TRX/Wood Rings)", "Sleds & Prowler", "Medicine & Slam Balls", "Cable Systems & Selectorized", "Ergometers (AirBike/Rower/SkiErg)", "Plyo Boxes & Agility Ladders"]
+    default=["Barbells & Plates", "Dumbbells", "Kettlebells", "Landmine Attachment", "Rigs & Suspension (TRX/Wood Rings)", "Sleds & Prowler", "Medicine & Slam Balls", "Cable Systems & Selectorized", "Ergometers (AirBike/Rower/SkiErg)", "Plyo Boxes & Agility Cones"]
 )
 
 # ==========================================
@@ -212,10 +227,10 @@ if active_module == "📋 1. Demographics & Coach Sign-off":
     update_state("training_years", v_years)
 
 # ------------------------------------------
-# MODULE 2: CLUB LOAD & INJURY
+# MODULE 2: CLUB LOAD, WELLNESS & INJURY
 # ------------------------------------------
-elif active_module == "⚽ 2. Club Load & Injury Diagnostics":
-    st.markdown("<div class='banner-header'>⚽ Club Training Load & Clinical Injury Diagnostics</div>", unsafe_allow_html=True)
+elif active_module == "⚽ 2. Club Load, Daily Readiness & Injury":
+    st.markdown("<div class='banner-header'>⚽ External Load, Daily Readiness & Injury Diagnostics</div>", unsafe_allow_html=True)
     c1, c2 = st.columns(2)
     with c1:
         st.subheader("⚽ External Club Training Exposure")
@@ -225,15 +240,26 @@ elif active_module == "⚽ 2. Club Load & Injury Diagnostics":
         update_state("club_days", v_days)
         update_state("club_hours_per_day", v_hours)
 
-        if tot_hrs >= 10:
-            st.warning(f"⚠️ High External Load ({tot_hrs} hrs/wk): Prescribed S&C auto-condenses to 2 Days/Week (Full-Body Dense).")
-        elif tot_hrs >= 6:
-            st.info(f"📊 Moderate External Load ({tot_hrs} hrs/wk): Prescribed S&C auto-scales to 3 Days/Week.")
+        st.markdown("---")
+        st.subheader("🧠 Daily Wellness & Autoregulation Check")
+        v_sleep = st.slider("Sleep Quality & Duration (1 = Poor, 10 = Rested)", 1, 10, value=bind_input("sleep_quality"))
+        v_soreness = st.slider("Muscle Soreness (1 = Fresh, 10 = Severe DOMS)", 1, 10, value=bind_input("muscle_soreness"))
+        v_stress = st.slider("Life / Mental Stress (1 = Low, 10 = Extreme)", 1, 10, value=bind_input("stress_level"))
+        
+        readiness_score = int(((v_sleep + (11 - v_soreness) + (11 - v_stress)) / 30.0) * 100)
+        update_state("sleep_quality", v_sleep)
+        update_state("muscle_soreness", v_soreness)
+        update_state("stress_level", v_stress)
+
+        if readiness_score >= 80:
+            st.success(f"🔥 High Readiness ({readiness_score}%): Optimal state for high force production and max velocity.")
+        elif readiness_score >= 60:
+            st.warning(f"⚡ Moderate Readiness ({readiness_score}%): Standard training volume. Auto-adjusting load intensity.")
         else:
-            st.success(f"✅ Low External Load ({tot_hrs} hrs/wk): Prescribed S&C set to 4 Days/Week.")
+            st.error(f"🛑 Low Readiness ({readiness_score}%): CNS fatigue detected. Auto-reducing target working weights by 10%.")
 
     with c2:
-        st.subheader("🩺 Injury Assessment")
+        st.subheader("🩺 Clinical Injury Assessment")
         v_has_inj = st.radio("Active / Recent Injury?", ["No", "Yes"], index=["No", "Yes"].index(bind_input("has_injury")), horizontal=True)
         if v_has_inj == "Yes":
             sites = ["Ankle", "Knee (ACL/Patellar)", "Hamstring/Groin", "Lumbar Spine", "Shoulder", "Elbow/Wrist"]
@@ -279,7 +305,7 @@ elif active_module == "🩺 3. SFMA & 3-View Posture Diagnostic":
     update_state("overhead_squat", v_ohs)
 
     st.markdown("---")
-    st.subheader("2. Static Postural Assessment (3-View)")
+    st.subheader("2. Static Postural Assessment (3-View Diagnostic)")
     
     p_col1, p_col2, p_col3 = st.columns(3)
     
@@ -322,10 +348,10 @@ elif active_module == "🩺 3. SFMA & 3-View Posture Diagnostic":
     update_state("heel_calcaneus", v_calc)
 
 # ------------------------------------------
-# MODULE 4: POWER & SPEED ASSESSMENT
+# MODULE 4: POWER & RADAR BENCHMARKING
 # ------------------------------------------
-elif active_module == "💥 4. Sport-Specific Power & Speed Assessment":
-    st.markdown("<div class='banner-header'>💥 Sport-Specific Power, Speed & Capacity Assessment</div>", unsafe_allow_html=True)
+elif active_module == "💥 4. Assessment & Radar Benchmarking":
+    st.markdown("<div class='banner-header'>💥 Sport-Specific Assessment & Radar Normative Benchmarking</div>", unsafe_allow_html=True)
     
     current_sport = bind_input("sport_type")
     is_overhead = current_sport in ["Tennis", "Volleyball", "Combat Sports (MMA/Boxing)", "Racket Sports (Squash/Padel)"]
@@ -334,7 +360,6 @@ elif active_module == "💥 4. Sport-Specific Power & Speed Assessment":
     with c1:
         st.subheader("💥 Explosive Power")
         if is_overhead:
-            st.caption(f"⚡ **Rotational & Overhead Power Suite** ({current_sport}):")
             v_oh_m = st.number_input("Overhead Med-Ball Launch (m)", 1.0, 30.0, value=bind_input("mb_overhead_m"))
             v_fh_m = st.number_input("Rotational Forehand Launch (m)", 1.0, 30.0, value=bind_input("mb_forehand_m"))
             v_bh_m = st.number_input("Rotational Backhand Launch (m)", 1.0, 30.0, value=bind_input("mb_backhand_m"))
@@ -342,7 +367,6 @@ elif active_module == "💥 4. Sport-Specific Power & Speed Assessment":
             update_state("mb_forehand_m", v_fh_m)
             update_state("mb_backhand_m", v_bh_m)
         else:
-            st.caption(f"⚡ **Lower Body Kinetic Power Suite** ({current_sport}):")
             v_cmj = st.number_input("Countermovement Jump (cm)", 10.0, 100.0, value=bind_input("cmj_cm"))
             v_bj = st.number_input("Broad Jump (cm)", 50.0, 350.0, value=bind_input("broad_jump_cm"))
             v_chest = st.number_input("Med-Ball Chest Launch (m)", 1.0, 20.0, value=bind_input("mb_chest_launch_m"))
@@ -351,14 +375,14 @@ elif active_module == "💥 4. Sport-Specific Power & Speed Assessment":
             update_state("mb_chest_launch_m", v_chest)
 
     with c2:
-        st.subheader("🏃 Speed & Agility")
+        st.subheader("🏃 Acceleration & Agility")
         v_sp10 = st.number_input("10m Acceleration Sprint (sec)", 1.0, 4.0, value=bind_input("sprint_10m"))
         v_tdrill = st.number_input("T-Drill Agility (sec)", 5.0, 20.0, value=bind_input("t_drill"))
         update_state("sprint_10m", v_sp10)
         update_state("t_drill", v_tdrill)
 
     with c3:
-        st.subheader("🫁 Muscular & Aerobic Capacity")
+        st.subheader("🫁 Work Capacity & VO2")
         v_push = st.number_input("Max Push-ups (1 Min)", 0, 100, value=bind_input("max_pushups"))
         v_pull = st.number_input("Max Pull-ups (Unbroken)", 0, 50, value=bind_input("max_pullups"))
         v_cooper = st.number_input("12-Min Cooper Test (meters)", 500, 5000, value=bind_input("cooper_meters"))
@@ -367,7 +391,34 @@ elif active_module == "💥 4. Sport-Specific Power & Speed Assessment":
         update_state("cooper_meters", v_cooper)
 
     vo2max = round((v_cooper - 504.9) / 44.73, 1)
-    st.info(f"📊 **Calculated VO2Max Engine Score**: `{vo2max} mL/kg/min`")
+
+    # --- RADAR CHART BENCHMARKING ---
+    st.markdown("---")
+    st.subheader(f"📊 Kinetic Profile vs. Elite {current_sport} Benchmark")
+    
+    # Normalized scores (0 to 100)
+    score_power = min(100, int((bind_input("cmj_cm") if not is_overhead else bind_input("mb_forehand_m") * 8) / 50.0 * 100))
+    score_speed = min(100, int((2.2 - bind_input("sprint_10m")) / 0.7 * 100))
+    score_agility = min(100, int((13.0 - bind_input("t_drill")) / 4.0 * 100))
+    score_capacity = min(100, int(bind_input("max_pushups") / 45.0 * 100))
+    score_vo2 = min(100, int(vo2max / 60.0 * 100))
+
+    categories = ['Explosive Power', '10m Sprint Speed', 'Agility / COD', 'Muscular Capacity', 'Aerobic Engine (VO2)']
+    athlete_scores = [score_power, max(20, score_speed), max(20, score_agility), score_capacity, score_vo2]
+    elite_benchmark = [90, 88, 92, 85, 88]
+
+    fig = go.Figure()
+    fig.add_trace(go.Scatterpolar(r=athlete_scores, theta=categories, fill='toself', name=f"{bind_input('athlete_name')} (Current)", line_color='#38bdf8'))
+    fig.add_trace(go.Scatterpolar(r=elite_benchmark, theta=categories, fill='toself', name=f"Elite {current_sport} Standard", line_color='#ec4899', opacity=0.4))
+
+    fig.update_layout(
+        polar=dict(radialaxis=dict(visible=True, range=[0, 100])),
+        showlegend=True,
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
+        font=dict(color='#f8fafc')
+    )
+    st.plotly_chart(fig, use_container_width=True)
 
     if st.button("💾 SAVE ASSESSMENT SNAPSHOT TO HISTORICAL DATABASE"):
         rec = st.session_state.form_data.copy()
@@ -376,9 +427,51 @@ elif active_module == "💥 4. Sport-Specific Power & Speed Assessment":
         st.success(f"✅ Baseline snapshot saved for {rec['athlete_name']} on {rec['assessment_date']}!")
 
 # ------------------------------------------
-# MODULE 5: SAVED RECORDS
+# MODULE 5: SPORTS NUTRITION & MACRO ENGINE
 # ------------------------------------------
-elif active_module == "📈 5. Saved Records & Historical Progress":
+elif active_module == "🥗 5. Sports Nutrition & Macro Engine":
+    st.markdown("<div class='banner-header'>🥗 High-Performance Fueling & Macro Engine</div>", unsafe_allow_html=True)
+    
+    w = bind_input("weight_kg")
+    h = bind_input("height_cm")
+    a = bind_input("age")
+    g = bind_input("gender")
+    tot_club_hrs = bind_input("club_days") * bind_input("club_hours_per_day")
+
+    # BMR (Mifflin-St Jeor)
+    if g == "Male":
+        bmr = (10 * w) + (6.25 * h) - (5 * a) + 5
+    else:
+        bmr = (10 * w) + (6.25 * h) - (5 * a) - 161
+
+    # Activity Multiplier based on club exposure
+    act_mult = 1.55 if tot_club_hrs < 6 else (1.75 if tot_club_hrs < 12 else 1.95)
+    tdee = int(bmr * act_mult)
+
+    protein_g = int(w * 2.0) # 2.0g per kg
+    fats_g = int(w * 1.0)    # 1.0g per kg
+    carbs_g = int((tdee - ((protein_g * 4) + (fats_g * 9))) / 4)
+    water_l = round((w * 0.04) + (tot_club_hrs / 7 * 0.5), 1)
+
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("🔥 Total Energy (TDEE)", f"{tdee} kcal/day")
+    c2.metric("🥩 Protein Target", f"{protein_g} g/day", "2.0 g/kg")
+    c3.metric("🍚 Carbohydrate Target", f"{carbs_g} g/day", "Glycogen Fuel")
+    c4.metric("💧 Hydration Target", f"{water_l} Liters/day", "Euhydration")
+
+    st.markdown(f"""
+    <div class='scientific-note'>
+        <b>🧬 Periodized Fueling Strategy for {bind_input('sport_type')} ({bind_input('athlete_name')}):</b><br>
+        • <b>Pre-Training (2-3 hrs prior)</b>: Consume 1.5g/kg carbs ({int(w*1.5)}g) + 30g lean protein for intra-court glycogen availability.<br>
+        • <b>Intra-Training (>90 mins)</b>: 30-60g fast electrolyte-carbohydrate solution per hour to prevent power decay.<br>
+        • <b>Post-Training Recovery Window</b>: 3:1 Carb-to-Protein ratio within 45 minutes to stimulate muscle protein synthesis (MPS).
+    </div>
+    """, unsafe_allow_html=True)
+
+# ------------------------------------------
+# MODULE 6: SAVED RECORDS
+# ------------------------------------------
+elif active_module == "📈 6. Saved Records & Historical Progress":
     st.markdown("<div class='banner-header'>📈 Saved Assessment Records & Multi-Month Tracking</div>", unsafe_allow_html=True)
     if len(st.session_state.athlete_records) == 0:
         st.info("ℹ️ No saved snapshots yet. Complete assessment in Module 4 and click 'Save Assessment Snapshot'.")
@@ -387,10 +480,10 @@ elif active_module == "📈 5. Saved Records & Historical Progress":
         st.dataframe(df, use_container_width=True)
 
 # ------------------------------------------
-# MODULE 6: DYNAMIC CONCURRENT PROGRAM GENERATOR
+# MODULE 7: GENERATE PROGRAM & CARD
 # ------------------------------------------
-elif active_module == "🚀 6. GENERATE ADAPTIVE PROGRAM":
-    st.markdown("<div class='banner-header'>🚀 Dynamic Multi-Month Concurrent Training Program</div>", unsafe_allow_html=True)
+elif active_module == "🚀 7. GENERATE ADAPTIVE PROGRAM & CARD":
+    st.markdown("<div class='banner-header'>🚀 Dynamic Multi-Month Concurrent Program & Printable Card</div>", unsafe_allow_html=True)
     
     d = st.session_state.form_data
     name = d["athlete_name"]
@@ -412,21 +505,27 @@ elif active_module == "🚀 6. GENERATE ADAPTIVE PROGRAM":
         rec_days = 4
         freq_label = "4 Days/Week (Upper/Lower Concurrent Split)"
 
-    # Base Load Calculations
+    # Base Load Calculations with Readiness Auto-regulation
     pushups = d["max_pushups"]
     cmj = d.get("cmj_cm", 40.0)
-    base_press = round(weight * 0.45 * (pushups / 30.0), 1)
-    base_hinge = round(weight * 0.85 * (cmj / 40.0), 1)
+    sleep = d.get("sleep_quality", 8)
+    soreness = d.get("muscle_soreness", 3)
+    stress = d.get("stress_level", 3)
+    readiness = ((sleep + (11 - soreness) + (11 - stress)) / 30.0)
+    readiness_mod = 0.90 if readiness < 0.6 else (1.05 if readiness > 0.85 else 1.00)
+
+    base_press = round(weight * 0.45 * (pushups / 30.0) * readiness_mod, 1)
+    base_hinge = round(weight * 0.85 * (cmj / 40.0) * readiness_mod, 1)
 
     st.markdown(f"""
     <div class='metric-card'>
         <h3 style='margin:0; color:#38bdf8;'>👤 Athlete: {name} | ⚽ Sport: {sport} | 🧢 Coach: {coach}</h3>
-        <p style='margin:5px 0 0 0; color:#cbd5e1;'>Macrocycle Plan Scope: <b>{plan_months}-Month Concurrent Block</b> | Weekly Frequency: <b>{freq_label}</b></p>
+        <p style='margin:5px 0 0 0; color:#cbd5e1;'>Scope: <b>{plan_months}-Month Macrocycle</b> | Weekly Frequency: <b>{freq_label}</b> | Readiness Mod: <b>{int(readiness_mod*100)}%</b></p>
     </div>
     """, unsafe_allow_html=True)
 
     if has_injury == "Yes":
-        st.markdown(f"<div class='injury-alert'>⚠️ <b>CLINICAL INJURY PROTOCOL ACTIVE ({injury_site})</b><br>Exercises adapted for eccentric control and structural safety. High impact loads restricted.</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='injury-alert'>⚠️ <b>CLINICAL INJURY PROTOCOL ACTIVE ({injury_site})</b><br>Substituted high-impact plyometrics with controlled eccentric/isometric progressions.</div>", unsafe_allow_html=True)
 
     # Dynamic Month Progression Logic
     m_tabs = st.tabs([f"🗓️ MONTH {m}" for m in range(1, plan_months + 1)])
@@ -434,34 +533,37 @@ elif active_module == "🚀 6. GENERATE ADAPTIVE PROGRAM":
     for m_idx, m_tab in enumerate(m_tabs):
         m_num = m_idx + 1
         with m_tab:
-            # Exercise Variation by Month
+            # Exercise Variation Pool across Months
             if m_num == 1:
                 focus_desc = "Phase 1: Base Work Capacity, Postural Alignment & Movement Quality"
-                ex_mobility = "3-View Posture Correction Flow & Dynamic Mobility"
-                ex_power = "Rotational Med-Ball Slams" if sport in ["Tennis", "Volleyball", "Combat Sports (MMA/Boxing)", "Racket Sports (Squash/Padel)"] else "Non-Countermovement Box Jump"
-                ex_agility = "T-Drill Baseline & Agility Ladder Footwork"
-                ex_lower = "Goblet Squats & Romanian Deadlift"
-                ex_upper = "Barbell Strict Press" if "Barbells & Plates" in equipment_selected else "Dumbbell Overhead Press"
-                ex_pull = "Single-Arm TRX / Cable Row"
-                ex_esd = "AirBike / Shuttle Sprints (Extensive Intervals)"
+                ex_mob = "3-View Posture Flow (Thoracic Extension & Hip Capsule Priming)"
+                ex_pow = "Rotational Med-Ball Scoop Throws (Violent Extension)" if sport in ["Tennis", "Volleyball", "Combat Sports (MMA/Boxing)", "Racket Sports (Squash/Padel)"] else "Non-Countermovement Plyo Box Jump"
+                ex_agil = "T-Drill Sharp Deceleration & Agility Ladder Quick-Feet"
+                ex_low = "Barbell Romanian Deadlift (RDL)" if "Barbells & Plates" in equipment_selected else "Dumbbell Single-Leg RDL"
+                ex_upp = "Barbell Strict Overhead Press" if "Barbells & Plates" in equipment_selected else "Half-Kneeling Dumbbell Press"
+                ex_pull = "Single-Arm Cable Row with Thoracic Rotation"
+                ex_esd = "AirBike Extensive Interval Repeats"
+                tempo_str = "3-1-1-0 (Eccentric Control)"
             elif m_num == 2:
-                focus_desc = "Phase 2: Heavy Force Production, Kinetic Chain Power & COD Velocity"
-                ex_mobility = "Thoracic-Hip Dissociation & Active Multi-Planar Mobility"
-                ex_power = "Overhead & Forehand/Backhand Med-Ball Explosive Launches" if sport in ["Tennis", "Volleyball", "Combat Sports (MMA/Boxing)", "Racket Sports (Squash/Padel)"] else "Explosive Depth Jumps"
-                ex_agility = "Pro Agility (5-10-5) Shuttle & Reactive Deceleration"
-                ex_lower = "Barbell Front Squat / Trap Bar Deadlift" if "Barbells & Plates" in equipment_selected else "Heavy Dumbbell Bulgarian Split Squat"
-                ex_upper = "Incline Dumbbell Press / Push Press"
-                ex_pull = "Chest-Supported T-Bar / Cable Row"
-                ex_esd = "High-Intensity Lactate Threshold Shuttle Repeats"
+                focus_desc = "Phase 2: Dynamic Force Production, Kinetic Chain Power & COD Velocity"
+                ex_mob = "Multi-Planar Lunge with Thoracic-Hip Dissociation Reach"
+                ex_pow = "Rotational Landmine Explosive Punches / Step Launches" if "Landmine Attachment" in equipment_selected else "Med-Ball Overhead Stepping Slam"
+                ex_agil = "Pro Agility (5-10-5) Shuttle & Reactive Cone Cutting"
+                ex_low = "Barbell Front Squat / Trap Bar Deadlift" if "Barbells & Plates" in equipment_selected else "Heavy Dumbbell Bulgarian Split Squat"
+                ex_upp = "Landmine Rotational Press / Push Press"
+                ex_pull = "Chest-Supported T-Bar / TRX Suspended Row"
+                ex_esd = "High-Intensity Shuttle Sprints (Lactate Buffer)"
+                tempo_str = "2-0-1-0 (Force Escalation)"
             else:
                 focus_desc = "Phase 3: Rate of Force Development (RFD), Speed-Power Peak & Reactive Agility"
-                ex_mobility = "Dynamic Elastic Priming & Kinetic Chain Pre-Activation"
-                ex_power = "Rotational Med-Ball Step-and-Launch Drops" if sport in ["Tennis", "Volleyball", "Combat Sports (MMA/Boxing)", "Racket Sports (Squash/Padel)"] else "Contrast Trap Bar Jumps / Banded Plyometrics"
-                ex_agility = "Reactive Agility Drills (Visual Trigger Sprints & Cutting)"
-                ex_lower = "Barbell Snatch-Grip High Pull / Dynamic Trap Bar Deadlift"
-                ex_upper = "Explosive Banded Push Press / Plyo Push-Ups"
-                ex_pull = "Weighted Pull-Ups / Explosive High Rows"
-                ex_esd = "Tabata AirBike Repeats & Multi-Directional Anaerobic Sprints"
+                ex_mob = "Dynamic Elastic Priming & Ankling Pre-Activation Drops"
+                ex_pow = "French Contrast Jumps / Dynamic Med-Ball Launch Drops"
+                ex_agil = "Reactive Light/Visual Trigger Sprints & Change-of-Direction Cuts"
+                ex_low = "Barbell Snatch-Grip High Pull / Dynamic Contrast Trap Bar Jumps"
+                ex_upp = "Explosive Banded Push Press / Plyometric Push-Ups"
+                ex_pull = "Weighted Pull-Ups / Explosive High Cable Rows"
+                ex_esd = "Tabata AirBike Sprint Repeats"
+                tempo_str = "1-0-X-0 (Max Intent / Velocity)"
 
             st.subheader(f"📌 Month {m_num}: {focus_desc}")
 
@@ -485,14 +587,14 @@ elif active_module == "🚀 6. GENERATE ADAPTIVE PROGRAM":
                         load_mod = 1.05
                     else:
                         w_label = "Week 4: Strategic Deload & Supercompensation"
-                        sets_reps = "2 x 8 Reps (Reduced Load)"
+                        sets_reps = "2 x 8 Reps (Reduced Volume)"
                         load_mod = 0.70
 
                     st.markdown(f"#### 🗓️ {w_label}")
 
                     m_df = pd.DataFrame({
                         "Fitness Component": [
-                            "1. Mobility & Priming", 
+                            "1. Mobility & Posture Priming", 
                             "2. Explosive Power", 
                             "3. Agility & Change of Direction (COD)",
                             "4. Lower Body Strength (Hinge/Squat)", 
@@ -500,43 +602,53 @@ elif active_module == "🚀 6. GENERATE ADAPTIVE PROGRAM":
                             "6. Unilateral Pull & Core", 
                             "7. Energy Systems (ESD)"
                         ],
-                        "Prescribed Exercise": [
-                            ex_mobility,
-                            ex_power,
-                            ex_agility,
-                            ex_lower,
-                            ex_upper,
-                            ex_pull,
-                            ex_esd
-                        ],
-                        "Sets x Reps / Time": [
-                            "2 x 8 Reps / side",
-                            "4 x 4 Reps" if w_num != 4 else "2 x 4 Reps",
-                            "4 x 3 Reps / direction" if w_num != 4 else "2 x 3 Reps",
-                            sets_reps,
-                            sets_reps,
-                            sets_reps,
-                            "12-18 Mins (Intermittent)" if w_num != 4 else "10 Mins (Light Zone 2/3)"
-                        ],
+                        "Prescribed Exercise": [ex_mob, ex_pow, ex_agil, ex_low, ex_upp, ex_pull, ex_esd],
+                        "Tempo": ["2-1-2-0", "Explosive", "Max Speed", tempo_str, tempo_str, "2-0-1-1", "Interval"],
+                        "Sets x Reps": ["2 x 8 /side", "4 x 4", "4 x 3 /side", sets_reps, sets_reps, sets_reps, "12-18 Mins"],
                         "Prescribed Load": [
                             "Bodyweight",
-                            "Max Intent / Speed",
-                            "Agility Ladder / Cones (Max Speed)",
+                            "Max Speed Intent",
+                            "Cones / High Speed",
                             f"{round(base_hinge * load_mod, 1)} kg",
                             f"{round(base_press * load_mod, 1)} kg",
                             f"{round(base_press * 0.65 * load_mod, 1)} kg",
-                            "80-95% HRMax" if w_num != 4 else "60-70% HRMax"
+                            "80-95% HRMax"
                         ],
-                        "Rest Interval": ["30s", "90s", "90s", "120s", "90s", "60s", "45-60s"]
+                        "Coaching Cue": [
+                            "Drive big toe into floor; open thoracic spine.",
+                            "Explode violently; full triple extension at hips.",
+                            "Drop center of mass prior to plant foot cut.",
+                            "Hinge at hips; keep spine braced & rigid.",
+                            "Pack shoulders; drive vertically overhead.",
+                            "Squeeze scapula for 1 sec at peak contraction.",
+                            "Maintain cadence; push through anaerobic threshold."
+                        ]
                     })
 
                     st.table(m_df)
-            
-            st.markdown(f"""
-            <div class='scientific-note'>
-                <b>🧬 Month {m_num} Concurrent Programming Scientific Rationale:</b><br>
-                • <b>Agility & COD Integration</b>: Sport-specific acceleration, deceleration, and lateral change-of-direction drills included in every week.<br>
-                • <b>Undulating Microcycle Periodization</b>: Microcycles progress weekly from Week 1 (Base Load) $\rightarrow$ Week 2 (Build) $\rightarrow$ Week 3 (Peak Load) $\rightarrow$ Week 4 (Deload).<br>
-                • <b>Month-to-Month Exercise Progression</b>: Exercise selections evolve dynamically across macrocycle months to avoid adaptation plateaus.
-            </div>
-            """, unsafe_allow_html=True)
+
+    # --- PRINTABLE GYM FLOOR WORKOUT CARD GENERATOR ---
+    st.markdown("---")
+    st.subheader("📋 Printable Gym Floor Workout Card")
+    st.caption("Generate a clean summary block to copy/print for clipboard use on the weight room floor.")
+    
+    with st.expander("📄 Click to View / Print Floor Card"):
+        st.markdown(f"""
+```text
+================================================================================
+⚡ ATHLETE-IQ PERFORMANCE ENGINE - GYM FLOOR CARD
+================================================================================
+ATHLETE  : {name}                    SPORT  : {sport}
+COACH    : {coach}          DATE   : {datetime.now().strftime('%Y-%m-%d')}
+SCOPE    : Month 1 - Week 1         FREQUENCY: {freq_label}
+--------------------------------------------------------------------------------
+[ ] 1. MOBILITY : 3-View Posture Priming Flow       | 2 Sets x 8 Reps  | BW
+[ ] 2. POWER    : Rotational Med-Ball Throws        | 4 Sets x 4 Reps  | MAX INTENT
+[ ] 3. AGILITY  : T-Drill Deceleration & Ladder     | 4 Sets x 3 Reps  | MAX SPEED
+[ ] 4. STRENGTH : Barbell / DB Romanian Deadlift    | 3 Sets x 10 Reps | {round(base_hinge*0.85, 1)} kg
+[ ] 5. PRESS    : Overhead Strict / DB Press        | 3 Sets x 10 Reps | {round(base_press*0.85, 1)} kg
+[ ] 6. PULL     : Single-Arm Cable / TRX Row        | 3 Sets x 10 Reps | {round(base_press*0.55, 1)} kg
+[ ] 7. ESD      : High-Intensity Shuttle Sprints     | 12 Mins          | 85-90% HR
+================================================================================
+COACH NOTES: Maintain strict posture bracing on all compound hinge movements.
+================================================================================
