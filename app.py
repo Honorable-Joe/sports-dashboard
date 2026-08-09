@@ -92,7 +92,7 @@ if "current_assessment" not in st.session_state:
 # 2. APPLICATION HEADER & AUTHOR CREDITS
 # ==========================================
 st.markdown("<h1 style='text-align: center; color: #38bdf8; font-weight: 900; margin-bottom: 0px;'>⚡ ATHLETE-IQ PERFORMANCE ENGINE</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align: center; color: #a855f7; font-weight: 700; font-size: 1.1rem;'>Developed by: Your Name / S&C Lead</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: #a855f7; font-weight: 700; font-size: 1.1rem;'>Developed by: Coach Ahmed Youssef/ S&C Lead</p>", unsafe_allow_html=True)
 st.markdown("---")
 
 # ==========================================
