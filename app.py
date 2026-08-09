@@ -2,445 +2,396 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 
-# Set Streamlit Page Configuration
+# ==========================================
+# 1. PAGE CONFIG & HIGH-ENERGY CUSTOM STYLING
+# ==========================================
 st.set_page_config(
-    page_title="Athlete-IQ",
-    page_icon="🧠",
+    page_title="Athlete-IQ Performance Engine",
+    page_icon="⚡",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Energetic RGB Cyberpunk / Sports-Tech CSS Theme
+# High-energy Dark Theme styling with glowing neon accents
 st.markdown("""
 <style>
-    /* Main Background Dark Mesh Gradient */
+    /* Global Page Styling */
     .stApp {
-        background: radial-gradient(circle at 50% -20%, #151d30 0%, #080a0f 80%) !important;
-        color: #F0F6FC;
+        background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #020617 100%);
+        color: #f8fafc;
+        font-family: 'Inter', system-ui, sans-serif;
     }
     
-    /* Energetic RGB Title Styling */
-    .main-header { 
-        font-size: 2.8rem; 
-        font-weight: 900; 
-        background: linear-gradient(90deg, #00E5FF 0%, #7C4DFF 50%, #FF4081 100%); 
-        -webkit-background-clip: text; 
-        -webkit-text-fill-color: transparent; 
-        text-shadow: 0 0 25px rgba(0, 229, 255, 0.4);
-        margin-bottom: 0px; 
-        letter-spacing: -0.5px;
+    /* Neon Glow Accent Header Cards */
+    .metric-card {
+        background: rgba(30, 41, 59, 0.7);
+        border: 1px solid rgba(56, 189, 248, 0.3);
+        border-radius: 12px;
+        padding: 16px;
+        box-shadow: 0 4px 20px rgba(14, 165, 233, 0.15);
+        backdrop-filter: blur(8px);
+        margin-bottom: 12px;
     }
     
-    .sub-header { 
-        font-size: 1.2rem; 
-        color: #00E5FF; 
-        font-weight: 700; 
-        margin-bottom: 25px; 
-        letter-spacing: 1.5px;
+    .metric-title {
+        color: #38bdf8;
+        font-size: 0.85rem;
+        font-weight: 700;
         text-transform: uppercase;
-        text-shadow: 0 0 10px rgba(0, 229, 255, 0.3);
+        letter-spacing: 1px;
     }
     
-    /* Neon RGB Glowing Card Containers */
-    .card { 
-        background: rgba(18, 22, 31, 0.85) !important; 
-        backdrop-filter: blur(12px);
-        color: #E0E0E0; 
-        border-radius: 12px; 
-        padding: 20px; 
-        border: 1px solid rgba(0, 229, 255, 0.25);
-        border-left: 5px solid #00E5FF; 
-        margin-bottom: 20px; 
-        box-shadow: 0 0 18px rgba(0, 229, 255, 0.15);
-    }
-    
-    .alert-card { 
-        background: rgba(35, 12, 18, 0.9) !important; 
-        backdrop-filter: blur(12px);
-        color: #FFCDD2; 
-        border-radius: 12px; 
-        padding: 20px; 
-        border: 1px solid rgba(255, 64, 129, 0.4);
-        border-left: 5px solid #FF4081; 
-        margin-bottom: 20px; 
-        box-shadow: 0 0 22px rgba(255, 64, 129, 0.25);
-    }
-    
-    .warning-card { 
-        background: rgba(35, 28, 5, 0.9) !important; 
-        backdrop-filter: blur(12px);
-        color: #FFF59D; 
-        border-radius: 12px; 
-        padding: 20px; 
-        border: 1px solid rgba(255, 215, 0, 0.4);
-        border-left: 5px solid #FFD700; 
-        margin-bottom: 20px; 
-        box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
+    .metric-value {
+        color: #f3f4f6;
+        font-size: 1.6rem;
+        font-weight: 800;
+        margin-top: 4px;
     }
 
-    /* Custom Sidebar Glow */
-    section[data-testid="stSidebar"] {
-        background-color: #0a0d14 !important;
-        border-right: 1px solid rgba(124, 77, 255, 0.25) !important;
+    /* Section Header Banners */
+    .banner-header {
+        background: linear-gradient(90deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
+        padding: 12px 20px;
+        border-radius: 10px;
+        color: white;
+        font-weight: 800;
+        font-size: 1.2rem;
+        margin-top: 20px;
+        margin-bottom: 15px;
+        box-shadow: 0 4px 15px rgba(168, 85, 247, 0.3);
     }
+    
+    /* SFMA Indicator Badges */
+    .badge-fn { background-color: #10b981; color: white; padding: 3px 8px; border-radius: 6px; font-weight: bold; }
+    .badge-fp { background-color: #f59e0b; color: white; padding: 3px 8px; border-radius: 6px; font-weight: bold; }
+    .badge-dn { background-color: #06b6d4; color: white; padding: 3px 8px; border-radius: 6px; font-weight: bold; }
+    .badge-dp { background-color: #ef4444; color: white; padding: 3px 8px; border-radius: 6px; font-weight: bold; }
 
-    /* Metric Display Highlight */
-    div[data-testid="stMetricValue"] {
-        font-size: 2.2rem !important;
-        font-weight: 800 !important;
-        color: #00E5FF !important;
-        text-shadow: 0 0 12px rgba(0, 229, 255, 0.5);
+    /* Custom Streamlit UI Overrides */
+    div.stButton > button {
+        background: linear-gradient(90deg, #06b6d4 0%, #3b82f6 100%);
+        color: white;
+        border: none;
+        font-weight: 700;
+        border-radius: 8px;
+        padding: 10px 24px;
+        box-shadow: 0 0 15px rgba(6, 182, 212, 0.4);
+        transition: all 0.3s ease;
+    }
+    div.stButton > button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 0 25px rgba(59, 130, 246, 0.7);
     }
 </style>
-""", unsafe_allow_html=True)
+""", unsafe_allow_html=unsafe_allow_html)
 
-# -----------------------------------------------------------------------------
-# DATABASE: 60+ CLINICAL INJURIES
-# -----------------------------------------------------------------------------
-INJURY_DATABASE = {
-    "Upper Extremity": {
-        "Shoulder & Scapula": {
-            "Muscles / Tendons": [
-                "Rotator Cuff Tear / Tendinopathy", "Biceps Tendonitis / Tear",
-                "Pectoralis Major Tear", "Deltoid Strain"
-            ],
-            "Ligaments & Joint Capsules": [
-                "Glenohumeral Instability / Dislocation", "AC Joint Sprain ('Separation')",
-                "SLAP Lesion", "Bankart Lesion", "Adhesive Capsulitis ('Frozen Shoulder')"
-            ]
-        },
-        "Upper Arm (Brachium)": {
-            "Muscles / Tendons": ["Biceps Brachii Strain", "Triceps Brachii Strain / Tendonitis", "Brachialis Strain"],
-            "Ligaments & Connective Tissue": ["Intermuscular Septa Fascial Strain"]
-        },
-        "Elbow & Forearm": {
-            "Muscles / Tendons": [
-                "Lateral Epicondylitis ('Tennis Elbow')", "Medial Epicondylitis ('Golfer's Elbow')",
-                "Distal Biceps Tendon Rupture", "Forearm Flexor / Extensor Strain"
-            ],
-            "Ligaments & Joint Capsules": [
-                "Ulnar Collateral Ligament (UCL) Tear", "Radial Collateral Ligament (RCL) Sprain",
-                "Annular Ligament Sprain / Subluxation"
-            ]
-        },
-        "Wrist, Hand & Fingers": {
-            "Muscles / Tendons": [
-                "De Quervain’s Tenosynovitis", "Flexor Tendon Avulsion ('Jersey Finger')",
-                "Extensor Tendon Rupture ('Mallet Finger')", "Trigger Finger (Stenosing Tenosynovitis)"
-            ],
-            "Ligaments & Joint Capsules": [
-                "TFCC Tear", "Scapholunate Ligament Disruption",
-                "Ulnar Collateral Ligament Tear ('Gamekeeper’s/Skier’s Thumb')", "Volar Plate Avulsion"
-            ]
-        }
-    },
-    "Core, Spine & Pelvis": {
-        "Cervical & Thoracic Spine": {
-            "Muscles / Tendons": ["Whiplash / Cervical Paraspinal Strain", "Rhomboid & Thoracic Erector Sprain"],
-            "Ligaments & Discs": ["Cervical / Thoracic Disc Herniation", "Facet Joint Sprain", "Ligamentum Nuchae / Interspinous Ligament Sprain"]
-        },
-        "Lumbar Spine, Abdomen & Pelvis": {
-            "Muscles / Tendons": ["Lumbar Erector Spinae / Multifidus Strain", "Rectus Abdominis / Oblique Strain", "Athletic Pubalgia ('Sports Hernia')"],
-            "Ligaments & Discs": ["Lumbar Disc Bulge / Herniation", "Sacroiliac (SI) Joint Sprain", "Iliolumbar Ligament Sprain"]
-        }
-    },
-    "Lower Extremity": {
-        "Hip & Groin": {
-            "Muscles / Tendons": ["Groin Strain (Adductors)", "Iliopsoas Strain / Bursitis", "Gluteal Tendinopathy / Tear", "Hamstring Complex Strain (Proximal)"],
-            "Ligaments & Joint Capsules": ["Acetabular Labral Tear", "Ligamentum Teres Tear", "Iliofemoral / Ischiofemoral Ligament Sprain"]
-        },
-        "Thigh (Anterior & Posterior)": {
-            "Muscles / Tendons": ["Quadriceps Strain / Contusion", "Hamstring Muscle Belly Tear", "Iliotibial (IT) Band Friction Syndrome"]
-        },
-        "Knee": {
-            "Muscles / Tendons": ["Patellar Tendinopathy ('Jumper’s Knee')", "Quadriceps Tendon Rupture", "Popliteus Strain"],
-            "Ligaments, Cartilage & Capsules": ["Anterior Cruciate Ligament (ACL) Tear", "Posterior Cruciate Ligament (PCL) Tear", "Medial Collateral Ligament (MCL) Sprain", "Lateral Collateral Ligament (LCL) Sprain", "Meniscal Tear (Medial / Lateral)", "Patellofemoral Medial Retinaculum Tear"]
-        },
-        "Lower Leg (Calf & Shin)": {
-            "Muscles / Tendons": ["Gastrocnemius Strain ('Tennis Leg')", "Soleus Strain", "Shin Splints (MTSS)", "Tibialis Anterior / Posterior Tendinopathy"],
-            "Connective Tissue": ["Exertional Compartment Syndrome"]
-        },
-        "Ankle & Foot": {
-            "Muscles / Tendons": ["Achilles Tendonitis / Rupture", "Peroneal Tendon Subluxation / Strain", "Plantaris Tendon Rupture"],
-            "Ligaments & Joint Capsules": ["Inversion Ankle Sprain (ATFL/CFL)", "Eversion Ankle Sprain (Deltoid)", "High Ankle Sprain (Syndesmosis)", "Plantofascial Rupture / Fasciitis", "Lisfranc Ligament Complex Injury", "Turf Toe"]
-        }
-    }
-}
+# ==========================================
+# 2. APPLICATION HEADER & SIDEBAR FILTERS
+# ==========================================
+st.markdown("<h1 style='text-align: center; color: #38bdf8; font-weight: 900; letter-spacing: 1px;'>⚡ ATHLETE-IQ PERFORMANCE ENGINE</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: #94a3b8; font-size: 1.1rem;'>Clinical SFMA Screening • Multi-View Posture • Dynamic 1-Month Plan Generator</p>", unsafe_allow_html=True)
+st.markdown("---")
 
-# Header Banner
-st.markdown("<p class='main-header'>🧠 Athlete-IQ</p>", unsafe_allow_html=True)
-st.markdown("<p class='sub-header'>Coach Ahmed Youssef</p>", unsafe_allow_html=True)
+# Sidebar Configuration Controls
+st.sidebar.markdown("### 🎛️ Athlete & Facility Settings")
 
-# -----------------------------------------------------------------------------
-# COLLAPSIBLE SIDEBAR MENU
-# -----------------------------------------------------------------------------
-with st.sidebar:
-    st.title("⚙️ Navigation")
-    page = st.radio(
-        "Select Section:",
-        [
-            "1. Demographics & Workload",
-            "2. Clinical Medical Engine",
-            "3. Posture & Mobility",
-            "4. Power & Performance",
-            "5. 1-Month Plan Generator"
-        ]
-    )
-    st.markdown("---")
-    st.caption("⚡ Powered by Athlete-IQ Engine")
+sport_profile = st.sidebar.selectbox(
+    "Primary Sport Profile",
+    ["General Fitness / Health", "Field & Court Sports (Soccer/Basketball)", "Overhead & Racket Sports (Tennis/Baseball)", "Endurance Sports (Running/Cycling)", "Tactical & Combat"]
+)
 
-# Initialize Session States
-if "blacklisted_movements" not in st.session_state:
-    st.session_state.blacklisted_movements = []
-if "in_season" not in st.session_state:
-    st.session_state.in_season = False
-if "sport_category" not in st.session_state:
-    st.session_state.sport_category = "General Fitness / Body Recomp"
-if "total_external_hours" not in st.session_state:
-    st.session_state.total_external_hours = 0.0
+in_season_toggle = st.sidebar.toggle("In-Season Athlete Mode", value=False)
 
-# -----------------------------------------------------------------------------
-# PAGE 1: DEMOGRAPHICS & WORKLOAD
-# -----------------------------------------------------------------------------
-if page == "1. Demographics & Workload":
-    st.subheader("1. Athlete Profile & Sport Context")
-    
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        athlete_name = st.text_input("Athlete Full Name", "Marcus Vance")
-        age = st.number_input("Age", min_value=10, max_value=80, value=24)
+st.sidebar.markdown("---")
+st.sidebar.markdown("### 🏋️ Facility Equipment Available")
+equipment_selected = st.sidebar.multiselect(
+    "Select All Equipment in Facility:",
+    ["Barbells & Plates", "Dumbbells", "Kettlebells", "Cable Columns", "Resistance Bands", "TRX / Rings", "Medicine Balls", "AirBike / Rower", "Sleds / Prowler"],
+    default=["Dumbbells", "Kettlebells", "Resistance Bands", "Medicine Balls", "AirBike / Rower"]
+)
+
+# Sport-based disabled filters
+is_gen_fitness = sport_profile == "General Fitness / Health"
+is_endurance = sport_profile == "Endurance Sports (Running/Cycling)"
+
+# ==========================================
+# 3. ASSESSMENT MODULE TABS
+# ==========================================
+tabs = st.tabs([
+    "📋 1. Demographics & History",
+    "🩺 2. SFMA Top-Tier Screen",
+    "📐 3. 3-View Posture Matrix",
+    "💥 4. Explosive Power & Jumps",
+    "🏃 5. Agility & Speed",
+    "🫁 6. Endurance & Capacity",
+    "🚀 7. GENERATE 1-MONTH PLAN"
+])
+
+# ------------------------------------------
+# TAB 1: DEMOGRAPHICS
+# ------------------------------------------
+with tabs[0]:
+    st.markdown("<div class='banner-header'>👤 Athlete Profile & Medical History</div>", unsafe_allow_html=True)
+    c1, c2, c3, c4 = st.columns(4)
+    with c1:
+        athlete_name = st.text_input("Athlete Name", "Alex Morgan")
+        age = st.number_input("Age", 14, 80, 24)
+    with c2:
         gender = st.selectbox("Gender", ["Male", "Female", "Other"])
-    with col2:
-        height = st.number_input("Height (cm)", min_value=100.0, max_value=250.0, value=182.0)
-        weight = st.number_input("Weight (kg)", min_value=30.0, max_value=200.0, value=80.0)
-        level = st.selectbox("Competitive Level", ["Pro/Elite", "College", "Youth", "General Fitness / Gen Pop"])
-    with col3:
-        st.session_state.sport_category = st.selectbox("Primary Sport Focus", [
-            "Field & Court (Football, Basketball, Soccer, Rugby)",
-            "Overhead & Racket (Tennis, Volleyball, Swimming)",
-            "Combat & Contact (MMA, Boxing, Wrestling)",
-            "Endurance (Running, Cycling)",
-            "General Fitness / Body Recomp"
-        ])
-        st.session_state.in_season = st.checkbox("Athlete is Currently IN-SEASON", value=st.session_state.in_season)
-        readiness = st.slider("Daily Readiness Score (1-10)", 1, 10, 8)
+        weight_kg = st.number_input("Body Weight (kg)", 40.0, 150.0, 75.0)
+    with c3:
+        height_cm = st.number_input("Height (cm)", 120.0, 230.0, 178.0)
+        training_age = st.number_input("Training History (Years)", 0, 30, 4)
+    with c4:
+        primary_goal = st.selectbox("Primary Goal", ["Hypertrophy / Power", "Speed & Agility", "Rehab / Injury Prevention", "Aerobic Conditioning"])
+        injury_flags = st.multiselect("Active Injury Sites", ["Ankle", "Knee", "Lumbar Spine", "Shoulder", "Wrist/Elbow"])
 
-    st.markdown("---")
-    st.subheader("2. External Club & Training Load")
-    col_c1, col_c2, col_c3 = st.columns(3)
+# ------------------------------------------
+# TAB 2: SFMA TOP-TIER SCREENING
+# ------------------------------------------
+with tabs[1]:
+    st.markdown("<div class='banner-header'>🩺 SFMA Top-Tier Movement Assessment</div>", unsafe_allow_html=True)
+    st.info("💡 **Scoring Guide:** **FN** = Functional Non-Painful | **FP** = Functional Painful | **DN** = Dysfunctional Non-Painful | **DP** = Dysfunctional Painful")
     
-    is_general_fitness = "General Fitness" in st.session_state.sport_category
+    sfma_results = {}
+    sfma_patterns = [
+        "1. Cervical Flexion (Chin to Chest)",
+        "2. Cervical Extension (Look Overhead)",
+        "3. Cervical Rotation (Left & Right)",
+        "4. Upper Extremity Pattern 1 (Reach Behind Back)",
+        "5. Upper Extremity Pattern 2 (Reach Overhead/Neck)",
+        "6. Multi-Segmental Flexion (Toe Touch)",
+        "7. Multi-Segmental Extension (Backward Bend)",
+        "8. Multi-Segmental Rotation (Trunk Rotation)",
+        "9. Single-Leg Stance (Eyes Open / Eyes Closed)",
+        "10. Deep Overhead / Arms-Down Squat"
+    ]
     
-    with col_c1:
-        club_days = st.number_input("Club Practice Days / Week", min_value=0, max_value=7, value=0 if is_general_fitness else 4, disabled=is_general_fitness)
-    with col_c2:
-        club_hours = st.number_input("Avg Hours / Practice Day", min_value=0.0, max_value=8.0, value=0.0 if is_general_fitness else 2.5, step=0.5, disabled=is_general_fitness)
-    with col_c3:
-        st.session_state.total_external_hours = club_days * club_hours
-        st.metric("Total External Sport Load", f"{st.session_state.total_external_hours:.1f} hrs/wk")
-        if st.session_state.total_external_hours >= 10:
-            st.warning("⚡ High External Load: Gym volume will be auto-adjusted to micro-dosing.")
-        elif st.session_state.total_external_hours > 0:
-            st.info("ℹ️ Moderate External Load: Moderate gym volume recommended.")
+    col_a, col_b = st.columns(2)
+    for idx, pattern in enumerate(sfma_patterns):
+        target_col = col_a if idx < 5 else col_b
+        with target_col:
+            sfma_results[pattern] = st.radio(
+                pattern,
+                ["FN", "FP", "DN", "DP"],
+                index=0,
+                horizontal=True,
+                key=f"sfma_{idx}"
+            )
 
-# -----------------------------------------------------------------------------
-# PAGE 2: CLINICAL MEDICAL ENGINE
-# -----------------------------------------------------------------------------
-elif page == "2. Clinical Medical Engine":
-    st.subheader("Clinical Injury & Pathology Logging")
+# ------------------------------------------
+# TAB 3: 3-VIEW POSTURAL MATRIX
+# ------------------------------------------
+with tabs[2]:
+    st.markdown("<div class='banner-header'>📐 Static Postural Analysis Matrix</div>", unsafe_allow_html=True)
+    p_tab1, p_tab2, p_tab3 = st.tabs(["👁️ Anterior (Front) View", "👁️ Lateral (Side) View", "👁️ Posterior (Back) View"])
     
-    st.markdown("#### 3-Tier Cascading Pathology Picker")
-    m_col1, m_col2, m_col3 = st.columns(3)
+    posture_data = {}
     
-    with m_col1:
-        selected_region = st.selectbox("Select Body Region", list(INJURY_DATABASE.keys()))
-    with m_col2:
-        selected_subregion = st.selectbox("Select Joint / Sub-Region", list(INJURY_DATABASE[selected_region].keys()))
-    with m_col3:
-        tissue_categories = INJURY_DATABASE[selected_region][selected_subregion]
-        all_pathologies = []
-        for cat, items in tissue_categories.items():
-            all_pathologies.extend(items)
-        selected_injuries = st.multiselect("Tagged Pathologies", all_pathologies)
+    with p_tab1:
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            posture_data["ant_shoulder"] = st.selectbox("Shoulder Level", ["Symmetrical", "Left Elevated", "Right Elevated"])
+            posture_data["ant_hip"] = st.selectbox("Hip / ASIS Position", ["Level", "Left High", "Right High"])
+        with c2:
+            posture_data["ant_knee"] = st.selectbox("Knee Position", ["Neutral", "Genu Valgus (Knock-Knees)", "Genu Varum (Bow-Legged)"])
+            posture_data["ant_tibia"] = st.selectbox("Tibia Alignment", ["Neutral Alignment", "Internal Tibial Torsion", "External Tibial Torsion"])
+        with c3:
+            posture_data["ant_foot_arch"] = st.selectbox("Foot Arch", ["Normal Arch", "Collapsed Arch (Pronation)", "High Arch (Supination)"])
+            posture_data["ant_foot_pos"] = st.selectbox("Foot Position", ["Parallel / Forward", "Toe-Out (External Rotation)", "Toe-In (Internal Rotation)"])
+
+    with p_tab2:
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            posture_data["lat_shoulder"] = st.selectbox("Shoulder Position", ["Neutral Alignment", "Forward Rounded (Protracted)"])
+            posture_data["lat_pelvis"] = st.selectbox("Pelvic Tilt", ["Neutral Pelvis", "Anterior Pelvic Tilt (APT)", "Posterior Pelvic Tilt (PPT)"])
+        with c2:
+            posture_data["lat_thoracic"] = st.selectbox("Thoracic Spine", ["Normal Curve", "Hyper-Kyphosis (Hunchback)", "Flat Thoracic Spine"])
+            posture_data["lat_lumbar"] = st.selectbox("Lumbar Spine", ["Normal Lordosis", "Hyper-Lordosis", "Flat Lumbar Curve"])
+        with c3:
+            posture_data["lat_knee"] = st.selectbox("Lateral Knee Line", ["Neutral Stance", "Genu Recurvatum (Hyperextended)", "Slightly Flexed Stance"])
+            posture_data["lat_ankle"] = st.selectbox("Ankle Alignment", ["Vertical Gravity Line", "Anterior Weight Shift", "Posterior Weight Shift"])
+
+    with p_tab3:
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            posture_data["post_scapula"] = st.selectbox("Scapula Alignment", ["Neutral & Flat", "Scapular Winging", "Abducted / Protracted"])
+            posture_data["post_sit_bone"] = st.selectbox("Sit Bone / PSIS Level", ["Symmetrical / Level", "Left PSIS High", "Right PSIS High"])
+        with c2:
+            posture_data["post_spine"] = st.selectbox("Spine Line", ["Straight Vertical", "Scoliotic Lateral Curve"])
+            posture_data["post_hip"] = st.selectbox("Gluteal Shift", ["Centered Alignment", "Left Hip Shift", "Right Hip Shift"])
+        with c3:
+            posture_data["post_ankle"] = st.selectbox("Rearfoot / Achilles Line", ["Neutral Calcaneus", "Calcaneal Valgus (Everted)", "Calcaneal Varus (Inverted)"])
+            posture_data["post_toes"] = st.selectbox("Toe Visibility (Behind)", ["Normal Digits Visible", "Too-Many-Toes Sign (Toes Out)"])
+
+# ------------------------------------------
+# TAB 4: EXPLOSIVE POWER & JUMPS
+# ------------------------------------------
+with tabs[3]:
+    st.markdown("<div class='banner-header'>💥 Ballistic Power & Jump Testing</div>", unsafe_allow_html=True)
+    c1, c2 = st.columns(2)
+    
+    with c1:
+        st.subheader("🏋️ Upper-Body Med-Ball Throws")
+        mb_chest = st.number_input("Med-Ball Chest Pass (m)", 0.0, 20.0, 6.5, disabled=is_endurance)
+        mb_overhead = st.number_input("Med-Ball Overhead Throw (m)", 0.0, 25.0, 9.2, disabled=is_endurance)
+        mb_forehand = st.number_input("Med-Ball Forehand Throw (m)", 0.0, 20.0, 7.8, disabled=is_endurance)
+        mb_backhand = st.number_input("Med-Ball Backhand Throw (m)", 0.0, 20.0, 6.9, disabled=is_endurance)
         
-    st.markdown("---")
-    st.subheader("Mechanism of Injury (MOI) & Manual Coach Override")
-    
-    o_col1, o_col2 = st.columns(2)
-    with o_col1:
-        pain_score = st.slider("Current Pain Scale (VAS 0-10)", 0, 10, 0)
-        manual_cause = st.text_input("Specific Trigger / Exercise Cause (e.g., Heavy Back Squat at 90% 1RM)", "")
-    
-    with o_col2:
-        st.session_state.blacklisted_movements = st.multiselect(
-            "Blacklist Movement Patterns (Auto-substitutions will apply)",
-            ["Barbell Back Squat", "Axial Compression", "Floor Deadlift / Spinal Shear", 
-             "Overhead Pressing", "Max-Velocity Sprinting", "Deep Knee Flexion", "High-Impact Plyometrics"],
-            default=["Barbell Back Squat", "Axial Compression"] if "squat" in manual_cause.lower() else st.session_state.blacklisted_movements
-        )
-        coach_override = st.checkbox("Enable Executive Coach Manual Override", value=True)
+        # Rotational Asymmetry Calculation
+        if mb_forehand > 0 and mb_backhand > 0:
+            rot_diff = abs(mb_forehand - mb_backhand) / max(mb_forehand, mb_backhand) * 100
+            if rot_diff > 15:
+                st.warning(f"⚠️ Rotational Sling Asymmetry Detected: {rot_diff:.1f}% imbalance between forehand & backhand!")
 
-    if pain_score > 3 or len(selected_injuries) > 0 or len(st.session_state.blacklisted_movements) > 0:
+    with c2:
+        st.subheader("🦵 Lower-Body Jump & Landing Screen")
+        cmj_height = st.number_input("Countermovement Jump (CMJ) (cm)", 0.0, 100.0, 42.0)
+        broad_jump = st.number_input("Bilateral Broad Jump (cm)", 0.0, 400.0, 210.0)
+        sl_jump_left = st.number_input("Single-Leg Broad Jump LEFT (cm)", 0.0, 300.0, 95.0)
+        sl_jump_right = st.number_input("Single-Leg Broad Jump RIGHT (cm)", 0.0, 300.0, 88.0)
+        
+        landing_flaws = st.multiselect(
+            "Landing Mechanics Screen Flaws",
+            ["Dynamic Knee Valgus (Cave)", "Stiff Landing (Poor Force Absorption)", "Asymmetrical Weight Landing", "Loss of Balance / Step Out"]
+        )
+
+# ------------------------------------------
+# TAB 5: AGILITY & SPEED
+# ------------------------------------------
+with tabs[4]:
+    st.markdown("<div class='banner-header'>🏃 Agility & Speed Testing</div>", unsafe_allow_html=True)
+    if is_gen_fitness or is_endurance or in_season_toggle:
+        st.info("ℹ️ High-fatigue anaerobic agility tests are currently grayed out based on selected Sport Profile / In-Season status.")
+        
+    c1, c2 = st.columns(2)
+    with c1:
+        sprint_5m = st.number_input("5-Meter Acceleration Sprint (sec)", 0.5, 5.0, 1.25, disabled=(is_gen_fitness or is_endurance))
+        t_drill = st.number_input("T-Drill Agility Test (sec)", 5.0, 20.0, 10.4, disabled=(is_gen_fitness or is_endurance))
+    with c2:
+        box_drill = st.number_input("Box Drill / 4-Cone (sec)", 5.0, 25.0, 12.1, disabled=(is_gen_fitness or is_endurance))
+        drill_7x7 = st.number_input("7 x 7 COD Test (sec)", 10.0, 60.0, 22.5, disabled=(is_gen_fitness or is_endurance or in_season_toggle))
+
+# ------------------------------------------
+# TAB 6: ENDURANCE & CAPACITY
+# ------------------------------------------
+with tabs[5]:
+    st.markdown("<div class='banner-header'>🫁 Muscular & Aerobic Endurance</div>", unsafe_allow_html=True)
+    c1, c2 = st.columns(2)
+    
+    with c1:
+        st.subheader("💪 Muscular Endurance Battery")
+        pushups_reps = st.number_input("Max Push-Ups (1-Min Cap)", 0, 100, 35)
+        pullups_reps = st.number_input("Max Pull-Ups (Unbroken Set)", 0, 50, 12)
+        squats_reps = st.number_input("Max Bodyweight Squats (1-Min Cap)", 0, 120, 48)
+        situps_reps = st.number_input("Max Sit-Ups (1-Min Cap)", 0, 100, 40)
+        
+    with c2:
+        st.subheader("🏃 Cardiovascular Capacity")
+        run_1000m = st.number_input("1000m Sprint / Run (seconds)", 120, 600, 240)
+        cooper_meters = st.number_input("Cooper Test - 12-Min Distance (meters)", 500, 5000, 2600)
+        
+        # Real-time VO2max estimation from Cooper Test
+        estimated_vo2 = (cooper_meters - 504.9) / 44.73
         st.markdown(f"""
-        <div class='alert-card'>
-            <b>🔴 CLINICAL RED FLAGS ACTIVE</b><br>
-            <b>Tagged Pathologies:</b> {', '.join(selected_injuries) if selected_injuries else 'None'}<br>
-            <b>Stated Trigger:</b> {manual_cause if manual_cause else 'Unspecified'}<br>
-            <b>Barred Patterns:</b> {', '.join(st.session_state.blacklisted_movements) if st.session_state.blacklisted_movements else 'None'}
+        <div class='metric-card'>
+            <div class='metric-title'>Calculated Estimated VO2Max</div>
+            <div class='metric-value'>{estimated_vo2:.1f} mL/kg/min</div>
         </div>
         """, unsafe_allow_html=True)
 
-# -----------------------------------------------------------------------------
-# PAGE 3: POSTURE & MOBILITY
-# -----------------------------------------------------------------------------
-elif page == "3. Posture & Mobility":
-    st.subheader("Structural Posture & Range of Motion (ROM)")
+# ------------------------------------------
+# TAB 7: GENERATE 1-MONTH PERIODIZED PLAN
+# ------------------------------------------
+with tabs[6]:
+    st.markdown("<div class='banner-header'>🚀 Dynamic 1-Month Training Plan Generator</div>", unsafe_allow_html=True)
     
-    p_col1, p_col2 = st.columns(2)
-    with p_col1:
-        st.markdown("#### Static Plumb Line Deviations")
-        st.checkbox("Forward Head Position")
-        st.checkbox("Anterior Pelvic Tilt")
-        st.checkbox("Genu Valgus (Knee Cave)")
-        st.checkbox("Foot Pronation / Flat Arches")
-        st.checkbox("Scapular Winging")
+    if st.button("🔥 GENERATE 1-MONTH DYNAMIC PROGRAM"):
+        st.success("✅ Program successfully compiled using Athlete-IQ Logic!")
         
-    with p_col2:
-        st.markdown("#### Dynamic FMS & Movement Screening")
-        ohs_score = st.radio("Overhead Squat Score", [3, 2, 1], horizontal=True, help="3=Clean, 2=Compensated, 1=Pain")
-        sls_score = st.radio("Single-Leg Squat Score", [3, 2, 1], horizontal=True)
-        pushup_score = st.radio("Core / Push-Up Hold Score", [3, 2, 1], horizontal=True)
-
-    st.markdown("---")
-    st.markdown("#### Joint ROM Inputs & Asymmetry Calculator")
-    r_col1, r_col2, r_col3 = st.columns(3)
-    with r_col1:
-        ank_l = st.number_input("Ankle Dorsiflexion Left (cm)", value=12.0)
-        ank_r = st.number_input("Ankle Dorsiflexion Right (cm)", value=9.0)
-    with r_col2:
-        hip_l = st.number_input("Hip Int Rotation Left (°)", value=40.0)
-        hip_r = st.number_input("Hip Int Rotation Right (°)", value=42.0)
-    with r_col3:
-        sh_l = st.number_input("Shoulder Flexion Left (°)", value=175.0)
-        sh_r = st.number_input("Shoulder Flexion Right (°)", value=180.0)
-
-    if ank_l > 0 and ank_r > 0:
-        ankle_diff = abs(ank_l - ank_r) / max(ank_l, ank_r) * 100
-        if ankle_diff > 10:
-            st.markdown(f"<div class='warning-card'>⚠️ <b>Asymmetry Alert:</b> {ankle_diff:.1f}% Ankle Dorsiflexion Asymmetry detected. Auto-populating mobility interventions.</div>", unsafe_allow_html=True)
-
-# -----------------------------------------------------------------------------
-# PAGE 4: POWER & PERFORMANCE
-# -----------------------------------------------------------------------------
-elif page == "4. Power & Performance":
-    st.subheader("Neuromuscular Power & Diagnostic Testing")
-    
-    if st.session_state.in_season:
-        st.info("ℹ️ IN-SEASON MODE: High-fatigue maximal tests are greyed out to preserve match readiness.")
-
-    f_col1, f_col2, f_col3 = st.columns(3)
-    with f_col1:
-        cmj_height = st.number_input("CMJ Height (cm)", value=42.0)
-        sj_height = st.number_input("Squat Jump Height (cm)", value=38.0)
-    with f_col2:
-        imtp_force = st.number_input("IMTP Peak Force (N)", value=2800.0, disabled=st.session_state.in_season or "Axial Compression" in st.session_state.blacklisted_movements)
-        rsi_index = st.number_input("Reactive Strength Index (RSI)", value=2.1)
-    with f_col3:
-        eur_ratio = cmj_height / sj_height if sj_height > 0 else 0
-        st.metric("Eccentric Utilization Ratio (EUR)", f"{eur_ratio:.2f}")
-
-    st.markdown("---")
-    st.subheader("Sport-Specific Functional Battery")
-    
-    is_gen_fit = "General Fitness" in st.session_state.sport_category
-    if is_gen_fit:
-        st.warning("🔒 Sport-specific high-level metrics are greyed out for General Fitness profile.")
+        # Collect Key Diagnostic Flags
+        dn_patterns = [k for k, v in sfma_results.items() if v in ["DN", "DP"]]
+        has_landing_flaw = len(landing_flaws) > 0
         
-    s_col1, s_col2 = st.columns(2)
-    with s_col1:
-        pro_agility = st.number_input("5-10-5 Pro Agility Time (s)", value=4.35, disabled=is_gen_fit)
-        rsa_fatigue = st.number_input("Sprint Fatigue Index (%)", value=5.2, disabled=is_gen_fit)
-    with s_col2:
-        gird_deficit = st.number_input("GIRD Shoulder IR Deficit (°)", value=4.0, disabled=is_gen_fit or "Field" in st.session_state.sport_category)
-        grip_str = st.number_input("Grip Dynamometry (kg)", value=55.0, disabled=is_gen_fit)
+        # --- TOP SUMMARY METRIC DASHBOARD ---
+        m1, m2, m3, m4 = st.columns(4)
+        with m1:
+            st.markdown(f"<div class='metric-card'><div class='metric-title'>Movement Flags</div><div class='metric-value'>{len(dn_patterns)} Flags</div></div>", unsafe_allow_html=True)
+        with m2:
+            st.markdown(f"<div class='metric-card'><div class='metric-title'>Est. VO2Max</div><div class='metric-value'>{estimated_vo2:.1f}</div></div>", unsafe_allow_html=True)
+        with m3:
+            st.markdown(f"<div class='metric-card'><div class='metric-title'>Jump Power</div><div class='metric-value'>{cmj_height:.1f} cm</div></div>", unsafe_allow_html=True)
+        with m4:
+            st.markdown(f"<div class='metric-card'><div class='metric-title'>Selected Tools</div><div class='metric-value'>{len(equipment_selected)} Available</div></div>", unsafe_allow_html=True)
 
-# -----------------------------------------------------------------------------
-# PAGE 5: 1-MONTH PERIODIZED PLAN GENERATOR
-# -----------------------------------------------------------------------------
-elif page == "5. 1-Month Plan Generator":
-    st.subheader("Periodized 1-Month Program Builder")
-    
-    plan_col1, plan_col2, plan_col3 = st.columns(3)
-    with plan_col1:
-        gym_days = st.selectbox("Gym Training Days / Week (Coach Choice)", [2, 3, 4, 5], index=1)
-    with plan_col2:
-        session_focus = st.selectbox("Primary Microcycle Focus", ["Hypertrophy / Base", "Max Strength", "Power / Velocity", "Rehab / Movement Efficiency"])
-    with plan_col3:
-        auto_adjust = st.button("🔄 Regenerate Dynamic Plan")
+        st.markdown("---")
+        
+        # --- 5-TIER DAILY SESSION STRUCTURE DISPLAY ---
+        st.subheader("🏋️ Daily 5-Tier Workout Structure Architecture")
+        
+        t1, t2, t3, t4, t5 = st.tabs([
+            "Tier 1: Mobility & Priming",
+            "Tier 2: Power & Speed",
+            "Tier 3: Strength & Hypertrophy",
+            "Tier 4: Conditioning / ESD",
+            "Tier 5: Down-Regulation"
+        ])
+        
+        with t1:
+            st.markdown("#### 🧘 Corrective Mobility & Priming Block")
+            if dn_patterns:
+                st.warning(f"Targeting active SFMA restrictions: {', '.join([p.split('.')[1] for p in dn_patterns])}")
+                st.write("• **90/90 Hip Rotational Flow** - 2 sets x 8 reps/side")
+                st.write("• **Thoracic Spine Extension & CARs** - 2 sets x 10 reps (using Foam Roller)")
+                st.write("• **Ankle Dorsiflexion Wall Mobilization** - 2 sets x 12 reps")
+            else:
+                st.write("• **Full Body Dynamic World's Greatest Stretch** - 2 sets x 5 reps/side")
+                st.write("• **Band-Resisted Glute Activation Bridges** - 2 sets x 15 reps")
 
-    st.markdown("---")
-    
-    st.markdown("##### Active Programming Rules Applied:")
-    rule_text = f"• **Gym Days:** {gym_days} Days/Week | **External Practice:** {st.session_state.total_external_hours} hrs/week\n"
-    if st.session_state.in_season:
-        rule_text += "• **In-Season Capping:** Overall volume reduced by 35%. Peak intensity limited to 82.5% 1RM.\n"
-    if len(st.session_state.blacklisted_movements) > 0:
-        rule_text += f"• **Exercise Blacklist Active:** Replacing {', '.join(st.session_state.blacklisted_movements)} with safe patterns.\n"
-    st.markdown(rule_text)
+        with t2:
+            st.markdown("#### ⚡ Neuromuscular Speed, Power & Deceleration")
+            if "Dynamic Knee Valgus (Cave)" in landing_flaws or "Stiff Landing (Poor Force Absorption)" in landing_flaws:
+                st.error("⚠️ Landing mechanics risk detected: High-impact drop jumps BLACKLISTED. Substituted with stick deceleration.")
+                st.write("• **TRX-Assisted Single-Leg Stick Landings** - 3 sets x 5 reps/side")
+                st.write("• **Medicine Ball Dynamic Chest Passes** - 3 sets x 6 reps")
+            else:
+                st.write("• **Countermovement Box Jumps** - 4 sets x 3 reps")
+                st.write("• **Med-Ball Rotational Wall Throws** - 3 sets x 5 reps/side")
 
-    main_squat_sub = "Barbell Back Squat"
-    main_hinge_sub = "Barbell Deadlift"
-    
-    if "Barbell Back Squat" in st.session_state.blacklisted_movements or "Axial Compression" in st.session_state.blacklisted_movements:
-        main_squat_sub = "Belt Squat OR Banded Spanish Box Squat (Zero Axial Load)"
-    if "Floor Deadlift / Spinal Shear" in st.session_state.blacklisted_movements or "Axial Compression" in st.session_state.blacklisted_movements:
-        main_hinge_sub = "Elevated Trap Bar Deadlift OR Single-Leg RDL"
+        with t3:
+            st.markdown("#### 🏋️ Main Functional Strength Component")
+            st.write(f"Adapted for available tools: {', '.join(equipment_selected)}")
+            st.write("• **Primary Hinge:** Kettlebell / Barbell Romanian Deadlifts - 4 sets x 8 reps @ RPE 8")
+            st.write("• **Primary Push:** DB / Cable Neutral Grip Overhead Press - 3 sets x 10 reps")
+            st.write("• **Unilateral Pull:** Single-Arm Cable / Kettlebell Rows - 3 sets x 10 reps/side")
 
-    st.markdown(f"### 4-Week Microcycle Matrix ({gym_days} Days / Week)")
-    weeks = ["Week 1: Accumulation / Isometrics", "Week 2: Intensification / Eccentrics", "Week 3: Peak Load / Explosive", "Week 4: Deload & Re-Test"]
-    
-    for w_idx, week_title in enumerate(weeks):
-        with st.expander(f"📌 {week_title}", expanded=(w_idx == 0)):
-            days_data = []
-            for d in range(1, gym_days + 1):
-                if d == 1:
-                    focus = "Lower Body Force & Trunk"
-                    ex1 = f"Lower Compound: {main_squat_sub}"
-                    ex2 = "Unilateral: Bulgarian Split Squat"
-                    ex3 = "SMR Quads & Hip Flexors"
-                elif d == 2:
-                    focus = "Upper Body Power & Core"
-                    ex1 = "Upper Press: Neutral Grip DB Bench Press"
-                    ex2 = "Upper Pull: Chest Supported T-Bar Row"
-                    ex3 = "Core: Pallof Press Anti-Rotation Holds"
-                elif d == 3:
-                    focus = "Posterior Chain & Speed"
-                    ex1 = f"Hinge Compound: {main_hinge_sub}"
-                    ex2 = "Hamstring: Single-Leg Isometric Hamstring Bridge"
-                    ex3 = "Power: Low-Impact Concentric Box Jumps"
-                else:
-                    focus = "Full Body Dynamic / Conditioning"
-                    ex1 = "Multi-planar Lunge Complex"
-                    ex2 = "Active Mobility Circuit"
-                    ex3 = "Low-Impact Bike Ergometer HIIT"
-                    
-                days_data.append({
-                    "Day": f"Day {d}",
-                    "Session Focus": focus,
-                    "Primary Exercise Pattern": ex1,
-                    "Accessory / Corrective": ex2,
-                    "Recovery / Mobility": ex3,
-                    "Volume": "2-3 Sets" if (st.session_state.in_season or st.session_state.total_external_hours >= 10) else "3-4 Sets",
-                    "Intensity": "RPE 6-7" if w_idx == 3 else ("RPE 7" if st.session_state.in_season else "RPE 8-9")
-                })
-            
-            df_plan = pd.DataFrame(days_data)
-            st.table(df_plan)
+        with t4:
+            st.markdown("#### 🫁 Energy System Development (ESD) & Endurance")
+            if estimated_vo2 < 45.0:
+                st.info("Aerobic base focus based on Cooper Test output:")
+                st.write("• **AirBike / Rower Zone 2 Aerobic Intervals:** 20 mins @ 65-75% HR Max")
+            else:
+                st.write("• **High-Intensity Lactic Intervals:** 10 sec Sprint / 50 sec Rest x 8 rounds")
 
-    st.markdown("---")
-    st.download_button(
-        label="📥 Export Full Assessment & 1-Month Plan (CSV)",
-        data=df_plan.to_csv(index=False),
-        file_name="Athlete_IQ_Plan.csv",
-        mime="text/csv"
-    )
+        with t5:
+            st.markdown("#### 🧘 Parasympathetic Recovery & Regeneration")
+            st.write("• **Box Breathing (4-4-4-4 tempo):** 3-5 minutes lying supine")
+            st.write("• **Lower Limb SMR Foam Rolling:** 2 minutes per leg (Calves & Quadriceps)")
+
+        # --- 4-WEEK PERIODIZATION SCHEDULE TABLE ---
+        st.markdown("---")
+        st.subheader("📅 4-Week Periodized Macro-Structure")
+        
+        plan_df = pd.DataFrame({
+            "Week": ["Week 1: Accumulation", "Week 2: Loading", "Week 3: Overreach", "Week 4: Deload / Re-Test"],
+            "Intensity (% 1RM / RPE)": ["70-75% (RPE 7)", "75-80% (RPE 8)", "80-85% (RPE 9)", "60-65% (RPE 5)"],
+            "Primary Focus": [
+                "Movement Quality & Structural Balance",
+                "Force Production & Speed Development",
+                "Maximal Aerobic & Muscular Output",
+                "Recovery, Taper & Re-Assessment"
+            ],
+            "Volume (Sets x Reps)": ["3-4 Sets x 10-12 Reps", "4 Sets x 8-10 Reps", "4-5 Sets x 6-8 Reps", "2-3 Sets x 8 Reps"]
+        })
+        
+        st.table(plan_df)
