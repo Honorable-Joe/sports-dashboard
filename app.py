@@ -4,7 +4,7 @@ import json
 from datetime import datetime
 
 # ==========================================
-# 1. PAGE CONFIG & HIGH-ENERGY STYLING
+# 1. PAGE CONFIG & ATHLETIC STYLING WITH BACKGROUND
 # ==========================================
 st.set_page_config(
     page_title="Athlete-IQ Performance Engine",
@@ -13,24 +13,29 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# Custom Styling with Dark Athletic Background Image
 st.markdown("""
 <style>
-    /* Global Page Styling */
+    /* Athletic Background with semi-transparent overlay */
     .stApp {
-        background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #020617 100%);
+        background: linear-gradient(rgba(15, 23, 42, 0.88), rgba(2, 6, 23, 0.94)), 
+                    url('https://images.unsplash.com/photo-1517838277536-f5f99be501cd?q=80&w=1920&auto=format&fit=crop');
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
         color: #f8fafc;
         font-family: 'Inter', system-ui, sans-serif;
     }
     
-    /* Neon Glow Cards */
+    /* Neon Glassmorphism Cards */
     .metric-card {
-        background: rgba(30, 41, 59, 0.75);
+        background: rgba(30, 41, 59, 0.85);
         border: 1px solid rgba(56, 189, 248, 0.35);
         border-radius: 12px;
         padding: 16px;
-        box-shadow: 0 4px 20px rgba(14, 165, 233, 0.15);
-        backdrop-filter: blur(8px);
-        margin-bottom: 12px;
+        box-shadow: 0 4px 20px rgba(14, 165, 233, 0.2);
+        backdrop-filter: blur(10px);
+        margin-bottom: 15px;
     }
     
     .metric-title {
@@ -39,13 +44,6 @@ st.markdown("""
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 1px;
-    }
-    
-    .metric-value {
-        color: #f3f4f6;
-        font-size: 1.4rem;
-        font-weight: 800;
-        margin-top: 4px;
     }
 
     /* Section Banner */
@@ -58,12 +56,12 @@ st.markdown("""
         font-size: 1.25rem;
         margin-top: 10px;
         margin-bottom: 15px;
-        box-shadow: 0 4px 15px rgba(168, 85, 247, 0.3);
+        box-shadow: 0 4px 15px rgba(168, 85, 247, 0.4);
     }
     
-    /* Rationale Box */
+    /* Rationale & Safety Box */
     .scientific-note {
-        background-color: rgba(15, 23, 42, 0.85);
+        background-color: rgba(15, 23, 42, 0.92);
         border-left: 4px solid #38bdf8;
         padding: 14px 18px;
         border-radius: 6px;
@@ -71,6 +69,14 @@ st.markdown("""
         margin-bottom: 20px;
         font-size: 0.95rem;
         line-height: 1.5;
+    }
+
+    .injury-alert {
+        background-color: rgba(225, 29, 72, 0.25);
+        border-left: 4px solid #f43f5e;
+        padding: 12px 16px;
+        border-radius: 6px;
+        margin-bottom: 15px;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -83,10 +89,10 @@ if "current_assessment" not in st.session_state:
     st.session_state.current_assessment = {}
 
 # ==========================================
-# 2. APPLICATION HEADER
+# 2. APPLICATION HEADER & AUTHOR CREDITS
 # ==========================================
 st.markdown("<h1 style='text-align: center; color: #38bdf8; font-weight: 900; margin-bottom: 0px;'>⚡ ATHLETE-IQ PERFORMANCE ENGINE</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align: center; color: #a855f7; font-weight: 700; font-size: 1.1rem;'>Total Athletic Development & Assessment System</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: #a855f7; font-weight: 700; font-size: 1.1rem;'>Developed by: Your Name / S&C Lead</p>", unsafe_allow_html=True)
 st.markdown("---")
 
 # ==========================================
@@ -97,7 +103,7 @@ active_module = st.sidebar.radio(
     "Jump to Module:",
     [
         "📋 1. Demographics & Coach Sign-off",
-        "⚽ 2. Club Load & Injury Profile",
+        "⚽ 2. Club Load & Injury Diagnostics",
         "🩺 3. SFMA & Posture Assessment",
         "💥 4. Power, Speed & Capacity",
         "📈 5. Saved Records & Follow-Up",
@@ -140,7 +146,6 @@ if active_module == "📋 1. Demographics & Coach Sign-off":
         assessment_type = st.selectbox("Assessment Phase", ["Baseline (Initial)", "Mid-Phase Follow-Up", "Re-Assessment (Post-Block)"])
         training_years = st.number_input("Training History (Years)", 0, 30, 3)
 
-    # Save to dynamic memory
     st.session_state.current_assessment.update({
         "athlete_name": athlete_name,
         "evaluating_coach": evaluating_coach,
@@ -157,7 +162,7 @@ if active_module == "📋 1. Demographics & Coach Sign-off":
 # ------------------------------------------
 # MODULE 2: CLUB LOAD & INJURY DIAGNOSTICS
 # ------------------------------------------
-elif active_module == "⚽ 2. Club Load & Injury Profile":
+elif active_module == "⚽ 2. Club Load & Injury Diagnostics":
     st.markdown("<div class='banner-header'>⚽ Club Training Load & Clinical Injury Diagnostics</div>", unsafe_allow_html=True)
     
     col1, col2 = st.columns(2)
@@ -172,11 +177,11 @@ elif active_module == "⚽ 2. Club Load & Injury Profile":
         st.session_state.current_assessment["total_club_hours"] = total_club_hours
 
         if total_club_hours >= 10:
-            st.warning(f"⚠️ High Club Load Exposure: {total_club_hours} hrs/week. App will scale strength sessions to 2 days/week to prevent overtraining.")
+            st.warning(f"⚠️ High Club Load Exposure: {total_club_hours} hrs/week. App will scale strength sessions to 2 days/week.")
         elif total_club_hours >= 6:
             st.info(f"📊 Moderate Club Load Exposure: {total_club_hours} hrs/week. App will recommend 3 days/week.")
         else:
-            st.success(f"✅ Low External Exposure: {total_club_hours} hrs/week. App will recommend 3 to 4 days/week for maximum development.")
+            st.success(f"✅ Low External Exposure: {total_club_hours} hrs/week. App will recommend 3 to 4 days/week.")
 
     with col2:
         st.subheader("🩺 Injury History & Current Limitations")
@@ -188,7 +193,11 @@ elif active_module == "⚽ 2. Club Load & Injury Profile":
         
         if has_injury == "Yes":
             injury_site = st.selectbox("Injury Site", ["Ankle", "Knee (ACL/Patellar)", "Hamstring/Groin", "Lumbar Spine", "Shoulder", "Elbow/Wrist"])
-            injury_mechanism = st.radio("Mechanism of Injury", ["Acute Contact / Traumatic", "Overuse / Repetitive Stress"], horizontal=True)
+            injury_mechanism = st.radio("Mechanism of Injury", [
+                "Acute Contact / Traumatic (High impact force)", 
+                "Overuse / Repetitive Stress (Volume spike / fatigued loading)",
+                "Non-Contact Biomechanical / Direction Change"
+            ])
             still_affects = st.radio("Are symptoms currently present during training?", ["Yes - Active Symptoms", "No - Cleared / Asymptomatic"], horizontal=True)
             
         st.session_state.current_assessment.update({
@@ -199,16 +208,17 @@ elif active_module == "⚽ 2. Club Load & Injury Profile":
         })
 
 # ------------------------------------------
-# MODULE 3: SFMA & POSTURE MATRIX
+# MODULE 3: SFMA & POSTURE ASSESSMENT
 # ------------------------------------------
 elif active_module == "🩺 3. SFMA & Posture Assessment":
-    st.markdown("<div class='banner-header'>🩺 Movement Quality & Posture Assessment</div>", unsafe_allow_html=True)
+    st.markdown("<div class='banner-header'>🩺 Movement Quality & Comprehensive Posture Assessment</div>", unsafe_allow_html=True)
     
     st.subheader("1. SFMA Screen Top-Tier Flags")
     c1, c2, c3 = st.columns(3)
     with c1:
         cervical = st.selectbox("Cervical Spine Pattern", ["Functional Non-Painful", "Dysfunctional Non-Painful", "Dysfunctional Painful"])
         shoulder = st.selectbox("Upper Extremity Reach", ["Functional Non-Painful", "Dysfunctional Non-Painful", "Dysfunctional Painful"])
+        rotation = st.selectbox("Multi-Segmental Rotation", ["Functional Non-Painful", "Dysfunctional Non-Painful", "Dysfunctional Painful"])
     with c2:
         flexion = st.selectbox("Multi-Segmental Flexion (Toe Touch)", ["Functional Non-Painful", "Dysfunctional Non-Painful", "Dysfunctional Painful"])
         extension = st.selectbox("Multi-Segmental Extension", ["Functional Non-Painful", "Dysfunctional Non-Painful", "Dysfunctional Painful"])
@@ -217,18 +227,25 @@ elif active_module == "🩺 3. SFMA & Posture Assessment":
         overhead_squat = st.selectbox("Deep Overhead Squat Pattern", ["Functional Non-Painful", "Dysfunctional Non-Painful", "Dysfunctional Painful"])
 
     st.subheader("2. Static Posture Deviations")
-    p1, p2 = st.columns(2)
+    p1, p2, p3 = st.columns(3)
     with p1:
         pelvis = st.selectbox("Pelvic Alignment", ["Neutral Pelvis", "Anterior Pelvic Tilt", "Posterior Pelvic Tilt"])
         knee_align = st.selectbox("Knee Alignment", ["Neutral", "Genu Valgus (Knock-Knees)", "Genu Varum (Bow-Legged)"])
     with p2:
         shoulder_align = st.selectbox("Shoulder Position", ["Symmetrical Neutral", "Forward Rounded (Protracted)", "Asymmetrical Elevation"])
         foot_arch = st.selectbox("Foot Arch", ["Normal Arch", "Collapsed Arch (Pronated)", "High Arch (Supinated)"])
+    with p3:
+        head_align = st.selectbox("Head & Neck Position", ["Neutral Alignment", "Forward Head Posture"])
+        thoracic_spine = st.selectbox("Thoracic Spine", ["Normal Curve", "Increased Kyphosis (Hunchback)"])
 
     st.session_state.current_assessment.update({
         "sfma_squat": overhead_squat,
+        "sfma_flexion": flexion,
+        "sfma_extension": extension,
         "pelvis": pelvis,
-        "knee_align": knee_align
+        "knee_align": knee_align,
+        "foot_arch": foot_arch,
+        "shoulder_align": shoulder_align
     })
 
 # ------------------------------------------
@@ -326,50 +343,83 @@ elif active_module == "🚀 6. GENERATE 1-MONTH PLAN":
         club_days = data.get("club_days", 4)
         cmj = data.get("cmj", 42.0)
         pushups = data.get("pushups", 35)
-        pullups = data.get("pullups", 12)
-        vo2 = data.get("vo2max", 46.8)
-        injury_site = data.get("injury_site", "None")
-        still_affects = data.get("still_affects", "No")
         
-        # --- SCIENTIFIC FREQUENCY & REGULATION DECISION ENGINE ---
+        # Injury & Posture Details
+        has_injury = data.get("has_injury", "No")
+        injury_site = data.get("injury_site", "None")
+        injury_mechanism = data.get("injury_mechanism", "N/A")
+        still_affects = data.get("still_affects", "No")
+        knee_align = data.get("knee_align", "Neutral")
+        pelvis = data.get("pelvis", "Neutral Pelvis")
+
+        # --- INJURY & MECHANISM SAFETY MODIFIERS ---
+        injury_notes = []
+        hinge_exercise = "Barbell / DB Romanian Deadlift"
+        squat_exercise = "Safety Bar / Goblet Squat"
+        plyo_exercise = "Countermovement Box Jumps"
+        
+        if has_injury == "Yes":
+            injury_notes.append(f"⚠️ **Injury Protocol Active ({injury_site})**: Mechanism identified as '{injury_mechanism}'.")
+            if "Overuse" in injury_mechanism:
+                injury_notes.append("• **Overuse Modifier**: Reduced overall eccentric volume and lowered initial load by 15% to manage tendon/muscle stress.")
+            elif "Contact" in injury_mechanism or "Traumatic" in injury_mechanism:
+                injury_notes.append("• **Traumatic Recovery Modifier**: Substituted high-impact landings with controlled isometric holds & stable landings.")
+                plyo_exercise = "Non-Countermovement Jump to Box (Controlled Soft Landing)"
+
+            if injury_site == "Hamstring/Groin":
+                hinge_exercise = "Single-Leg BFR Hip Thrust / Trap Bar Deadlift (High Handles)"
+            elif injury_site == "Knee (ACL/Patellar)":
+                squat_exercise = "Box Squat (Vertical Shin Angle) / Step-ups"
+            elif injury_site == "Lumbar Spine":
+                hinge_exercise = "Chest-Supported DB Row & Hip Extensions (Zero Axial Loading)"
+
+        # Posture Modifiers
+        if knee_align == "Genu Valgus (Knock-Knees)":
+            injury_notes.append("• **Posture Modifier (Genu Valgus)**: Added Banded Clamshells & Glute Medius activation prior to all jump/squat movements.")
+        if pelvis == "Anterior Pelvic Tilt":
+            injury_notes.append("• **Posture Modifier (Anterior Pelvic Tilt)**: Integrated Rear Foot Elevated Hip Flexor Mobilization & Anti-Extension Core work.")
+
+        # --- FREQUENCY CALCULATION ---
         if club_hours >= 10:
             recommended_days = 2
-            fatigue_reduction = 0.88 # 12% lower load to avoid overtraining
-            freq_rationale = f"Due to heavy club exposure ({club_hours} hrs/week across {club_days} days), S&C frequency is set to **2 Days/Week** to avoid overtraining and injury (Gabbett's Acute:Chronic Workload Ratio)."
+            fatigue_reduction = 0.88
+            freq_rationale = f"Heavy club exposure ({club_hours} hrs/week). S&C set to **2 Days/Week** to prevent acute-on-chronic overtraining spikes."
         elif club_hours >= 6:
             recommended_days = 3
             fatigue_reduction = 0.95
-            freq_rationale = f"Moderate club exposure ({club_hours} hrs/week). S&C frequency is set to **3 Days/Week** for optimal adaptation without central fatigue build-up."
+            freq_rationale = f"Moderate club exposure ({club_hours} hrs/week). S&C set to **3 Days/Week** for optimal adaptation."
         else:
             recommended_days = 4
             fatigue_reduction = 1.00
-            freq_rationale = f"Low external club exposure ({club_hours} hrs/week). S&C frequency is set to **4 Days/Week** to maximize all athletic components."
+            freq_rationale = f"Low external club exposure ({club_hours} hrs/week). S&C set to **4 Days/Week** to maximize athletic development."
 
-        # Compute Load Targets based on Assessment Metrics
-        base_squat = round((weight * 0.80 * (cmj / 40.0) * fatigue_reduction), 1)
+        # Dynamic Load Targets
         base_press = round((weight * 0.45 * (pushups / 30.0) * fatigue_reduction), 1)
-        base_rdl = round((weight * 0.90 * (cmj / 40.0) * fatigue_reduction), 1)
+        base_rdl = round((weight * 0.85 * (cmj / 40.0) * fatigue_reduction), 1)
 
-        # Overview Display
+        # Display Athlete Header Card
         st.markdown(f"""
         <div class='metric-card'>
             <h3 style='margin:0; color:#38bdf8;'>👤 Athlete: {name} | 🧢 Evaluating Coach: {coach}</h3>
-            <p style='margin:5px 0 0 0; color:#cbd5e1;'>Recommended S&C Training Days: <b>{recommended_days} Days / Week</b> | Club Exposure: {club_hours} hrs/wk</p>
+            <p style='margin:5px 0 0 0; color:#cbd5e1;'>Prescribed S&C Frequency: <b>{recommended_days} Days / Week</b> | Club Load: {club_hours} hrs/wk</p>
         </div>
         """, unsafe_allow_html=True)
-        
-        st.info(f"💡 **Training Frequency Logic:** {freq_rationale}")
+
+        if injury_notes:
+            st.markdown("<div class='injury-alert'>" + "<br>".join(injury_notes) + "</div>", unsafe_allow_html=True)
+            
+        st.info(f"💡 **Training Load Engine:** {freq_rationale}")
 
         st.markdown("---")
-        st.subheader("🗓️ 1-Month Week-by-Week Detailed Prescriptive Plan")
+        st.subheader("🗓️ 1-Month Week-by-Week Detailed Prescriptive Schedule")
 
         # --------------------------------------
         # WEEK 1
         # --------------------------------------
-        with st.expander("📌 WEEK 1: Accumulation & Neuromuscular Priming", expanded=True):
+        with st.expander("📌 WEEK 1: Accumulation & Movement Quality Priming", expanded=True):
             w1_df = pd.DataFrame({
-                "Category / Focus": ["Mobility Priming", "Explosive Power", "Lower Strength (Hinge)", "Upper Strength (Push)", "Unilateral Pull", "Energy Systems (ESD)"],
-                "Exercise Name": ["90/90 Hip Flow & Thoracic CARs", "Countermovement Box Jumps", "Barbell / DB Romanian Deadlift", "DB Neutral Overhead Press", "Single-Arm Cable Row", "AirBike Zone 2 Aerobic Base"],
+                "Category / Focus": ["Mobility Priming", "Explosive Power", "Lower Strength (Hinge/Squat)", "Upper Strength (Push)", "Unilateral Pull", "Energy Systems (ESD)"],
+                "Exercise Name": ["90/90 Hip Flow & Ankle CARs", plyo_exercise, hinge_exercise, "DB Neutral Overhead Press", "Single-Arm Cable Row", "AirBike Zone 2 Aerobic Base"],
                 "Sets x Reps": ["2 x 8 Reps/side", "3 x 4 Reps", "3 x 8 Reps", "3 x 10 Reps", "3 x 10 Reps/side", "15 Mins"],
                 "Prescribed Load": ["Bodyweight", "Bodyweight (Focus Speed)", f"{base_rdl} kg", f"{base_press} kg", f"{round(base_press*0.6, 1)} kg", "65-70% HRMax"],
                 "Equipment": ["Mat", "Plyo Box", "Barbell / DB", "Dumbbells", "Cable Station", "AirBike / Rower"],
@@ -377,60 +427,42 @@ elif active_module == "🚀 6. GENERATE 1-MONTH PLAN":
             })
             st.table(w1_df)
             
-            st.markdown("""
+            st.markdown(f"""
             <div class='scientific-note'>
-                <b>🧬 Week 1 Scientific Basis & Exercise Rationale:</b><br>
-                • <b>Why these exercises?</b> Romanian Deadlifts and Neutral DB Presses were selected to build posterior chain motor control and overhead shoulder stability without overtaxing joints.<br>
-                • <b>Progression Rule:</b> Focus strictly on movement quality and crisp tempo (3-1-1-0). If RPE is under 7, add +2.5kg next week.<br>
-                • <b>Regression Rule:</b> If knee/spine discomfort occurs (or active injury flags trigger), regress RDLs to Hip Thrusts or Kettlebell Deadlifts from blocks.
+                <b>🧬 Week 1 Rationale & Safety Rules:</b><br>
+                • <b>Mechanism Guarding:</b> Exercises selected specifically account for injury site (<i>{injury_site}</i>) and mechanism (<i>{injury_mechanism}</i>). Controlled eccentric velocity prevents mechanical overloading.<br>
+                • <b>Progression Rule:</b> Achieve pristine form with RPE ≤ 7 before increasing load.<br>
+                • <b>Regression Rule:</b> Drop weight by 15% if localized discomfort or technique breakdown occurs.
             </div>
             """, unsafe_allow_html=True)
 
         # --------------------------------------
         # WEEK 2
         # --------------------------------------
-        with st.expander("📌 WEEK 2: Progressive Loading & Capacity Building", expanded=False):
+        with st.expander("📌 WEEK 2: Progressive Loading & Dynamic Capacity", expanded=False):
             w2_df = pd.DataFrame({
-                "Category / Focus": ["Mobility Priming", "Explosive Power", "Lower Strength (Hinge)", "Upper Strength (Push)", "Unilateral Pull", "Energy Systems (ESD)"],
-                "Exercise Name": ["Dynamic World's Greatest Stretch", "Med-Ball Chest Launches", "Barbell / DB Romanian Deadlift", "DB Neutral Overhead Press", "Single-Arm Cable Row", "Aerobic / Lactic Threshold Intervals"],
+                "Category / Focus": ["Mobility Priming", "Explosive Power", "Lower Strength", "Upper Strength", "Unilateral Pull", "Energy Systems (ESD)"],
+                "Exercise Name": ["Dynamic World's Greatest Stretch", "Med-Ball Chest Launch", hinge_exercise, "DB Neutral Overhead Press", "Single-Arm Cable Row", "Lactic Capacity Intervals"],
                 "Sets x Reps": ["2 x 10 Reps/side", "4 x 4 Reps", "4 x 8 Reps", "4 x 8 Reps", "4 x 8 Reps/side", "6 x 45s On / 45s Off"],
                 "Prescribed Load": ["Bodyweight", "4 kg Med-Ball", f"{round(base_rdl * 1.05, 1)} kg", f"{round(base_press * 1.05, 1)} kg", f"{round(base_press * 0.65, 1)} kg", "80-85% HRMax"],
-                "Equipment": ["Mat", "Med-Ball (4kg)", "Barbell / DB", "Dumbbells", "Cable Station", "AirBike / Shuttle Runs"],
+                "Equipment": ["Mat", "Med-Ball (4kg)", "Barbell / DB", "Dumbbells", "Cable Station", "AirBike / Turf"],
                 "Rest": ["30 sec", "90 sec", "120 sec", "90 sec", "60 sec", "60 sec"]
             })
             st.table(w2_df)
-            
-            st.markdown("""
-            <div class='scientific-note'>
-                <b>🧬 Week 2 Scientific Basis & Progression Rationale:</b><br>
-                • <b>Why progressive loading?</b> Load is increased by 5% in accordance with NSCA progressive overload principles to stimulate structural adaptation.<br>
-                • <b>Progression Rule:</b> Maintain technical execution under increased set volume.<br>
-                • <b>Regression Rule:</b> Reduce set volume back to 3 sets if club training fatigue creates performance drop-off during speed drills.
-            </div>
-            """, unsafe_allow_html=True)
 
         # --------------------------------------
         # WEEK 3
         # --------------------------------------
-        with st.expander("📌 WEEK 3: Peak Functional Overreach & Speed-Power Focus", expanded=False):
+        with st.expander("📌 WEEK 3: Peak Functional Overreach & Motor Unit Recruitment", expanded=False):
             w3_df = pd.DataFrame({
-                "Category / Focus": ["Mobility Priming", "Explosive Power", "Lower Strength (Hinge)", "Upper Strength (Push)", "Unilateral Pull", "Energy Systems (ESD)"],
-                "Exercise Name": ["Multi-Planar Ankle & Hip Flow", "Broad Jump to Stick Landing", "Barbell / DB Romanian Deadlift", "DB Neutral Overhead Press", "Weighted Pull-ups / Cable Lat Pulls", "High-Intensity Repeat Sprint Ability"],
+                "Category / Focus": ["Mobility Priming", "Explosive Power", "Lower Strength", "Upper Strength", "Unilateral Pull", "Energy Systems (ESD)"],
+                "Exercise Name": ["Multi-Planar Hip & Ankle Flow", "Broad Jump to Stick Landing", hinge_exercise, "DB Neutral Overhead Press", "Weighted Pull-ups / Lat Pulls", "Repeat Sprint Ability"],
                 "Sets x Reps": ["2 x 10 Reps", "4 x 3 Reps", "4 x 6 Reps", "4 x 6 Reps", "4 x 6 Reps", "8 x 15s All-Out / 45s Rest"],
-                "Prescribed Load": ["Bodyweight", "Bodyweight", f"{round(base_rdl * 1.10, 1)} kg", f"{round(base_press * 1.10, 1)} kg", "Bodyweight + 5kg", "Max Effort"],
-                "Equipment": ["Mat", "Turf / Mat", "Barbell / DB", "Dumbbells", "Pull-Up Bar / Cable", "Turf / Bike"],
+                "Prescribed Load": ["Bodyweight", "Bodyweight", f"{round(base_rdl * 1.10, 1)} kg", f"{round(base_press * 1.10, 1)} kg", "BW + 5kg", "Max Effort"],
+                "Equipment": ["Mat", "Turf", "Barbell / DB", "Dumbbells", "Pull-Up Bar", "Turf / Bike"],
                 "Rest": ["30 sec", "120 sec", "150 sec", "120 sec", "90 sec", "45 sec"]
             })
             st.table(w3_df)
-            
-            st.markdown("""
-            <div class='scientific-note'>
-                <b>🧬 Week 3 Scientific Basis & Peak Rationale:</b><br>
-                • <b>Why Peak Overreach?</b> Week 3 introduces peak intensity (+10% load) with reduced rep counts (6 reps) to train high-threshold motor unit recruitment without excess metabolic damage.<br>
-                • <b>Progression Rule:</b> If bar speed remains fast, athlete is ready for post-block testing.<br>
-                • <b>Regression Rule:</b> Drop load by 10% if technique breaks down on reps 5 and 6.
-            </div>
-            """, unsafe_allow_html=True)
 
         # --------------------------------------
         # WEEK 4
@@ -438,18 +470,18 @@ elif active_module == "🚀 6. GENERATE 1-MONTH PLAN":
         with st.expander("📌 WEEK 4: Deload, Supercompensation & Re-Assessment", expanded=False):
             w4_df = pd.DataFrame({
                 "Category / Focus": ["Mobility Priming", "Decompression", "Lower Strength", "Upper Strength", "Re-Assessment", "Active Recovery"],
-                "Exercise Name": ["Full Body SFMA Correctives", "Light Goblet Squats", "DB Romanian Deadlifts", "Light Overhead DB Press", "CMJ & Push-up Re-Test", "Zone 1 Light Flush"],
+                "Exercise Name": ["SFMA Corrective Pattern Flow", "Light Goblet Squats", hinge_exercise, "Light Overhead DB Press", "CMJ & Push-up Re-Test", "Zone 1 Light Flush"],
                 "Sets x Reps": ["2 x 10 Reps", "2 x 8 Reps", "2 x 8 Reps", "2 x 8 Reps", "3 Max Effort Trials", "15 Mins"],
-                "Prescribed Load": ["Bodyweight", f"{round(base_squat * 0.5, 1)} kg", f"{round(base_rdl * 0.5, 1)} kg", f"{round(base_press * 0.5, 1)} kg", "Bodyweight", "50-60% HRMax"],
-                "Equipment": ["Mat", "Kettlebell", "Dumbbells", "Dumbbells", "Jump Mat / Tape", "Rower / Bike"],
+                "Prescribed Load": ["Bodyweight", f"{round(weight*0.3, 1)} kg", f"{round(base_rdl * 0.5, 1)} kg", f"{round(base_press * 0.5, 1)} kg", "Bodyweight", "50-60% HRMax"],
+                "Equipment": ["Mat", "Kettlebell", "Dumbbells", "Dumbbells", "Jump Mat", "Rower / Bike"],
                 "Rest": ["30 sec", "60 sec", "60 sec", "60 sec", "180 sec", "N/A"]
             })
             st.table(w4_df)
             
-            st.markdown("""
+            st.markdown(f"""
             <div class='scientific-note'>
-                <b>🧬 Week 4 Scientific Basis & Supercompensation Rationale:</b><br>
-                • <b>Why Deload & Re-Test?</b> Volume is dropped by 50% to allow neuromuscular recovery and supercompensation (Bompa & Haff Periodization Model). Re-assessment protocols on Day 3 evaluate progress against baseline metrics.<br>
-                • <b>Follow-Up Action:</b> The assessing coach will log scores into <b>Module 5 (Saved Records & Follow-Up)</b> to quantify percentage gains.
+                <b>🧬 Week 4 Deload & Re-Assessment Rule:</b><br>
+                • <b>Supercompensation:</b> Volume dropped by 50% to allow full central nervous system restoration.<br>
+                • <b>Follow-Up Action:</b> Evaluating Coach <b>{coach}</b> will record post-block scores into Module 5 to track athlete evolution and percentage gains.
             </div>
             """, unsafe_allow_html=True)
