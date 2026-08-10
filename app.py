@@ -141,7 +141,7 @@ if "form_data" not in st.session_state:
         "gender": "Female",
         "weight_kg": 75.0,
         "height_cm": 178.0,
-        "sport_type": "Tennis",
+        "sport_type": "Soccer",
         "evaluating_coach": "Coach Ahmed Youssef 👑",
         "assessment_date": datetime.now().date(),
         "assessment_type": "Baseline (Initial)",
@@ -193,8 +193,8 @@ if "form_data" not in st.session_state:
         "p_vert_jump_bi": 45.0,
         "p_vert_jump_uni_l": 22.0,
         "p_vert_jump_uni_r": 21.5,
-        "p_forehand_throw": 9.2,
-        "p_backhand_throw": 8.4,
+        "p_forehand_throw": 0.0,
+        "p_backhand_throw": 0.0,
         # Speed & Agility
         "s_7x7": 14.2,
         "s_tdrill": 10.20,
@@ -449,18 +449,37 @@ elif active_module == "🩺 3. SFMA & Postural Diagnostic Matrix":
     update_state("congenital_defects", v_congenital)
 
 # ------------------------------------------
-# MODULE 4: SPORT-SPECIFIC TESTING SUITE
+# MODULE 4: SPORT-SPECIFIC POWER, SPEED & CAPACITY ASSESSMENT
 # ------------------------------------------
 elif active_module == "💥 4. Sport-Specific Power, Speed & Capacity Assessment":
     st.markdown("<div class='banner-header'>💥 Full Sport-Specific Power, Speed, Agility & Aerobic Capacity Testing</div>", unsafe_allow_html=True)
     
+    # Check current sport to conditionally enable/disable specialized tests
+    current_sport = bind_input("sport_type")
+    is_racket_sport = current_sport in ["Tennis", "Racket Sports (Squash/Padel)"]
+
     c1, c2, c3 = st.columns(3)
     with c1:
         st.subheader("4.1. Explosive Power Suite")
         v_chest_pass = st.number_input("Chest Pass Med-Ball Launch (m)", 1.0, 25.0, value=bind_input("p_chest_pass"))
         v_oh_throw = st.number_input("Overhead Throw Med-Ball (m)", 1.0, 30.0, value=bind_input("p_overhead_throw"))
-        v_fh_throw = st.number_input("Forehand Med-Ball Throw (m)", 1.0, 30.0, value=bind_input("p_forehand_throw"))
-        v_bh_throw = st.number_input("Backhand Med-Ball Throw (m)", 1.0, 30.0, value=bind_input("p_backhand_throw"))
+        
+        # Disabled (greyed out) if not a racket sport
+        v_fh_throw = st.number_input(
+            "Forehand Med-Ball Throw (m)", 
+            0.0, 30.0, 
+            value=bind_input("p_forehand_throw"),
+            disabled=not is_racket_sport,
+            help="Relevant primarily for Racket Sports (Tennis/Squash/Padel)"
+        )
+        v_bh_throw = st.number_input(
+            "Backhand Med-Ball Throw (m)", 
+            0.0, 30.0, 
+            value=bind_input("p_backhand_throw"),
+            disabled=not is_racket_sport,
+            help="Relevant primarily for Racket Sports (Tennis/Squash/Padel)"
+        )
+        
         v_cmj = st.number_input("Countermovement Jump (CMJ) (cm)", 10.0, 100.0, value=bind_input("p_cmj"))
         v_horiz_bi = st.number_input("Horizontal Jump - Both Legs (cm)", 50.0, 400.0, value=bind_input("p_horiz_jump_bi"))
         v_horiz_uni_l = st.number_input("Horizontal Jump - Left Leg (cm)", 20.0, 250.0, value=bind_input("p_horiz_jump_uni_l"))
@@ -642,7 +661,7 @@ elif active_module == "🚀 6. ADAPTIVE PROGRAM GENERATOR":
 
     st.markdown("---")
     st.subheader("🔄 Interactive Exercise Swapping Engine & Database Reference")
-    st.caption("Swap any prescribed exercise based on available equipment from the Master Directory[span_2](start_span)[span_2](end_span)[span_3](start_span)[span_3](end_span):")
+    st.caption("Swap any prescribed exercise based on available equipment from the Master Directory:")
 
     col_sw1, col_sw2, col_sw3 = st.columns(3)
     with col_sw1:
