@@ -1,9 +1,8 @@
-from dataclasses import dataclass, field
+From dataclasses import dataclass, field
 from typing import List, Dict, Optional
-import streamlit as st
 
 # ==========================================
-# 1. CORE DATA STRUCTURES
+# 1. DATA MODELS & ATHLETE PROFILE
 # ==========================================
 
 @dataclass
@@ -112,7 +111,7 @@ class PeriodizationEngine:
             note = "Active Recovery / Deload"
             
         base_1rm = athlete.estimated_1rm.get(exercise.pattern)
-        if base_1rm and base_1rm > 0:
+        if base_1rm:
             target_weight = round(base_1rm * weekly_intensity, 1)
             load_display = f"{target_weight} kg"
         else:
@@ -133,7 +132,7 @@ class PeriodizationEngine:
 
 
 # ==========================================
-# 4. MASTER WORKOUT PROGRAM GENERATOR
+# 4. MASTER WORKOUT GENERATOR
 # ==========================================
 
 class WorkoutProgramEngine:
@@ -142,12 +141,15 @@ class WorkoutProgramEngine:
 
     def generate_full_3_month_plan(self, athlete: Athlete, movement_patterns: List[str]) -> Dict:
         macrocycle = {}
+        
         for month in [1, 2, 3]:
             month_key = f"Month_{month}"
             macrocycle[month_key] = {}
+            
             for week in range(1, 5):
                 week_key = f"Week_{week}"
                 weekly_prescriptions = []
+                
                 for pattern in movement_patterns:
                     exercise = self.filter_engine.get_valid_exercise(pattern, month, athlete)
                     if exercise:
@@ -159,12 +161,14 @@ class WorkoutProgramEngine:
                             "pattern": pattern, 
                             "error": "No safe exercise found matching equipment and mobility profile."
                         })
+                        
                 macrocycle[month_key][week_key] = weekly_prescriptions
+                
         return macrocycle
 
 
 # ==========================================
-# 5. SAMPLE EXERCISE DATABASE
+# 5. SAMPLE DATABASE & TEST EXECUTION
 # ==========================================
 
 exercise_database = [
@@ -194,124 +198,37 @@ exercise_database = [
     Exercise("ex17", "Cable Hip Thrust", "Hinge", "cables", [], 3)
 ]
 
-
-# ==========================================
-# 6. STREAMLIT FRONTEND & UI ENGINE
-# ==========================================
-
-st.set_page_config(page_title="Interlocking Workout Engine", page_icon="🏋️", layout="wide")
-
-st.title("🏋️ Interlocking Workout Engine")
-st.caption("Diagnostic screening, periodization, and automated exercise rotation in one connected system.")
-
-# --- SIDEBAR: COLLAPSIBLE EXPANDERS ---
-st.sidebar.header("⚙️ Configuration Panel")
-
-# Group 1: Athlete Profile & 1RMs
-with st.sidebar.expander("👤 Athlete Profile & 1RMs", expanded=False):
-    athlete_name = st.text_input("Athlete Name", value="Jordan")
-    experience_level = st.selectbox("Experience Level", ["Novice", "Intermediate", "Advanced"], index=1)
-    
-    st.markdown("**Estimated 1RMs (kg)**")
-    squat_1rm = st.number_input("Squat 1RM", min_value=0.0, value=140.0, step=2.5)
-    ohp_1rm = st.number_input("Overhead Press 1RM", min_value=0.0, value=70.0, step=2.5)
-    bench_1rm = st.number_input("Bench Press 1RM", min_value=0.0, value=100.0, step=2.5)
-    hinge_1rm = st.number_input("Hinge 1RM", min_value=0.0, value=160.0, step=2.5)
-
-# Group 2: Equipment Pool
-with st.sidebar.expander("🏋️ Equipment Available", expanded=False):
-    selected_equipment = st.multiselect(
-        "Available Tools:",
-        options=["barbell", "dumbbells", "machines", "cables"],
-        default=["barbell", "dumbbells", "machines", "cables"]
+if __name__ == "__main__":
+    # Create an athlete with Ankle and Shoulder restrictions
+    athlete = Athlete(
+        name="Jordan (Restricted Ankle & Shoulder)",
+        experience_level="Intermediate",
+        equipment=["barbell", "dumbbells", "machines", "cables"],
+        mobility=MobilityProfile(ankle_dorsiflexion="FAIL", overhead_flexion="FAIL", hip_extension="PASS"),
+        estimated_1rm={
+            "Squat": 140.0, 
+            "Overhead Press": 70.0, 
+            "Horizontal Push": 100.0,
+            "Hinge": 160.0
+        }
     )
 
-# Group 3: Joint Mobility Screening (Expanded by default for quick access)
-with st.sidebar.expander("🩺 Joint Mobility Screening", expanded=True):
-    st.caption("Flag failed tests to automatically filter contraindicated lifts.")
-    ankle_status = st.radio("Ankle Dorsiflexion", ["PASS", "FAIL"], index=1, help="Knee-to-wall test (<10cm fails)")
-    overhead_status = st.radio("Overhead Flexion", ["PASS", "FAIL"], index=1, help="Back-to-wall thumb touch")
-    hip_status = st.radio("Hip Extension", ["PASS", "FAIL"], index=0, help="Thomas test for tight hip flexors")
+    patterns_to_train = ["Squat", "Overhead Press", "Horizontal Push", "Hinge"]
+    engine = WorkoutProgramEngine(exercise_database)
+    program = engine.generate_full_3_month_plan(athlete, patterns_to_train)
 
-# Group 4: Target Patterns & Timeline
-with st.sidebar.expander("🎯 Target Patterns & Timeline", expanded=False):
-    selected_patterns = st.multiselect(
-        "Movement Patterns:",
-        options=["Squat", "Overhead Press", "Horizontal Push", "Hinge"],
-        default=["Squat", "Overhead Press", "Horizontal Push", "Hinge"]
-    )
-    st.divider()
-    selected_month = st.selectbox("View Month", [1, 2, 3], index=0)
-    selected_week = st.slider("View Week", min_value=1, max_value=4, value=1)
+    # Print summary output for Month 1 and Month 2
+    for month_key, weeks in program.items():
+        print(f"\n========================================================")
+        print(f"               PROGRAM OUTPUT: {month_key.upper()}")
+        print(f"========================================================")
+        
+        for week_key, exercises in weeks.items():
+            print(f"\n  --- {week_key.upper()} ---")
+            for item in exercises:
+                if "error" in item:
+                    print(f"   * [{item['pattern']}] ERROR: {item['error']}")
+                else:
+                    print(f"   * [{item['pattern']}] {item['exercise']} ({item['equipment'].upper()})")
+                    print(f"     Rx: {item['sets']} sets x {item['reps']} reps @ {item['target_load']} ({item['intensity_pct']} 1RM) | Tempo: {item['tempo']} | ({item['weekly_note']})")
 
-
-# ==========================================
-# 7. EXECUTION & DASHBOARD RENDERING
-# ==========================================
-
-# Instantiate Athlete Object
-athlete = Athlete(
-    name=athlete_name,
-    experience_level=experience_level,
-    equipment=selected_equipment,
-    mobility=MobilityProfile(
-        ankle_dorsiflexion=ankle_status,
-        overhead_flexion=overhead_status,
-        hip_extension=hip_status
-    ),
-    estimated_1rm={
-        "Squat": squat_1rm,
-        "Overhead Press": ohp_1rm,
-        "Horizontal Push": bench_1rm,
-        "Hinge": hinge_1rm
-    }
-)
-
-# Run Program Engine
-program_engine = WorkoutProgramEngine(exercise_database)
-full_program = program_engine.generate_full_3_month_plan(athlete, selected_patterns)
-
-# Display Diagnostic Summary Flags
-col_a, col_b, col_c = st.columns(3)
-with col_a:
-    st.metric("Ankle Screening", athlete.mobility.ankle_dorsiflexion, 
-              delta="Restricted" if athlete.mobility.ankle_dorsiflexion == "FAIL" else "Normal", 
-              delta_color="inverse")
-with col_b:
-    st.metric("Shoulder Screening", athlete.mobility.overhead_flexion, 
-              delta="Restricted" if athlete.mobility.overhead_flexion == "FAIL" else "Normal", 
-              delta_color="inverse")
-with col_c:
-    st.metric("Hip Screening", athlete.mobility.hip_extension, 
-              delta="Restricted" if athlete.mobility.hip_extension == "FAIL" else "Normal", 
-              delta_color="inverse")
-
-st.divider()
-
-# Get Prescription for Selected Timeline
-month_key = f"Month_{selected_month}"
-week_key = f"Week_{selected_week}"
-current_prescriptions = full_program[month_key][week_key]
-
-phase_name = PeriodizationEngine.PHASE_CONFIGS[selected_month]["phase"]
-st.subheader(f"📋 {athlete.name}'s Plan — Month {selected_month} ({phase_name}) | Week {selected_week}")
-
-# Render Exercises as Clean Metric Cards
-if not selected_patterns:
-    st.warning("Please select at least one movement pattern from the sidebar options.")
-else:
-    for rx in current_prescriptions:
-        if "error" in rx:
-            st.error(f"❌ **[{rx['pattern']}]**: {rx['error']}")
-        else:
-            with st.container(border=True):
-                c1, c2, c3, c4 = st.columns([2, 1, 1, 1])
-                with c1:
-                    st.markdown(f"### **{rx['exercise']}**")
-                    st.caption(f"Pattern: **{rx['pattern']}** | Tool: **{rx['equipment'].upper()}**")
-                with c2:
-                    st.metric("Target Load", rx['target_load'], delta=rx['intensity_pct'])
-                with c3:
-                    st.metric("Sets & Reps", f"{rx['sets']} × {rx['reps']}")
-                with c4:
-                    st.metric("Tempo / Focus", rx['tempo'], delta=rx['weekly_note'], delta_color="off")
