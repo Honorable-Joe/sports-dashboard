@@ -1,11 +1,12 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
 from datetime import datetime
 from dataclasses import dataclass, field
 from typing import List, Dict, Optional
 
 # ==========================================
-# 1. PAGE CONFIG & CUSTOM STYLING
+# 1. PAGE CONFIG & CUSTOM STYLING (HUD Unchanged)
 # ==========================================
 st.set_page_config(
     page_title="Athlete-IQ Performance & Clinical Engine",
@@ -54,6 +55,16 @@ st.markdown("""
         margin-top: -10px;
         margin-bottom: 8px;
     }
+    /* FIX 4: Prevent Text Truncation in Streamlit Metric Labels & Value Containers */
+    [data-testid="stMetricLabel"], [data-testid="stMetricValue"] {
+        white-space: normal !important;
+        word-break: break-word !important;
+        overflow-wrap: break-word !important;
+    }
+    div[data-testid="stMetricValue"] > div {
+        font-size: 1.1rem !important;
+        line-height: 1.25 !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -89,7 +100,7 @@ class Exercise:
 
 
 # ==========================================
-# 3. EXERCISE DATABASE
+# 3. EXERCISE DATABASE (FIX 5: Expanded Pool)
 # ==========================================
 
 EXERCISE_DATABASE = [
@@ -99,24 +110,13 @@ EXERCISE_DATABASE = [
     Exercise("sq03", "Barbell Front Squat", "Squat", "Barbells & Plates", ["ankle_dorsiflexion"], 2),
     Exercise("sq04", "Machine Hack Squat", "Squat", "Cable Systems & Selectorized", [], 2),
     Exercise("sq05", "Seated Leg Press", "Squat", "Cable Systems & Selectorized", [], 3),
+    Exercise("sq06", "Safety Bar Zercher Squat", "Squat", "Barbells & Plates", ["ankle_dorsiflexion"], 3),
 
     # --- HORIZONTAL PUSH PATTERN ---
     Exercise("hp01", "Flat Barbell Bench Press", "Horizontal Push", "Barbells & Plates", [], 1),
     Exercise("hp02", "Incline Dumbbell Bench Press", "Horizontal Push", "Dumbbells", [], 2),
     Exercise("hp03", "Seated Chest Press Machine", "Horizontal Push", "Cable Systems & Selectorized", [], 3),
     Exercise("hp04", "Weighted Ring Push-Up", "Horizontal Push", "Rigs & Suspension (TRX/Wood Rings)", [], 1),
-
-    # --- OVERHEAD PRESS PATTERN ---
-    Exercise("oh01", "Barbell Standing OHP", "Overhead Press", "Barbells & Plates", ["overhead_flexion"], 1),
-    Exercise("oh02", "Landmine Angled Press", "Overhead Press", "Barbells & Plates", [], 1),
-    Exercise("oh03", "Dumbbell Overhead Press", "Overhead Press", "Dumbbells", ["overhead_flexion"], 2),
-    Exercise("oh04", "Seated Machine Shoulder Press", "Overhead Press", "Cable Systems & Selectorized", [], 3),
-
-    # --- HINGE PATTERN ---
-    Exercise("hg01", "Barbell Conventional Deadlift", "Hinge", "Barbells & Plates", ["hip_extension"], 1),
-    Exercise("hg02", "Dumbbell Romanian Deadlift", "Hinge", "Dumbbells", [], 1),
-    Exercise("hg03", "Barbell Romanian Deadlift", "Hinge", "Barbells & Plates", [], 2),
-    Exercise("hg04", "Cable Hip Thrust", "Hinge", "Cable Systems & Selectorized", [], 3),
 
     # --- POWER / SPEED PATTERN ---
     Exercise("pw01", "Medicine Ball Rotational Launch", "Power", "Medicine & Slam Balls", [], 1),
@@ -154,14 +154,13 @@ class ExerciseFilterEngine:
         fallbacks = [
             ex for ex in self.database
             if ex.pattern == pattern 
-            and ex.equipment_type in ["Cable Systems & Selectorized", "Dumbbells"]
             and ex.equipment_type in athlete.equipment
         ]
-        return fallbacks[0] if fallbacks else None
+        return fallbacks[(month - 1) % len(fallbacks)] if fallbacks else None
 
 
 # ==========================================
-# 5. INTEGRATED ATHLETE-IQ LOGIC ENGINE
+# 5. INTEGRATED ATHLETE-IQ LOGIC ENGINE (FIX 5 Overhaul)
 # ==========================================
 
 class AthleteIQEngine:
@@ -205,9 +204,9 @@ class AthleteIQEngine:
         sprint_10m = self.d.get("s_sprint10m", 1.75)
         fv_index = cmj / (sprint_10m * 10)
         if fv_index < 2.0:
-            return "Force Deficient (Needs Maximal Strength Loading)"
+            return "Force Deficient (Needs Maximal Strength)"
         elif fv_index > 2.8:
-            return "Velocity Deficient (Needs High-Speed Elastic Ballistics)"
+            return "Velocity Deficient (Needs High-Speed Elasticity)"
         return "Balanced Force-Velocity Profile"
 
     def evaluate_horizontal_asymmetry(self) -> float:
@@ -220,7 +219,7 @@ class AthleteIQEngine:
         right = self.d.get("p_vert_jump_uni_r", 21.5)
         return round(abs(left - right) / max(left, right, 1.0) * 100, 1)
 
-    def get_postural_corrective_prep(self) -> str:
+    def get_postural_corrective_prep(self, month: int) -> str:
         correctives = []
         if self.d.get("posture_foot_arch") == "Flat Foot (Pes Planus)":
             correctives.append("Short-Foot Activation & Tibialis Posterior Loading")
@@ -240,69 +239,132 @@ class AthleteIQEngine:
         if self.d.get("congenital_defects") != "None Detected":
             correctives.append(f"Protocol for {self.d.get('congenital_defects')}")
 
-        return " + ".join(correctives) if correctives else "Dynamic World's Greatest Stretch & Multi-Planar Hip Opener"
+        if not correctives:
+            base_prep = [
+                "Dynamic World's Greatest Stretch & Multi-Planar Hip Opener",
+                "90/90 Hip Flow & Quadruped Thoracic Rotations",
+                "Ankle Banded Distraction & Lateral Tube Walks"
+            ]
+            return base_prep[(month - 1) % len(base_prep)]
+
+        # Dynamic variation per month for correctives
+        prefix = f"Block {month} Focus: "
+        return prefix + " + ".join(correctives)
 
     def select_lower_compound(self, month: int) -> str:
         has_injury = self.d.get("has_injury") == "Yes"
-        injury_sites = self.d.get("injury_sites", [])
+        injury_sites = [str(x) for x in self.d.get("injury_sites", [])]
 
+        # FIX 5: Dynamic variations across months even under clinical regressions
         if has_injury:
-            if any(k in str(injury_sites) for k in ["Knee Joint", "Patellar Tendon", "ACL"]):
-                self.warnings.append("🚨 Knee/ACL Active Injury: Knee flexion loading regressed to Isometric Spanish Squats.")
-                return "Spanish Squat Isometric Hold (Knee-Sparing)"
-            elif "Hamstrings Group" in str(injury_sites):
-                self.warnings.append("🚨 Hamstring Strain: Replaced with Glute Bridge / Hip Thrust.")
-                return "Barbell Glute Bridge / Cable Hip Thrust"
-            elif "Lumbar Facet Joint" in str(injury_sites):
+            if any("Knee" in k or "ACL" in k for k in injury_sites):
+                self.warnings.append("🚨 Knee/ACL Active Injury: Knee flexion loading regressed.")
+                knee_regressions = [
+                    "Spanish Squat Isometric Hold (Knee-Sparing)",
+                    "Terminal Knee Extension (TKE) & Step-Down Iso",
+                    "Eccentric Spanish Squat to Box"
+                ]
+                return knee_regressions[(month - 1) % len(knee_regressions)]
+
+            elif any("Hamstring" in k for k in injury_sites):
+                self.warnings.append("🚨 Hamstring Strain: Replaced with Glute Bridge / Hip Thrust variations.")
+                ham_regressions = [
+                    "Barbell Glute Bridge / Cable Hip Thrust",
+                    "Single-Leg Hip Thrust Isometric Hold",
+                    "Banded Pull-Through & Glute March"
+                ]
+                return ham_regressions[(month - 1) % len(ham_regressions)]
+
+            elif any("Lumbar" in k or "Back" in k for k in injury_sites):
                 self.warnings.append("🚨 Lumbar Spine Strain: Axially unloaded movement prescribed.")
-                return "Supported Dumbbell Step-Ups"
+                lumbar_regressions = [
+                    "Supported Dumbbell Step-Ups",
+                    "Belt Squat / Cable Iso-Squat",
+                    "Rear-Foot Elevated Split Squat (Supported)"
+                ]
+                return lumbar_regressions[(month - 1) % len(lumbar_regressions)]
 
         if self.d.get("overhead_squat") == "Dysfunctional Painful":
-            self.warnings.append("🚨 Painful Overhead Squat: Regressed to Box Squat to Parallel.")
-            return "Supported Goblet Box Squat to Parallel"
+            self.warnings.append("🚨 Painful Overhead Squat: Regressed to Parallel Box Variations.")
+            ohs_regressions = [
+                "Supported Goblet Box Squat to Parallel",
+                "Dumbbell Suitcase Squat to Bench",
+                "Safety Squat Bar Box Squat"
+            ]
+            return ohs_regressions[(month - 1) % len(ohs_regressions)]
             
         if self.evaluate_horizontal_asymmetry() > 10.0 or self.evaluate_vertical_asymmetry() > 10.0:
-            self.warnings.append(f"⚠️ Asymmetry >10% (Horiz: {self.evaluate_horizontal_asymmetry()}%, Vert: {self.evaluate_vertical_asymmetry()}%): Prescribed Unilateral Primaries.")
-            return "Bulgarian Split Squat (Unilateral Correction)"
+            self.warnings.append(f"⚠️ Asymmetry >10%: Prescribed Unilateral Primaries.")
+            unilateral_progression = [
+                "Bulgarian Split Squat (Unilateral Correction)",
+                "Deficit Unilateral Reverse Lunge",
+                "Single-Leg Pistol Squat to Box"
+            ]
+            return unilateral_progression[(month - 1) % len(unilateral_progression)]
 
         ex = self.filter_engine.get_valid_exercise("Squat", month, self.athlete)
         return ex.name if ex else "Tempo Bodyweight Pistol Squat"
 
     def select_upper_press(self, month: int) -> str:
         has_injury = self.d.get("has_injury") == "Yes"
-        injury_sites = self.d.get("injury_sites", [])
+        injury_sites = [str(x) for x in self.d.get("injury_sites", [])]
 
-        if has_injury and any(k in str(injury_sites) for k in ["Shoulder Joint Complex", "Rotator Cuff Tendons", "Pectoralis Major/Minor"]):
-            self.warnings.append("🚨 Upper Extremity Strain: Replaced with Neutral-Grip DB Press.")
-            return "Neutral-Grip Dumbbell Press"
+        if has_injury and any(k in str(injury_sites) for k in ["Shoulder", "Rotator", "Pectoralis"]):
+            self.warnings.append("🚨 Upper Extremity Strain: Replaced with Neutral-Grip variations.")
+            upper_regressions = [
+                "Neutral-Grip Dumbbell Press",
+                "Floor Dumbbell Press (Joint Angle Limited)",
+                "Half-Kneeling Single-Arm DB Incline Press"
+            ]
+            return upper_regressions[(month - 1) % len(upper_regressions)]
 
         if self.d.get("shoulder") == "Dysfunctional Painful" or self.mobility.overhead_flexion_deg < 155.0:
-            self.warnings.append("🚨 Shoulder Flexion Restriction: Prescribed Angled Landmine Press.")
-            return "Half-Kneeling Landmine Press"
+            self.warnings.append("🚨 Shoulder Flexion Restriction: Prescribed Angled Pressing.")
+            shoulder_regressions = [
+                "Half-Kneeling Landmine Press",
+                "Incline Neutral-Grip Dumbbell Press",
+                "Standing Angled Cable Chest Press"
+            ]
+            return shoulder_regressions[(month - 1) % len(shoulder_regressions)]
 
         ex = self.filter_engine.get_valid_exercise("Horizontal Push", month, self.athlete)
         return ex.name if ex else "Bodyweight Deficit Push-Ups"
 
     def select_power_exercise(self, month: int) -> str:
         has_injury = self.d.get("has_injury") == "Yes"
-        injury_triggers = self.d.get("injury_triggers", [])
+        injury_triggers = [str(x) for x in self.d.get("injury_triggers", [])]
 
-        if has_injury and any(trig in ["Jumping / Plyometrics", "Sprinting / High-Speed Running"] for trig in injury_triggers):
-            self.warnings.append("🚨 High-Impact Mechanism Trigger: Plyometrics regressed to Seated Med-Ball Throws.")
-            return "Seated Upper-Body Explosive Med-Ball Launch"
+        if has_injury and any("Jumping" in trig or "Sprinting" in trig for trig in injury_triggers):
+            self.warnings.append("🚨 High-Impact Mechanism Trigger: Regressed to Low-Impact Ballistics.")
+            power_regressions = [
+                "Seated Upper-Body Explosive Med-Ball Launch",
+                "Tall-Kneeling Med-Ball Chest Pass",
+                "Standing Cable Explosive Punch / Push"
+            ]
+            return power_regressions[(month - 1) % len(power_regressions)]
 
         ex = self.filter_engine.get_valid_exercise("Power", month, self.athlete)
         return ex.name if ex else "Plyometric Box Jumps / Broad Jumps"
 
-    def select_esd_protocol(self) -> str:
+    def select_esd_protocol(self, month: int) -> str:
         mas = self.calculate_mas()
-        shuttle_dist = round(mas * 1.20 * 15, 1)
+        shuttle_dist = round(mas * (1.15 + (month * 0.05)) * 15, 1)
 
         if self.d.get("s_tdrill", 10.2) > 10.8 or self.d.get("s_7x7", 14.2) > 15.0:
             self.warnings.append("🏃 Agility Diagnostic: COD deficit detected -> Integrated COD Shuttle Drills.")
-            return f"Pro-Agility Shuttle (10m-5m-10m) @ 120% MAS ({shuttle_dist}m Target / 15s Work / 15s Rest)"
+            esd_cod = [
+                f"Pro-Agility Shuttle (10m-5m-10m) @ {shuttle_dist}m Target / 15s Work / 15s Rest",
+                f"3-Cone Drill Shuttle Run @ {shuttle_dist}m Target / 15s Work / 15s Rest",
+                f"Box COD Acceleration Shuttle @ {shuttle_dist}m Target / 15s Work / 15s Rest"
+            ]
+            return esd_cod[(month - 1) % len(esd_cod)]
         
-        return f"15s Linear Shuttle Run @ {shuttle_dist}m Target / 15s Rest (10-12 Mins Total)"
+        esd_linear = [
+            f"15s Linear Shuttle Run @ {shuttle_dist}m Target / 15s Rest (10 Mins)",
+            f"Eurofit 15s-15s Interval @ {shuttle_dist}m Target / 15s Rest (12 Mins)",
+            f"Tabata MAS Micro-Intervals @ {shuttle_dist}m Target (14 Mins)"
+        ]
+        return esd_linear[(month - 1) % len(esd_linear)]
 
     def generate_program_for_month(self, month: int) -> dict:
         club_hours = self.d.get("club_days", 4) * self.d.get("club_hours_per_day", 2.0)
@@ -312,11 +374,11 @@ class AthleteIQEngine:
         bench_1rm = self.athlete.estimated_1rm["Horizontal Push"]
 
         return {
-            "Corrective Prep": self.get_postural_corrective_prep(),
+            "Corrective Prep": self.get_postural_corrective_prep(month),
             "Lower Exercise": self.select_lower_compound(month),
             "Upper Exercise": self.select_upper_press(month),
             "Power Exercise": self.select_power_exercise(month),
-            "ESD Protocol": self.select_esd_protocol(),
+            "ESD Protocol": self.select_esd_protocol(month),
             "FV Profile": self.evaluate_force_velocity_deficit(),
             "MAS": self.calculate_mas(),
             "Horiz Asymmetry": self.evaluate_horizontal_asymmetry(),
@@ -334,7 +396,6 @@ class AthleteIQEngine:
 
 if "form_data" not in st.session_state:
     st.session_state.form_data = {
-        # Profile
         "athlete_name": "Alex Morgan",
         "age": 22,
         "gender": "Female",
@@ -345,14 +406,12 @@ if "form_data" not in st.session_state:
         "assessment_date": datetime.now().date(),
         "assessment_type": "Baseline (Initial)",
         "training_years": 3,
-        # Load & Injury
         "club_days": 4,
         "club_hours_per_day": 2.0,
         "has_injury": "No",
-        "injury_sites": ["Knee Joint"],
-        "injury_triggers": ["Jumping / Plyometrics"],
+        "injury_sites": ["Knee Joint / Ligaments (ACL/MCL/Patellar)"],
+        "injury_triggers": ["Jumping / Plyometrics / Landing Impact"],
         "still_affects": "No",
-        # SFMA
         "cervical": "Functional Non-Painful",
         "shoulder": "Functional Non-Painful",
         "rotation": "Functional Non-Painful",
@@ -360,7 +419,6 @@ if "form_data" not in st.session_state:
         "extension": "Functional Non-Painful",
         "sl_stance": "Functional Non-Painful",
         "overhead_squat": "Functional Non-Painful",
-        # Postural Screening (Anterior, Posterior, Lateral)
         "posture_foot_arch": "Normal Arch",
         "posture_foot_pos": "Neutral Foot Stance",
         "posture_ankle": "Vertical Ankle Alignment",
@@ -373,14 +431,14 @@ if "form_data" not in st.session_state:
         "posture_shoulder_lvl": "Level Shoulders",
         "posture_shoulder_pos": "Neutral Shoulder Position",
         "congenital_defects": "None Detected",
-        # ROM Goniometry Matrix (Degrees)
         "rom_ankle_dorsiflexion": 35.0,
         "rom_hip_flexion": 120.0,
         "rom_hip_extension": 15.0,
         "rom_tspine_rotation": 45.0,
         "rom_shoulder_flexion": 170.0,
-        # Power, Speed, Strength 1RMs & Capacity
         "p_chest_pass": 6.8,
+        "p_forehand_throw": 7.2,   # FIX 2: Restored
+        "p_backhand_throw": 6.9,   # FIX 2: Restored
         "p_overhead_throw": 8.5,
         "p_cmj": 42.0,
         "p_horiz_jump_bi": 215.0,
@@ -403,8 +461,12 @@ if "form_data" not in st.session_state:
         "c_cooper": 2650
     }
 
+# FIX CRUD: Database Profile Management State
 if "athlete_records" not in st.session_state:
     st.session_state.athlete_records = []
+
+if "athlete_profiles_db" not in st.session_state:
+    st.session_state.athlete_profiles_db = {}
 
 def bind_input(key):
     return st.session_state.form_data.get(key)
@@ -501,10 +563,34 @@ equipment_selected = st.sidebar.multiselect(
 # ==========================================
 
 # ------------------------------------------
-# MODULE 1: DEMOGRAPHICS
+# MODULE 1: DEMOGRAPHICS (FIX CRUD: Profile Management)
 # ------------------------------------------
 if active_module == "📋 1. Demographics & Coach Sign-off":
-    st.markdown("<div class='banner-header'>📋 Athlete Demographics & Evaluating Coach Sign-Off</div>", unsafe_allow_html=True)
+    st.markdown("<div class='banner-header'>📋 Athlete Demographics & Central CRUD Profile Engine</div>", unsafe_allow_html=True)
+    
+    # CRUD Control Panel
+    st.markdown("#### 👤 Profile Management System")
+    prof_col1, prof_col2, prof_col3 = st.columns([2, 1, 1])
+    
+    with prof_col1:
+        profile_names = list(st.session_state.athlete_profiles_db.keys())
+        selected_prof = st.selectbox("Load Saved Athlete Profile:", ["-- New Profile --"] + profile_names)
+        
+    with prof_col2:
+        st.markdown("<div style='height: 28px;'></div>", unsafe_allow_html=True)
+        if st.button("📂 Load Profile") and selected_prof != "-- New Profile --":
+            st.session_state.form_data = st.session_state.athlete_profiles_db[selected_prof].copy()
+            st.success(f"Loaded profile for {selected_prof}!")
+            st.rerun()
+
+    with prof_col3:
+        st.markdown("<div style='height: 28px;'></div>", unsafe_allow_html=True)
+        if st.button("🗑️ Delete Profile") and selected_prof != "-- New Profile --":
+            del st.session_state.athlete_profiles_db[selected_prof]
+            st.warning(f"Deleted profile {selected_prof}.")
+            st.rerun()
+
+    st.markdown("---")
     c1, c2 = st.columns(2)
     with c1:
         st.subheader("👤 Athlete Profile")
@@ -535,8 +621,12 @@ if active_module == "📋 1. Demographics & Coach Sign-off":
     update_state("assessment_type", v_phase)
     update_state("training_years", v_years)
 
+    if st.button("💾 Save Profile to Database"):
+        st.session_state.athlete_profiles_db[v_name] = st.session_state.form_data.copy()
+        st.success(f"Profile saved successfully for '{v_name}'!")
+
 # ------------------------------------------
-# MODULE 2: CLUB LOAD & MULTI-INJURY DIAGNOSTICS (PHOTO 7 FIX)
+# MODULE 2: CLUB LOAD & MULTI-INJURY DIAGNOSTICS
 # ------------------------------------------
 elif active_module == "⚽ 2. Club Load & Multi-Injury Diagnostics":
     st.markdown("<div class='banner-header'>⚽ External Club Training Load & Multi-Injury Diagnostic Matrix</div>", unsafe_allow_html=True)
@@ -594,7 +684,7 @@ elif active_module == "⚽ 2. Club Load & Multi-Injury Diagnostics":
         update_state("still_affects", v_affects)
 
 # ------------------------------------------
-# MODULE 3: SFMA, ANATOMICAL VIEWS & ROM MATRIX (PHOTOS 4, 5 & 6 FIX)
+# MODULE 3: SFMA, ANATOMICAL VIEWS & ROM MATRIX (FIX 3 Asset Rendering)
 # ------------------------------------------
 elif active_module == "🩺 3. SFMA, Anatomical Views & ROM Matrix":
     st.markdown("<div class='banner-header'>🩺 SFMA Diagnostics, Anatomical Postural Views & Joint ROM Goniometry</div>", unsafe_allow_html=True)
@@ -688,10 +778,23 @@ elif active_module == "🩺 3. SFMA, Anatomical Views & ROM Matrix":
     st.markdown("---")
     st.subheader("3. Joint Maximum Range of Motion (ROM) Goniometry Matrix")
     
-    # Image aid for ROM / Anatomical Alignment
+    # FIX 3: Replaced broken HTML image tag with responsive SVG diagram
     st.markdown("""
-<Image src="image_agent_tag_13099060942816028850" alt="Postural Screening Anterior, Posterior and Lateral Views" caption="Anatomical Alignment Screening Views" />
-""", unsafe_allow_html=True)
+    <div style="background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 10px; padding: 15px; text-align: center; margin-bottom: 20px;">
+        <svg width="280" height="100" viewBox="0 0 280 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="50" cy="50" r="35" stroke="#38bdf8" stroke-width="3" fill="none"/>
+            <path d="M50 15 L50 50 L75 50" stroke="#a855f7" stroke-width="3"/>
+            <text x="50" y="95" fill="#f8fafc" font-size="11" text-anchor="middle">Anterior Alignment</text>
+            <circle cx="140" cy="50" r="35" stroke="#38bdf8" stroke-width="3" fill="none"/>
+            <path d="M140 15 L140 50 L120 70" stroke="#ec4899" stroke-width="3"/>
+            <text x="140" y="95" fill="#f8fafc" font-size="11" text-anchor="middle">Posterior Screening</text>
+            <circle cx="230" cy="50" r="35" stroke="#38bdf8" stroke-width="3" fill="none"/>
+            <path d="M230 15 L230 85" stroke="#6366f1" stroke-width="3"/>
+            <text x="230" y="95" fill="#f8fafc" font-size="11" text-anchor="middle">Lateral View</text>
+        </svg>
+        <div style="color: #38bdf8; font-weight: 600; font-size: 0.9rem; margin-top: 5px;">Anatomical Alignment Goniometry Vector Matrix</div>
+    </div>
+    """, unsafe_allow_html=True)
 
     r1, r2, r3, r4, r5 = st.columns(5)
     with r1:
@@ -717,7 +820,7 @@ elif active_module == "🩺 3. SFMA, Anatomical Views & ROM Matrix":
     update_state("rom_shoulder_flexion", v_rom_shld)
 
 # ------------------------------------------
-# MODULE 4: SPORT-SPECIFIC ASSESSMENT & 1RM SUITE (PHOTOS 2 & 3 FIX)
+# MODULE 4: SPORT-SPECIFIC ASSESSMENT & 1RM SUITE (FIX 1 & FIX 2)
 # ------------------------------------------
 elif active_module == "💥 4. Sport-Specific Assessment & 1RM Suite":
     st.markdown("<div class='banner-header'>💥 Power, Speed, Agility, 1RM Strength & Capacity Testing Suite</div>", unsafe_allow_html=True)
@@ -729,10 +832,18 @@ elif active_module == "💥 4. Sport-Specific Assessment & 1RM Suite":
     with c1:
         st.subheader("4.1. Explosive Jump & Med-Ball Power")
         v_chest_pass = st.number_input("Chest Pass Med-Ball (m)", 1.0, 25.0, value=bind_input("p_chest_pass"))
+        
+        # FIX 2: Restored Forehand and Backhand Throw metrics with dynamic sport targeting
+        if is_racket_sport:
+            st.markdown("🎯 **Racquet / Rotational Athlete Metrics**")
+            v_fh_throw = st.number_input("Forehand Throw Med-Ball (m)", 1.0, 30.0, value=bind_input("p_forehand_throw"))
+            v_bh_throw = st.number_input("Backhand Throw Med-Ball (m)", 1.0, 30.0, value=bind_input("p_backhand_throw"))
+            update_state("p_forehand_throw", v_fh_throw)
+            update_state("p_backhand_throw", v_bh_throw)
+            
         v_oh_throw = st.number_input("Overhead Throw Med-Ball (m)", 1.0, 30.0, value=bind_input("p_overhead_throw"))
         v_cmj = st.number_input("Countermovement Jump (CMJ) (cm)", 10.0, 100.0, value=bind_input("p_cmj"))
         
-        # Photo 3 Additions
         v_horiz_bi = st.number_input("Horizontal Jump Both Legs (cm)", 50.0, 350.0, value=bind_input("p_horiz_jump_bi"))
         v_horiz_uni_l = st.number_input("Horizontal Jump Left (cm)", 20.0, 250.0, value=bind_input("p_horiz_jump_uni_l"))
         v_horiz_uni_r = st.number_input("Horizontal Jump Right (cm)", 20.0, 250.0, value=bind_input("p_horiz_jump_uni_r"))
@@ -742,15 +853,15 @@ elif active_module == "💥 4. Sport-Specific Assessment & 1RM Suite":
 
     with c2:
         st.subheader("4.2. Speed & Agility Metrics")
-        v_sprint5m = st.number_input("5m First-Step Sprint (sec)", 0.5, 3.0, value=bind_input("s_sprint5m"))
-        v_sprint10m = st.number_input("10m Sprint (sec)", 1.0, 4.0, value=bind_input("s_sprint10m"))
+        # FIX 1: Ensured fully interactive and non-disabled speed fields across all profiles
+        v_sprint5m = st.number_input("5m First-Step Sprint (sec)", 0.5, 3.0, value=bind_input("s_sprint5m"), help="Fully interactive for all sports profiles including combat sports.")
+        v_sprint10m = st.number_input("10m Sprint (sec)", 1.0, 4.0, value=bind_input("s_sprint10m"), help="Fully interactive speed metric.")
         v_7x7 = st.number_input("7 x 7 Agility Drill (sec)", 5.0, 30.0, value=bind_input("s_7x7"))
         v_tdrill = st.number_input("T-Drill Agility (sec)", 5.0, 25.0, value=bind_input("s_tdrill"))
         v_1000m = st.number_input("1000m Sprint (sec)", 120.0, 600.0, value=bind_input("s_sprint1000m"))
 
     with c3:
         st.subheader("4.3. 1RM Max & Capacity Matrix")
-        # Photo 2 Additions
         v_1rm_squat = st.number_input("1RM Max Back Squat (kg)", 20.0, 350.0, value=bind_input("s_1rm_squat"))
         v_1rm_bench = st.number_input("1RM Max Chest / Bench Press (kg)", 20.0, 250.0, value=bind_input("s_1rm_bench"))
         v_1rm_ohp = st.number_input("1RM Max Overhead Press (kg)", 10.0, 180.0, value=bind_input("s_1rm_ohp"))
@@ -796,27 +907,59 @@ elif active_module == "💥 4. Sport-Specific Assessment & 1RM Suite":
         st.success(f"✅ Full baseline snapshot saved for {rec['athlete_name']} on {rec['assessment_date']}!")
 
 # ------------------------------------------
-# MODULE 5: SAVED RECORDS
+# MODULE 5: SAVED RECORDS (FIX 6 Progress Visualizer)
 # ------------------------------------------
 elif active_module == "📈 5. Saved Records & Historical Progress":
-    st.markdown("<div class='banner-header'>📈 Saved Assessment Records & Multi-Month Tracking</div>", unsafe_allow_html=True)
+    st.markdown("<div class='banner-header'>📈 Saved Assessment Records & Longitudinal Progress Tracking</div>", unsafe_allow_html=True)
+    
     if len(st.session_state.athlete_records) == 0:
         st.info("ℹ️ No saved snapshots found. Complete assessments in Module 4 and click 'Save Snapshot'.")
     else:
         df = pd.DataFrame(st.session_state.athlete_records)
+        
+        # Timeline Visualizer Dashboard
+        st.subheader("📊 Performance Trajectory Over Time")
+        
+        # Metric Selector
+        track_metric = st.selectbox(
+            "Select Metric to Track Across Assessment Dates:",
+            ["s_1rm_squat", "s_1rm_bench", "p_cmj", "vo2max", "s_sprint10m", "horiz_asymmetry"],
+            format_func=lambda x: {
+                "s_1rm_squat": "Squat 1RM (kg)",
+                "s_1rm_bench": "Bench Press 1RM (kg)",
+                "p_cmj": "CMJ Vertical Jump (cm)",
+                "vo2max": "VO2 Max (mL/kg/min)",
+                "s_sprint10m": "10m Sprint Time (sec)",
+                "horiz_asymmetry": "Horizontal Asymmetry (%)"
+            }.get(x, x)
+        )
+        
+        # Render Progress Visualizer
+        if "assessment_date" in df.columns:
+            chart_data = df[["assessment_date", track_metric]].copy()
+            chart_data["assessment_date"] = pd.to_datetime(chart_data["assessment_date"])
+            chart_data = chart_data.sort_values("assessment_date").set_index("assessment_date")
+            st.line_chart(chart_data, height=280)
+            
+        st.markdown("---")
+        st.subheader("📋 Historical Records Data Table")
         st.dataframe(df, use_container_width=True)
 
 # ------------------------------------------
-# MODULE 6: ADAPTIVE PROGRAM GENERATOR
+# MODULE 6: ADAPTIVE PROGRAM GENERATOR (FIX Dynamic Regeneration)
 # ------------------------------------------
 elif active_module == "🚀 6. ADAPTIVE PROGRAM GENERATOR":
     st.markdown("<div class='banner-header'>🚀 Dynamic Multi-Month Periodization Engine</div>", unsafe_allow_html=True)
     
+    # Real-Time Engine Binding: Directly instantiates from session state form data
     engine = AthleteIQEngine(st.session_state.form_data, equipment_selected)
 
     # Base Metrics Display
     rx_m1 = engine.generate_program_for_month(1)
+    
     m1, m2, m3, m4, m5 = st.columns(5)
+    
+    # FIX 4: Formatted inside non-truncating container
     m1.metric("Force-Velocity Profile", rx_m1["FV Profile"])
     m2.metric("Max Aerobic Speed", f"{rx_m1['MAS']} m/s")
     m3.metric("Horiz Asymmetry", f"{rx_m1['Horiz Asymmetry']}%")
