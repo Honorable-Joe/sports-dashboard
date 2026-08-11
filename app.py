@@ -168,7 +168,6 @@ class AthleteIQEngine:
         right = self.d.get("p_horiz_jump_uni_r", 104.0)
         return round(abs(left - right) / max(left, right) * 100, 1)
 
-    # --- GAP 1 FIX: POSTURAL CORRECTIVE DRILLS ---
     def get_postural_corrective_prep(self) -> str:
         correctives = []
         if self.d.get("posture_foot_arch") == "Flat Foot (Pes Planus)":
@@ -191,8 +190,8 @@ class AthleteIQEngine:
 
         return " + ".join(correctives) if correctives else "Dynamic World's Greatest Stretch & Hip Opener"
 
-    # --- GAP 2 FIX: SPEED & AGILITY DIAGNOSTICS ---
-    def evaluate_speed_agility_deficits((self) -> dict:
+    # --- FIXED SYNTAX ERROR HERE ---
+    def evaluate_speed_agility_deficits(self) -> dict:
         s5m = self.d.get("s_sprint5m", 1.10)
         tdrill = self.d.get("s_tdrill", 10.2)
         s7x7 = self.d.get("s_7x7", 14.2)
@@ -205,7 +204,6 @@ class AthleteIQEngine:
             "has_cod_deficit": has_cod_deficit
         }
 
-    # --- GAP 3 FIX: UPPER CAPACITY DIAGNOSTICS ---
     def evaluate_upper_capacity(self) -> str:
         pushups = self.d.get("c_pushups", 38)
         pullups = self.d.get("c_pullups", 12)
@@ -216,7 +214,6 @@ class AthleteIQEngine:
             return "High Capacity (Weighted Progressions)"
         return "Standard Capacity"
 
-    # --- GAP 4 FIX: EXPANDED INJURY REGRESSIONS ---
     def select_lower_compound(self) -> str:
         has_injury = self.d.get("has_injury") == "Yes"
         injury_site = self.d.get("injury_site", "")
@@ -246,7 +243,6 @@ class AthleteIQEngine:
             self.warnings.append(f"⚠️ Asymmetry >10% ({self.evaluate_asymmetry()}%): Auto-switched to Unilateral Primaries.")
             return "Bulgarian Split Squat (Unilateral Correction)"
 
-        # Equipment Fallbacks
         if "Barbells & Plates" in self.equipment:
             return "Barbell Back Squat"
         elif "Dumbbells" in self.equipment:
@@ -274,7 +270,6 @@ class AthleteIQEngine:
             self.warnings.append("🚨 Dysfunctional Upper Reach: Prescribed Landmine Press.")
             return "Half-Kneeling Landmine Press"
 
-        # Capacity Modification
         if cap == "High Capacity (Weighted Progressions)":
             if "Barbells & Plates" in self.equipment:
                 return "Heavy Barbell Bench Press (Weighted Progression)"
@@ -344,7 +339,9 @@ class AthleteIQEngine:
             "Alerts": list(set(self.warnings))
         }
 
-# --- GAP 5 FIX: MULTI-MONTH MACROCYCLE PERIODIZATION SCHEMA ---
+# ==========================================
+# 4. MACROCYCLE PERIODIZATION SCHEMA
+# ==========================================
 def get_macrocycle_phase(month_num: int, week_num: int):
     macro = {
         1: {
@@ -380,7 +377,7 @@ def get_macrocycle_phase(month_num: int, week_num: int):
     return m_data["title"], w_data
 
 # ==========================================
-# 4. SIDEBAR NAVIGATION & EQUIPMENT MATRIX
+# 5. SIDEBAR NAVIGATION & EQUIPMENT MATRIX
 # ==========================================
 st.markdown("<h1 style='text-align: center; color: #38bdf8; font-weight: 900; margin-bottom: 0px;'>⚡ ATHLETE-IQ PERFORMANCE ENGINE</h1>", unsafe_allow_html=True)
 st.markdown("<p style='text-align: center; color: #a855f7; font-weight: 700; font-size: 1.15rem;'>Developed by: Coach Ahmed Youssef 👑</p>", unsafe_allow_html=True)
@@ -423,7 +420,7 @@ equipment_selected = st.sidebar.multiselect(
 )
 
 # ==========================================
-# 5. MODULE CONTROLLERS
+# 6. MODULE CONTROLLERS
 # ==========================================
 
 # ------------------------------------------
@@ -731,4 +728,4 @@ elif active_module == "🚀 6. ADAPTIVE PROGRAM GENERATOR":
                             "Tempo": "Dynamic Shuttle"
                         }
                     ]
-                    st.table(pd.DataFrame(plan_data))
+                    st.dataframe(pd.DataFrame(plan_data), use_container_width=True)
