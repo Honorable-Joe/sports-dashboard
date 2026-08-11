@@ -1,4 +1,4 @@
-From dataclasses import dataclass, field
+from dataclasses import dataclass, field
 from typing import List, Dict, Optional
 
 # ==========================================
@@ -231,4 +231,3 @@ if __name__ == "__main__":
                 else:
                     print(f"   * [{item['pattern']}] {item['exercise']} ({item['equipment'].upper()})")
                     print(f"     Rx: {item['sets']} sets x {item['reps']} reps @ {item['target_load']} ({item['intensity_pct']} 1RM) | Tempo: {item['tempo']} | ({item['weekly_note']})")
-
