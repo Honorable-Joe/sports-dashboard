@@ -1,9 +1,11 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
+from dataclasses import dataclass, field
+from typing import List, Dict, Optional
 
 # ==========================================
-# 1. PAGE CONFIG & CUSTOM STYLING
+# 1. PAGE CONFIG & CUSTOM STYLING (FROM CODE A)
 # ==========================================
 st.set_page_config(
     page_title="Athlete-IQ Performance & Clinical Engine",
@@ -46,9 +48,304 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+
 # ==========================================
-# 2. SESSION STATE INITIALIZATION & HELPERS
+# 2. CODE B OBJECT-ORIENTED DATA STRUCTURES
 # ==========================================
+
+@dataclass
+class MobilityProfile:
+    ankle_dorsiflexion: str = "PASS"
+    overhead_flexion: str = "PASS"
+    hip_extension: str = "PASS"
+
+@dataclass
+class AthleteProfile:
+    name: str
+    experience_level: str
+    equipment: List[str]
+    mobility: MobilityProfile
+    estimated_1rm: Dict[str, float]
+
+@dataclass
+class Exercise:
+    id: str
+    name: str
+    pattern: str                 # "Squat", "Horizontal Push", "Overhead Press", "Hinge", "Power"
+    equipment_type: str          # "Barbells & Plates", "Dumbbells", "Cable Systems & Selectorized", etc.
+    prerequisites: List[str]     # ["ankle_dorsiflexion", "overhead_flexion", "hip_extension"]
+    month_block: int             # 1, 2, or 3
+
+
+# ==========================================
+# 3. CODE B EXERCISE DATABASE
+# ==========================================
+
+EXERCISE_DATABASE = [
+    # --- SQUAT PATTERN ---
+    Exercise("sq01", "Barbell Back Squat", "Squat", "Barbells & Plates", ["ankle_dorsiflexion"], 1),
+    Exercise("sq02", "Heel-Elevated Goblet Squat", "Squat", "Dumbbells", [], 1),
+    Exercise("sq03", "Barbell Front Squat", "Squat", "Barbells & Plates", ["ankle_dorsiflexion"], 2),
+    Exercise("sq04", "Machine Hack Squat", "Squat", "Cable Systems & Selectorized", [], 2),
+    Exercise("sq05", "Seated Leg Press", "Squat", "Cable Systems & Selectorized", [], 3),
+
+    # --- HORIZONTAL PUSH PATTERN ---
+    Exercise("hp01", "Flat Barbell Bench Press", "Horizontal Push", "Barbells & Plates", [], 1),
+    Exercise("hp02", "Incline Dumbbell Bench Press", "Horizontal Push", "Dumbbells", [], 2),
+    Exercise("hp03", "Seated Chest Press Machine", "Horizontal Push", "Cable Systems & Selectorized", [], 3),
+    Exercise("hp04", "Weighted Ring Push-Up", "Horizontal Push", "Rigs & Suspension (TRX/Wood Rings)", [], 1),
+
+    # --- OVERHEAD PRESS PATTERN ---
+    Exercise("oh01", "Barbell Standing OHP", "Overhead Press", "Barbells & Plates", ["overhead_flexion"], 1),
+    Exercise("oh02", "Landmine Angled Press", "Overhead Press", "Barbells & Plates", [], 1),
+    Exercise("oh03", "Dumbbell Overhead Press", "Overhead Press", "Dumbbells", ["overhead_flexion"], 2),
+    Exercise("oh04", "Seated Machine Shoulder Press", "Overhead Press", "Cable Systems & Selectorized", [], 3),
+
+    # --- HINGE PATTERN ---
+    Exercise("hg01", "Barbell Conventional Deadlift", "Hinge", "Barbells & Plates", ["hip_extension"], 1),
+    Exercise("hg02", "Dumbbell Romanian Deadlift", "Hinge", "Dumbbells", [], 1),
+    Exercise("hg03", "Barbell Romanian Deadlift", "Hinge", "Barbells & Plates", [], 2),
+    Exercise("hg04", "Cable Hip Thrust", "Hinge", "Cable Systems & Selectorized", [], 3),
+
+    # --- POWER / SPEED PATTERN ---
+    Exercise("pw01", "Medicine Ball Rotational Launch", "Power", "Medicine & Slam Balls", [], 1),
+    Exercise("pw02", "Heavy Trap-Bar Jump Squat", "Power", "Barbells & Plates", [], 2),
+    Exercise("pw03", "Plyometric Box Jumps", "Power", "Plyo Boxes & Agility Ladders", [], 3),
+    Exercise("pw04", "Sled Acceleration Starts", "Power", "Sleds & Prowler", [], 1)
+]
+
+
+# ==========================================
+# 4. CODE B FILTER & SELECTION ENGINE
+# ==========================================
+
+class ExerciseFilterEngine:
+    def __init__(self, database: List[Exercise]):
+        self.database = database
+
+    def get_valid_exercise(self, pattern: str, month: int, athlete: AthleteProfile) -> Optional[Exercise]:
+        candidates = [ex for ex in self.database if ex.pattern == pattern and ex.month_block == month]
+        candidates = [ex for ex in candidates if ex.equipment_type in athlete.equipment]
+        
+        safe_candidates = []
+        for ex in candidates:
+            is_safe = True
+            for prereq in ex.prerequisites:
+                if getattr(athlete.mobility, prereq, "PASS") == "FAIL":
+                    is_safe = False
+                    break
+            if is_safe:
+                safe_candidates.append(ex)
+
+        if safe_candidates:
+            return safe_candidates[0]
+
+        fallbacks = [
+            ex for ex in self.database
+            if ex.pattern == pattern 
+            and ex.equipment_type in ["Cable Systems & Selectorized", "Dumbbells"]
+            and ex.equipment_type in athlete.equipment
+            and not any(getattr(athlete.mobility, p, "PASS") == "FAIL" for p in ex.prerequisites)
+        ]
+        return fallbacks[0] if fallbacks else None
+
+
+# ==========================================
+# 5. INTEGRATED ATHLETE-IQ INTELLIGENT LOGIC ENGINE
+# ==========================================
+
+class AthleteIQEngine:
+    def __init__(self, data: dict, equipment: list):
+        self.d = data
+        self.equipment = equipment
+        self.warnings = []
+        
+        # Build Mobility Profile from SFMA/Postural inputs
+        ankle_flag = "FAIL" if self.d.get("posture_ankle") in ["Pronated Rearfoot", "Supinated Rearfoot"] else "PASS"
+        overhead_flag = "FAIL" if self.d.get("shoulder") == "Dysfunctional Painful" or self.d.get("posture_shoulder_pos") == "Anterior Rounded Shoulders" else "PASS"
+        hip_flag = "FAIL" if self.d.get("posture_pelvic_tilt") == "Anterior Pelvic Tilt" else "PASS"
+
+        self.mobility = MobilityProfile(
+            ankle_dorsiflexion=ankle_flag,
+            overhead_flexion=overhead_flag,
+            hip_extension=hip_flag
+        )
+
+        self.athlete = AthleteProfile(
+            name=self.d.get("athlete_name", "Athlete"),
+            experience_level="Intermediate",
+            equipment=self.equipment,
+            mobility=self.mobility,
+            estimated_1rm={
+                "Squat": 100.0,
+                "Horizontal Push": 80.0,
+                "Overhead Press": 50.0,
+                "Hinge": 120.0,
+                "Power": 0.0
+            }
+        )
+        self.filter_engine = ExerciseFilterEngine(EXERCISE_DATABASE)
+
+    def calculate_mas(self) -> float:
+        sprint_1000 = self.d.get("s_sprint1000m", 235)
+        if sprint_1000 > 0:
+            return round(1000.0 / sprint_1000, 2)
+        cooper_m = self.d.get("c_cooper", 2500)
+        return round((cooper_m / 720.0), 2)
+
+    def evaluate_force_velocity_deficit(self) -> str:
+        cmj = self.d.get("p_cmj", 42.0)
+        sprint_10m = self.d.get("s_sprint10m", 1.75)
+        fv_index = cmj / (sprint_10m * 10)
+        if fv_index < 2.0:
+            return "Force Deficient (Needs Maximal Strength Loading)"
+        elif fv_index > 2.8:
+            return "Velocity Deficient (Needs High-Speed Elastic Ballistics)"
+        return "Balanced Force-Velocity Profile"
+
+    def evaluate_asymmetry(self) -> float:
+        left = self.d.get("p_horiz_jump_uni_l", 105.0)
+        right = self.d.get("p_horiz_jump_uni_r", 104.0)
+        return round(abs(left - right) / max(left, right) * 100, 1)
+
+    def get_postural_corrective_prep(self) -> str:
+        correctives = []
+        if self.d.get("posture_foot_arch") == "Flat Foot (Pes Planus)":
+            correctives.append("Short-Foot Activation & Tibialis Posterior Loading")
+        if self.d.get("posture_ankle") in ["Pronated Rearfoot", "Supinated Rearfoot"]:
+            correctives.append("Ankle Dorsiflexion Wall Mob & Iso Holds")
+        if self.d.get("posture_pelvic_tilt") == "Anterior Pelvic Tilt":
+            correctives.append("Half-Kneeling Hip Flexor Deactivation & Deadbugs")
+        elif self.d.get("posture_pelvic_tilt") == "Posterior Pelvic Tilt":
+            correctives.append("Hamstring Mobility & Cobra Lumbar Extensions")
+        if self.d.get("posture_thoracic") == "Hyper-Kyphosis":
+            correctives.append("Foam Roller T-Spine Extensions & Wall Angels")
+        if self.d.get("posture_shoulder_pos") == "Anterior Rounded Shoulders":
+            correctives.append("Band Face Pulls & Y-T-W Scapular Series")
+        if self.d.get("posture_knee") == "Genu Valgum (Knock-Knee)":
+            correctives.append("Banded Glute Medius Clamshells & Monster Walks")
+
+        if self.d.get("congenital_defects") != "None Detected":
+            correctives.append(f"Protocol for {self.d.get('congenital_defects')}")
+
+        return " + ".join(correctives) if correctives else "Dynamic World's Greatest Stretch & Hip Opener"
+
+    def evaluate_speed_agility_deficits(self) -> dict:
+        s5m = self.d.get("s_sprint5m", 1.10)
+        tdrill = self.d.get("s_tdrill", 10.2)
+        s7x7 = self.d.get("s_7x7", 14.2)
+        return {
+            "has_accel_deficit": s5m > 1.25,
+            "has_cod_deficit": (tdrill > 10.8) or (s7x7 > 15.0)
+        }
+
+    def evaluate_upper_capacity(self) -> str:
+        pushups = self.d.get("c_pushups", 38)
+        pullups = self.d.get("c_pullups", 12)
+        if pushups < 15 or pullups < 3:
+            return "Low Capacity (Assisted / High Rep Base)"
+        elif pushups > 45 and pullups > 15:
+            return "High Capacity (Weighted Progressions)"
+        return "Standard Capacity"
+
+    def select_lower_compound(self, month: int) -> str:
+        has_injury = self.d.get("has_injury") == "Yes"
+        injury_site = self.d.get("injury_site", "")
+        sfma_ohs = self.d.get("overhead_squat", "Functional Non-Painful")
+
+        if has_injury:
+            if any(k in injury_site for k in ["Knee", "ACL", "Patellar"]):
+                self.warnings.append("🚨 Knee/ACL Injury: Dynamic knee bending regressed to Isometric Spanish Squats.")
+                return "Spanish Squat Isometric Hold (Knee Sparing)"
+            elif "Hamstring" in injury_site:
+                self.warnings.append("🚨 Hamstring Injury: Swapped for Glute Bridge / Hip Thrust.")
+                return "Barbell Glute Bridge / Hip Thrust"
+            elif any(k in injury_site for k in ["Lumbar", "Facet"]):
+                self.warnings.append("🚨 Lumbar Spine Injury: Axially unloaded movement prescribed.")
+                return "Supported Dumbbell Step-Ups"
+            elif any(k in injury_site for k in ["Ankle", "Achilles"]):
+                self.warnings.append("🚨 Ankle/Achilles Strain: Restricted dorsiflexion.")
+                return "Heel-Elevated Goblet Box Squat"
+
+        if sfma_ohs == "Dysfunctional Painful":
+            self.warnings.append("🚨 Painful Overhead Squat: Regressed to Supported Box Squats.")
+            return "Supported Goblet Box Squat to Parallel"
+            
+        if self.evaluate_asymmetry() > 10.0:
+            self.warnings.append(f"⚠️ Asymmetry >10% ({self.evaluate_asymmetry()}%): Auto-switched to Unilateral Primaries.")
+            return "Bulgarian Split Squat (Unilateral Correction)"
+
+        # DB Search Engine
+        ex = self.filter_engine.get_valid_exercise("Squat", month, self.athlete)
+        return ex.name if ex else "Tempo Bodyweight Pistol Squat"
+
+    def select_upper_press(self, month: int) -> str:
+        has_injury = self.d.get("has_injury") == "Yes"
+        injury_site = self.d.get("injury_site", "")
+        sfma_shld = self.d.get("shoulder", "Functional Non-Painful")
+
+        if has_injury and any(k in injury_site for k in ["Shoulder", "Rotator", "Pectoralis"]):
+            self.warnings.append("🚨 Shoulder/Chest Injury: Replaced with Neutral-Grip Incline.")
+            return "Neutral-Grip Dumbbell Press"
+
+        if sfma_shld == "Dysfunctional Painful":
+            self.warnings.append("🚨 Dysfunctional Upper Reach: Prescribed Landmine Press.")
+            return "Half-Kneeling Landmine Press"
+
+        # DB Search Engine
+        ex = self.filter_engine.get_valid_exercise("Horizontal Push", month, self.athlete)
+        return ex.name if ex else "Bodyweight Deficit Push-Ups"
+
+    def select_power_exercise(self, month: int) -> str:
+        has_injury = self.d.get("has_injury") == "Yes"
+        injury_site = self.d.get("injury_site", "")
+
+        if has_injury and any(k in injury_site for k in ["Ankle", "Achilles", "Knee"]):
+            self.warnings.append("🚨 Lower Limb Injury: High impact plyometrics replaced with Seated Med-Ball Throws.")
+            return "Seated Upper-Body Explosive Med-Ball Launch"
+
+        sa = self.evaluate_speed_agility_deficits()
+        if sa["has_accel_deficit"]:
+            self.warnings.append("⚡ Speed Diagnostic: Acceleration deficit detected -> Added Heavy Sled Starts.")
+            return "Heavy Sled Sprints / Band-Resisted Acceleration Starts"
+
+        ex = self.filter_engine.get_valid_exercise("Power", month, self.athlete)
+        return ex.name if ex else "Plyometric Box Jumps / Broad Jumps"
+
+    def select_esd_protocol(self) -> str:
+        mas = self.calculate_mas()
+        sa = self.evaluate_speed_agility_deficits()
+        shuttle_dist = round(mas * 1.20 * 15, 1)
+
+        if sa["has_cod_deficit"]:
+            self.warnings.append("🏃 Agility Diagnostic: COD deficit detected -> Integrated COD Shuttle Drills.")
+            return f"Pro-Agility Shuttle (10m-5m-10m) @ 120% MAS ({shuttle_dist}m Target / 15s Work / 15s Rest)"
+        
+        return f"15s Linear Shuttle Run @ {shuttle_dist}m Target / 15s Rest (10-12 Mins Total)"
+
+    def generate_program_for_month(self, month: int) -> dict:
+        club_hours = self.d.get("club_days", 4) * self.d.get("club_hours_per_day", 2.0)
+        vol_schema = "2 Sets / Ex (Low Vol, High Density)" if club_hours >= 10 else "4 Sets / Ex (Standard Build)"
+
+        return {
+            "Corrective Prep": self.get_postural_corrective_prep(),
+            "Lower Exercise": self.select_lower_compound(month),
+            "Upper Exercise": self.select_upper_press(month),
+            "Power Exercise": self.select_power_exercise(month),
+            "ESD Protocol": self.select_esd_protocol(),
+            "FV Profile": self.evaluate_force_velocity_deficit(),
+            "MAS": self.calculate_mas(),
+            "Asymmetry": self.evaluate_asymmetry(),
+            "Upper Capacity": self.evaluate_upper_capacity(),
+            "Volume Schema": vol_schema,
+            "Alerts": list(set(self.warnings))
+        }
+
+
+# ==========================================
+# 6. SESSION STATE INITIALIZATION & HELPERS
+# ==========================================
+
 if "form_data" not in st.session_state:
     st.session_state.form_data = {
         # Profile
@@ -137,238 +434,33 @@ def safe_index(options_list, key):
     val = bind_input(key)
     return options_list.index(val) if val in options_list else 0
 
-# ==========================================
-# 3. ATHLETE-IQ INTELLIGENT LOGIC ENGINE
-# ==========================================
-class AthleteIQEngine:
-    def __init__(self, data: dict, equipment: list):
-        self.d = data
-        self.equipment = equipment
-        self.warnings = []
-
-    def calculate_mas(self) -> float:
-        sprint_1000 = self.d.get("s_sprint1000m", 235)
-        if sprint_1000 > 0:
-            return round(1000.0 / sprint_1000, 2)
-        cooper_m = self.d.get("c_cooper", 2500)
-        return round((cooper_m / 720.0), 2)
-
-    def evaluate_force_velocity_deficit(self) -> str:
-        cmj = self.d.get("p_cmj", 42.0)
-        sprint_10m = self.d.get("s_sprint10m", 1.75)
-        fv_index = cmj / (sprint_10m * 10)
-        if fv_index < 2.0:
-            return "Force Deficient (Needs Maximal Strength Loading)"
-        elif fv_index > 2.8:
-            return "Velocity Deficient (Needs High-Speed Elastic Ballistics)"
-        return "Balanced Force-Velocity Profile"
-
-    def evaluate_asymmetry(self) -> float:
-        left = self.d.get("p_horiz_jump_uni_l", 105.0)
-        right = self.d.get("p_horiz_jump_uni_r", 104.0)
-        return round(abs(left - right) / max(left, right) * 100, 1)
-
-    def get_postural_corrective_prep(self) -> str:
-        correctives = []
-        if self.d.get("posture_foot_arch") == "Flat Foot (Pes Planus)":
-            correctives.append("Short-Foot Activation & Tibialis Posterior Loading")
-        if self.d.get("posture_ankle") in ["Pronated Rearfoot", "Supinated Rearfoot"]:
-            correctives.append("Ankle Dorsiflexion Wall Mob & Iso Holds")
-        if self.d.get("posture_pelvic_tilt") == "Anterior Pelvic Tilt":
-            correctives.append("Half-Kneeling Hip Flexor Deactivation & Deadbugs")
-        elif self.d.get("posture_pelvic_tilt") == "Posterior Pelvic Tilt":
-            correctives.append("Hamstring Mobility & Cobra Lumbar Extensions")
-        if self.d.get("posture_thoracic") == "Hyper-Kyphosis":
-            correctives.append("Foam Roller T-Spine Extensions & Wall Angels")
-        if self.d.get("posture_shoulder_pos") == "Anterior Rounded Shoulders":
-            correctives.append("Band Face Pulls & Y-T-W Scapular Series")
-        if self.d.get("posture_knee") == "Genu Valgum (Knock-Knee)":
-            correctives.append("Banded Glute Medius Clamshells & Monster Walks")
-
-        if self.d.get("congenital_defects") != "None Detected":
-            correctives.append(f"Protocol for {self.d.get('congenital_defects')}")
-
-        return " + ".join(correctives) if correctives else "Dynamic World's Greatest Stretch & Hip Opener"
-
-    # --- FIXED SYNTAX ERROR HERE ---
-    def evaluate_speed_agility_deficits(self) -> dict:
-        s5m = self.d.get("s_sprint5m", 1.10)
-        tdrill = self.d.get("s_tdrill", 10.2)
-        s7x7 = self.d.get("s_7x7", 14.2)
-        
-        has_accel_deficit = s5m > 1.25
-        has_cod_deficit = (tdrill > 10.8) or (s7x7 > 15.0)
-
-        return {
-            "has_accel_deficit": has_accel_deficit,
-            "has_cod_deficit": has_cod_deficit
-        }
-
-    def evaluate_upper_capacity(self) -> str:
-        pushups = self.d.get("c_pushups", 38)
-        pullups = self.d.get("c_pullups", 12)
-
-        if pushups < 15 or pullups < 3:
-            return "Low Capacity (Assisted / High Rep Base)"
-        elif pushups > 45 and pullups > 15:
-            return "High Capacity (Weighted Progressions)"
-        return "Standard Capacity"
-
-    def select_lower_compound(self) -> str:
-        has_injury = self.d.get("has_injury") == "Yes"
-        injury_site = self.d.get("injury_site", "")
-        sfma_ohs = self.d.get("overhead_squat", "Functional Non-Painful")
-
-        if has_injury:
-            if any(k in injury_site for k in ["Knee", "ACL", "Patellar"]):
-                self.warnings.append("🚨 Knee/ACL Injury: Dynamic knee bending regressed to Isometric Spanish Squats.")
-                return "Spanish Squat Isometric Hold (Knee Sparing)"
-            elif "Hamstring" in injury_site:
-                self.warnings.append("🚨 Hamstring Injury: Avoid deep eccentric loading; swapped for Glute Bridge / Hip Thrust.")
-                return "Barbell Glute Bridge / Hip Thrust (Hamstring Sparing)"
-            elif any(k in injury_site for k in ["Lumbar", "Facet"]):
-                self.warnings.append("🚨 Lumbar Spine Injury: Axially unloaded lower movement prescribed.")
-                return "Supported Dumbbell Step-Ups (Spine Unloaded)"
-            elif any(k in injury_site for k in ["Ankle", "Achilles"]):
-                self.warnings.append("🚨 Ankle/Achilles Strain: High dorsiflexion restricted.")
-                return "Heel-Elevated Goblet Box Squat (Reduced Ankle Stress)"
-            elif any(k in injury_site for k in ["Adductor", "Groin"]):
-                self.warnings.append("🚨 Groin Strain: Wide-stance movements restricted.")
-                return "Narrow Stance Hack Squat / Leg Press"
-
-        if sfma_ohs == "Dysfunctional Painful":
-            self.warnings.append("🚨 Painful Overhead Squat: Regressed to Supported Box Squats.")
-            return "Supported Goblet Box Squat to Parallel"
-        if self.evaluate_asymmetry() > 10.0:
-            self.warnings.append(f"⚠️ Asymmetry >10% ({self.evaluate_asymmetry()}%): Auto-switched to Unilateral Primaries.")
-            return "Bulgarian Split Squat (Unilateral Correction)"
-
-        if "Barbells & Plates" in self.equipment:
-            return "Barbell Back Squat"
-        elif "Dumbbells" in self.equipment:
-            return "Dumbbell Rear-Foot Elevated Split Squat"
-        elif "Kettlebells" in self.equipment:
-            return "Double Kettlebell Front Squat"
-        else:
-            return "Tempo Bodyweight Pistol Squat (3-2-1-0)"
-
-    def select_upper_press(self) -> str:
-        has_injury = self.d.get("has_injury") == "Yes"
-        injury_site = self.d.get("injury_site", "")
-        sfma_shld = self.d.get("shoulder", "Functional Non-Painful")
-        cap = self.evaluate_upper_capacity()
-
-        if has_injury:
-            if any(k in injury_site for k in ["Shoulder", "Rotator", "Pectoralis"]):
-                self.warnings.append("🚨 Shoulder/Chest Injury: Overhead and wide bench replaced with Neutral-Grip Incline.")
-                return "Neutral-Grip Dumbbell Press"
-            elif any(k in injury_site for k in ["Elbow", "Wrist"]):
-                self.warnings.append("🚨 Elbow/Wrist Strain: Fixed barbell replaced with TRX Neutral Push-Ups.")
-                return "TRX Suspended Neutral-Grip Push-Ups"
-
-        if sfma_shld == "Dysfunctional Painful":
-            self.warnings.append("🚨 Dysfunctional Upper Reach: Prescribed Landmine Press.")
-            return "Half-Kneeling Landmine Press"
-
-        if cap == "High Capacity (Weighted Progressions)":
-            if "Barbells & Plates" in self.equipment:
-                return "Heavy Barbell Bench Press (Weighted Progression)"
-            elif "Rigs & Suspension (TRX/Wood Rings)" in self.equipment:
-                return "Weighted Ring Dip / Ring Push-Up"
-        elif cap == "Low Capacity (Assisted / High Rep Base)":
-            return "Incline Dumbbell Press / Assisted Push-Ups"
-
-        if "Barbells & Plates" in self.equipment:
-            return "Flat Barbell Bench Press"
-        elif "Dumbbells" in self.equipment:
-            return "Incline Dumbbell Press"
-        elif "Rigs & Suspension (TRX/Wood Rings)" in self.equipment:
-            return "Weighted Ring Push-Ups / Dips"
-        else:
-            return "Bodyweight Deficit Push-Ups"
-
-    def select_power_exercise(self) -> str:
-        sport = self.d.get("sport_type", "Soccer")
-        fv = self.evaluate_force_velocity_deficit()
-        sa = self.evaluate_speed_agility_deficits()
-        has_injury = self.d.get("has_injury") == "Yes"
-        injury_site = self.d.get("injury_site", "")
-
-        if has_injury and any(k in injury_site for k in ["Ankle", "Achilles", "Knee"]):
-            self.warnings.append("🚨 Lower Limb Injury: High impact plyometrics replaced with Seated Med-Ball Throws.")
-            return "Seated Upper-Body Explosive Med-Ball Launch"
-
-        if sa["has_accel_deficit"]:
-            self.warnings.append("⚡ Speed Diagnostic: Acceleration deficit detected -> Added Heavy Sled Starts.")
-            return "Heavy Sled Sprints / Band-Resisted Acceleration Starts"
-
-        if sport in ["Tennis", "Racket Sports (Squash/Padel)", "Volleyball"]:
-            return "Medicine Ball Rotational & Overhead Launch"
-        if "Force Deficient" in fv:
-            return "Heavy Trap-Bar Jump Squat (80% 1RM)" if "Barbells & Plates" in self.equipment else "Dumbbell Jump Squat"
-        elif "Velocity Deficient" in fv:
-            return "Depth Jumps / Assisted Elastic Jumps"
-        return "Plyometric Box Jumps / Broad Jumps"
-
-    def select_esd_protocol(self) -> str:
-        mas = self.calculate_mas()
-        sa = self.evaluate_speed_agility_deficits()
-        shuttle_dist = round(mas * 1.20 * 15, 1)
-
-        if sa["has_cod_deficit"]:
-            self.warnings.append("🏃 Agility Diagnostic: COD deficit detected -> Integrated Deceleration & COD Shuttle Drills.")
-            return f"Pro-Agility Shuttle (10m-5m-10m) @ 120% MAS ({shuttle_dist}m Target / 15s Work / 15s Rest)"
-        
-        return f"15s Linear Shuttle Run @ {shuttle_dist}m Target / 15s Rest (10-12 Mins Total)"
-
-    def generate_program(self) -> dict:
-        club_hours = self.d.get("club_days", 4) * self.d.get("club_hours_per_day", 2.0)
-        vol_schema = "2 Sets / Ex (Low Vol, High Density)" if club_hours >= 10 else "4 Sets / Ex (Standard Build)"
-
-        return {
-            "Corrective Prep": self.get_postural_corrective_prep(),
-            "Lower Exercise": self.select_lower_compound(),
-            "Upper Exercise": self.select_upper_press(),
-            "Power Exercise": self.select_power_exercise(),
-            "ESD Protocol": self.select_esd_protocol(),
-            "FV Profile": self.evaluate_force_velocity_deficit(),
-            "MAS": self.calculate_mas(),
-            "Asymmetry": self.evaluate_asymmetry(),
-            "Upper Capacity": self.evaluate_upper_capacity(),
-            "Volume Schema": vol_schema,
-            "Alerts": list(set(self.warnings))
-        }
-
-# ==========================================
-# 4. MACROCYCLE PERIODIZATION SCHEMA
-# ==========================================
 def get_macrocycle_phase(month_num: int, week_num: int):
     macro = {
         1: {
             "title": "Month 1: Accumulation Phase (Work Capacity & Base Build)",
             "weeks": {
-                1: {"sets": "3 x 10 Reps", "intensity": "65% 1RM (RPE 7)", "phase": "Base Accumulation"},
-                2: {"sets": "4 x 8 Reps", "intensity": "70% 1RM (RPE 7.5)", "phase": "Volume Build"},
-                3: {"sets": "4 x 8 Reps", "intensity": "75% 1RM (RPE 8)", "phase": "Overload Peak"},
-                4: {"sets": "2 x 8 Reps", "intensity": "60% 1RM (RPE 6)", "phase": "Deload & Regeneration"}
+                1: {"sets": "3 x 10 Reps", "intensity": "65% 1RM (RPE 7)", "phase": "Base Accumulation", "tempo": "3-1-1-0"},
+                2: {"sets": "4 x 8 Reps", "intensity": "70% 1RM (RPE 7.5)", "phase": "Volume Build", "tempo": "3-1-1-0"},
+                3: {"sets": "4 x 8 Reps", "intensity": "75% 1RM (RPE 8)", "phase": "Overload Peak", "tempo": "3-1-1-0"},
+                4: {"sets": "2 x 8 Reps", "intensity": "60% 1RM (RPE 6)", "phase": "Deload & Regeneration", "tempo": "2-0-1-0"}
             }
         },
         2: {
             "title": "Month 2: Intensification Phase (Max Strength & Dynamic Force)",
             "weeks": {
-                1: {"sets": "4 x 6 Reps", "intensity": "78% 1RM (RPE 8)", "phase": "Strength Introduction"},
-                2: {"sets": "4 x 5 Reps", "intensity": "82% 1RM (RPE 8.5)", "phase": "Heavy Loading"},
-                3: {"sets": "5 x 3 Reps", "intensity": "88% 1RM (RPE 9)", "phase": "Maximal Load Peak"},
-                4: {"sets": "2 x 5 Reps", "intensity": "65% 1RM (RPE 6)", "phase": "Deload & Regeneration"}
+                1: {"sets": "4 x 6 Reps", "intensity": "78% 1RM (RPE 8)", "phase": "Strength Introduction", "tempo": "2-1-1-0"},
+                2: {"sets": "4 x 5 Reps", "intensity": "82% 1RM (RPE 8.5)", "phase": "Heavy Loading", "tempo": "2-1-1-0"},
+                3: {"sets": "5 x 3 Reps", "intensity": "88% 1RM (RPE 9)", "phase": "Maximal Load Peak", "tempo": "2-0-1-0"},
+                4: {"sets": "2 x 5 Reps", "intensity": "65% 1RM (RPE 6)", "phase": "Deload & Regeneration", "tempo": "2-0-1-0"}
             }
         },
         3: {
             "title": "Month 3: Realization Phase (Peak Power, Speed & Taper)",
             "weeks": {
-                1: {"sets": "4 x 3 Reps", "intensity": "85% 1RM (RPE 8.5 - Explosive)", "phase": "Power Realization"},
-                2: {"sets": "4 x 2 Reps", "intensity": "90% 1RM (RPE 9 - Velocity Focus)", "phase": "Peaking Block"},
-                3: {"sets": "3 x 2 Reps", "intensity": "93% 1RM (RPE 9.5)", "phase": "Maximal Output Peak"},
-                4: {"sets": "2 x 3 Reps", "intensity": "50% 1RM (Explosive Speed)", "phase": "Match-Ready Taper"}
+                1: {"sets": "4 x 3 Reps", "intensity": "85% 1RM (RPE 8.5 - Explosive)", "phase": "Power Realization", "tempo": "1-0-1-0"},
+                2: {"sets": "4 x 2 Reps", "intensity": "90% 1RM (RPE 9 - Velocity Focus)", "phase": "Peaking Block", "tempo": "1-0-1-0"},
+                3: {"sets": "3 x 2 Reps", "intensity": "93% 1RM (RPE 9.5)", "phase": "Maximal Output Peak", "tempo": "1-0-1-0"},
+                4: {"sets": "2 x 3 Reps", "intensity": "50% 1RM (Explosive Speed)", "phase": "Match-Ready Taper", "tempo": "1-0-1-0"}
             }
         }
     }
@@ -376,9 +468,11 @@ def get_macrocycle_phase(month_num: int, week_num: int):
     w_data = m_data["weeks"].get(week_num, m_data["weeks"][1])
     return m_data["title"], w_data
 
+
 # ==========================================
-# 5. SIDEBAR NAVIGATION & EQUIPMENT MATRIX
+# 7. MAIN INTERFACE & NAVIGATION
 # ==========================================
+
 st.markdown("<h1 style='text-align: center; color: #38bdf8; font-weight: 900; margin-bottom: 0px;'>⚡ ATHLETE-IQ PERFORMANCE ENGINE</h1>", unsafe_allow_html=True)
 st.markdown("<p style='text-align: center; color: #a855f7; font-weight: 700; font-size: 1.15rem;'>Developed by: Coach Ahmed Youssef 👑</p>", unsafe_allow_html=True)
 st.markdown("---")
@@ -419,8 +513,9 @@ equipment_selected = st.sidebar.multiselect(
     default=["Barbells & Plates", "Dumbbells", "Kettlebells", "Rigs & Suspension (TRX/Wood Rings)", "Sleds & Prowler", "Medicine & Slam Balls", "Cable Systems & Selectorized", "Ergometers (AirBike/Rower/SkiErg)", "Plyo Boxes & Agility Ladders"]
 )
 
+
 # ==========================================
-# 6. MODULE CONTROLLERS
+# 8. MODULE CONTROLLERS
 # ==========================================
 
 # ------------------------------------------
@@ -658,26 +753,29 @@ elif active_module == "🚀 6. ADAPTIVE PROGRAM GENERATOR":
     st.markdown("<div class='banner-header'>🚀 Dynamic Multi-Month Periodization Engine</div>", unsafe_allow_html=True)
     
     engine = AthleteIQEngine(st.session_state.form_data, equipment_selected)
-    rx = engine.generate_program()
 
+    # Base Metrics Display
+    rx_m1 = engine.generate_program_for_month(1)
     m1, m2, m3, m4 = st.columns(4)
-    m1.metric("Force-Velocity Profile", rx["FV Profile"])
-    m2.metric("Max Aerobic Speed", f"{rx['MAS']} m/s")
-    m3.metric("Bilateral Asymmetry", f"{rx['Asymmetry']}%")
-    m4.metric("Upper Capacity", rx["Upper Capacity"])
+    m1.metric("Force-Velocity Profile", rx_m1["FV Profile"])
+    m2.metric("Max Aerobic Speed", f"{rx_m1['MAS']} m/s")
+    m3.metric("Bilateral Asymmetry", f"{rx_m1['Asymmetry']}%")
+    m4.metric("Upper Capacity", rx_m1["Upper Capacity"])
 
-    if rx["Alerts"]:
+    if rx_m1["Alerts"]:
         st.subheader("⚠️ Clinical & Performance Engine Alerts")
-        for alert in rx["Alerts"]:
+        for alert in rx_m1["Alerts"]:
             st.warning(alert)
 
-    st.markdown(f"**Auto-Prescribed Volume Scaling:** `{rx['Volume Schema']}`")
+    st.markdown(f"**Auto-Prescribed Volume Scaling:** `{rx_m1['Volume Schema']}`")
     st.markdown("---")
 
     m_tabs = st.tabs([f"🗓️ MONTH {m}" for m in range(1, plan_months + 1)])
 
     for m_idx, m_tab in enumerate(m_tabs):
         m_num = m_idx + 1
+        rx_month = engine.generate_program_for_month(m_num)
+        
         with m_tab:
             m_title, _ = get_macrocycle_phase(m_num, 1)
             st.subheader(f"📌 {m_title}")
@@ -694,35 +792,35 @@ elif active_module == "🚀 6. ADAPTIVE PROGRAM GENERATOR":
                     plan_data = [
                         {
                             "Category": "1. Postural Corrective Prep",
-                            "Exercise": rx["Corrective Prep"],
+                            "Exercise": rx_month["Corrective Prep"],
                             "Prescription": "2 Sets x 10 Reps / Side",
                             "Target Intensity": "Controlled Mobility",
                             "Tempo": "2-1-2-0"
                         },
                         {
                             "Category": "2. Neuromuscular Power / Speed",
-                            "Exercise": rx["Power Exercise"],
+                            "Exercise": rx_month["Power Exercise"],
                             "Prescription": "4 Sets x 3 Reps" if w_num != 4 else "2 Sets x 3 Reps",
                             "Target Intensity": "Maximal Explosive Intent",
                             "Tempo": "X-0-X-0"
                         },
                         {
                             "Category": "3. Lower Body Primary Lift",
-                            "Exercise": rx["Lower Exercise"],
+                            "Exercise": rx_month["Lower Exercise"],
                             "Prescription": p_info["sets"],
                             "Target Intensity": p_info["intensity"],
-                            "Tempo": "3-1-1-0"
+                            "Tempo": p_info["tempo"]
                         },
                         {
                             "Category": "4. Upper Body Primary Press",
-                            "Exercise": rx["Upper Exercise"],
+                            "Exercise": rx_month["Upper Exercise"],
                             "Prescription": p_info["sets"],
                             "Target Intensity": p_info["intensity"],
-                            "Tempo": "3-0-1-0"
+                            "Tempo": p_info["tempo"]
                         },
                         {
                             "Category": "5. Energy System Development (ESD)",
-                            "Exercise": rx["ESD Protocol"],
+                            "Exercise": rx_month["ESD Protocol"],
                             "Prescription": "12 Minutes Total Work",
                             "Target Intensity": "Zone 4 (120% MAS)",
                             "Tempo": "Dynamic Shuttle"
