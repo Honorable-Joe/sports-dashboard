@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from typing import List, Dict, Optional
 
 # ==========================================
-# 1. PAGE CONFIG & CUSTOM STYLING (HUD Unchanged)
+# 1. PAGE CONFIG & CUSTOM STYLING (HUD Styling)
 # ==========================================
 st.set_page_config(
     page_title="Athlete-IQ Performance & Clinical Engine",
@@ -55,7 +55,7 @@ st.markdown("""
         margin-top: -10px;
         margin-bottom: 8px;
     }
-    /* FIX 4: Prevent Text Truncation in Streamlit Metric Labels & Value Containers */
+    /* Prevent Text Truncation in Streamlit Metric Labels & Value Containers */
     [data-testid="stMetricLabel"], [data-testid="stMetricValue"] {
         white-space: normal !important;
         word-break: break-word !important;
@@ -100,7 +100,7 @@ class Exercise:
 
 
 # ==========================================
-# 3. EXERCISE DATABASE (FIX 5: Expanded Pool)
+# 3. EXERCISE DATABASE
 # ==========================================
 
 EXERCISE_DATABASE = [
@@ -160,7 +160,7 @@ class ExerciseFilterEngine:
 
 
 # ==========================================
-# 5. INTEGRATED ATHLETE-IQ LOGIC ENGINE (FIX 5 Overhaul)
+# 5. INTEGRATED ATHLETE-IQ LOGIC ENGINE
 # ==========================================
 
 class AthleteIQEngine:
@@ -247,7 +247,6 @@ class AthleteIQEngine:
             ]
             return base_prep[(month - 1) % len(base_prep)]
 
-        # Dynamic variation per month for correctives
         prefix = f"Block {month} Focus: "
         return prefix + " + ".join(correctives)
 
@@ -255,7 +254,6 @@ class AthleteIQEngine:
         has_injury = self.d.get("has_injury") == "Yes"
         injury_sites = [str(x) for x in self.d.get("injury_sites", [])]
 
-        # FIX 5: Dynamic variations across months even under clinical regressions
         if has_injury:
             if any("Knee" in k or "ACL" in k for k in injury_sites):
                 self.warnings.append("🚨 Knee/ACL Active Injury: Knee flexion loading regressed.")
@@ -437,8 +435,8 @@ if "form_data" not in st.session_state:
         "rom_tspine_rotation": 45.0,
         "rom_shoulder_flexion": 170.0,
         "p_chest_pass": 6.8,
-        "p_forehand_throw": 7.2,   # FIX 2: Restored
-        "p_backhand_throw": 6.9,   # FIX 2: Restored
+        "p_forehand_throw": 7.2,
+        "p_backhand_throw": 6.9,
         "p_overhead_throw": 8.5,
         "p_cmj": 42.0,
         "p_horiz_jump_bi": 215.0,
@@ -461,7 +459,6 @@ if "form_data" not in st.session_state:
         "c_cooper": 2650
     }
 
-# FIX CRUD: Database Profile Management State
 if "athlete_records" not in st.session_state:
     st.session_state.athlete_records = []
 
@@ -563,12 +560,11 @@ equipment_selected = st.sidebar.multiselect(
 # ==========================================
 
 # ------------------------------------------
-# MODULE 1: DEMOGRAPHICS (FIX CRUD: Profile Management)
+# MODULE 1: DEMOGRAPHICS
 # ------------------------------------------
 if active_module == "📋 1. Demographics & Coach Sign-off":
     st.markdown("<div class='banner-header'>📋 Athlete Demographics & Central CRUD Profile Engine</div>", unsafe_allow_html=True)
     
-    # CRUD Control Panel
     st.markdown("#### 👤 Profile Management System")
     prof_col1, prof_col2, prof_col3 = st.columns([2, 1, 1])
     
@@ -684,7 +680,7 @@ elif active_module == "⚽ 2. Club Load & Multi-Injury Diagnostics":
         update_state("still_affects", v_affects)
 
 # ------------------------------------------
-# MODULE 3: SFMA, ANATOMICAL VIEWS & ROM MATRIX (FIX 3 Asset Rendering)
+# MODULE 3: SFMA, ANATOMICAL VIEWS & ROM MATRIX
 # ------------------------------------------
 elif active_module == "🩺 3. SFMA, Anatomical Views & ROM Matrix":
     st.markdown("<div class='banner-header'>🩺 SFMA Diagnostics, Anatomical Postural Views & Joint ROM Goniometry</div>", unsafe_allow_html=True)
@@ -778,7 +774,6 @@ elif active_module == "🩺 3. SFMA, Anatomical Views & ROM Matrix":
     st.markdown("---")
     st.subheader("3. Joint Maximum Range of Motion (ROM) Goniometry Matrix")
     
-    # FIX 3: Replaced broken HTML image tag with responsive SVG diagram
     st.markdown("""
     <div style="background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 10px; padding: 15px; text-align: center; margin-bottom: 20px;">
         <svg width="280" height="100" viewBox="0 0 280 100" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -820,7 +815,7 @@ elif active_module == "🩺 3. SFMA, Anatomical Views & ROM Matrix":
     update_state("rom_shoulder_flexion", v_rom_shld)
 
 # ------------------------------------------
-# MODULE 4: SPORT-SPECIFIC ASSESSMENT & 1RM SUITE (FIX 1 & FIX 2)
+# MODULE 4: SPORT-SPECIFIC ASSESSMENT & 1RM SUITE
 # ------------------------------------------
 elif active_module == "💥 4. Sport-Specific Assessment & 1RM Suite":
     st.markdown("<div class='banner-header'>💥 Power, Speed, Agility, 1RM Strength & Capacity Testing Suite</div>", unsafe_allow_html=True)
@@ -833,7 +828,6 @@ elif active_module == "💥 4. Sport-Specific Assessment & 1RM Suite":
         st.subheader("4.1. Explosive Jump & Med-Ball Power")
         v_chest_pass = st.number_input("Chest Pass Med-Ball (m)", 1.0, 25.0, value=bind_input("p_chest_pass"))
         
-        # FIX 2: Restored Forehand and Backhand Throw metrics with dynamic sport targeting
         if is_racket_sport:
             st.markdown("🎯 **Racquet / Rotational Athlete Metrics**")
             v_fh_throw = st.number_input("Forehand Throw Med-Ball (m)", 1.0, 30.0, value=bind_input("p_forehand_throw"))
@@ -853,7 +847,6 @@ elif active_module == "💥 4. Sport-Specific Assessment & 1RM Suite":
 
     with c2:
         st.subheader("4.2. Speed & Agility Metrics")
-        # FIX 1: Ensured fully interactive and non-disabled speed fields across all profiles
         v_sprint5m = st.number_input("5m First-Step Sprint (sec)", 0.5, 3.0, value=bind_input("s_sprint5m"), help="Fully interactive for all sports profiles including combat sports.")
         v_sprint10m = st.number_input("10m Sprint (sec)", 1.0, 4.0, value=bind_input("s_sprint10m"), help="Fully interactive speed metric.")
         v_7x7 = st.number_input("7 x 7 Agility Drill (sec)", 5.0, 30.0, value=bind_input("s_7x7"))
@@ -907,7 +900,7 @@ elif active_module == "💥 4. Sport-Specific Assessment & 1RM Suite":
         st.success(f"✅ Full baseline snapshot saved for {rec['athlete_name']} on {rec['assessment_date']}!")
 
 # ------------------------------------------
-# MODULE 5: SAVED RECORDS (FIX 6 Progress Visualizer)
+# MODULE 5: SAVED RECORDS & HISTORICAL PROGRESS
 # ------------------------------------------
 elif active_module == "📈 5. Saved Records & Historical Progress":
     st.markdown("<div class='banner-header'>📈 Saved Assessment Records & Longitudinal Progress Tracking</div>", unsafe_allow_html=True)
@@ -917,10 +910,8 @@ elif active_module == "📈 5. Saved Records & Historical Progress":
     else:
         df = pd.DataFrame(st.session_state.athlete_records)
         
-        # Timeline Visualizer Dashboard
         st.subheader("📊 Performance Trajectory Over Time")
         
-        # Metric Selector
         track_metric = st.selectbox(
             "Select Metric to Track Across Assessment Dates:",
             ["s_1rm_squat", "s_1rm_bench", "p_cmj", "vo2max", "s_sprint10m", "horiz_asymmetry"],
@@ -934,7 +925,6 @@ elif active_module == "📈 5. Saved Records & Historical Progress":
             }.get(x, x)
         )
         
-        # Render Progress Visualizer
         if "assessment_date" in df.columns:
             chart_data = df[["assessment_date", track_metric]].copy()
             chart_data["assessment_date"] = pd.to_datetime(chart_data["assessment_date"])
@@ -946,20 +936,17 @@ elif active_module == "📈 5. Saved Records & Historical Progress":
         st.dataframe(df, use_container_width=True)
 
 # ------------------------------------------
-# MODULE 6: ADAPTIVE PROGRAM GENERATOR (FIX Dynamic Regeneration)
+# MODULE 6: ADAPTIVE PROGRAM GENERATOR (Modern HUD Card View)
 # ------------------------------------------
 elif active_module == "🚀 6. ADAPTIVE PROGRAM GENERATOR":
     st.markdown("<div class='banner-header'>🚀 Dynamic Multi-Month Periodization Engine</div>", unsafe_allow_html=True)
     
-    # Real-Time Engine Binding: Directly instantiates from session state form data
     engine = AthleteIQEngine(st.session_state.form_data, equipment_selected)
 
-    # Base Metrics Display
     rx_m1 = engine.generate_program_for_month(1)
     
     m1, m2, m3, m4, m5 = st.columns(5)
     
-    # FIX 4: Formatted inside non-truncating container
     m1.metric("Force-Velocity Profile", rx_m1["FV Profile"])
     m2.metric("Max Aerobic Speed", f"{rx_m1['MAS']} m/s")
     m3.metric("Horiz Asymmetry", f"{rx_m1['Horiz Asymmetry']}%")
@@ -990,43 +977,42 @@ elif active_module == "🚀 6. ADAPTIVE PROGRAM GENERATOR":
                 _, p_info = get_macrocycle_phase(m_num, w_num, rx_month["Squat 1RM Target"], rx_month["Bench 1RM Target"])
                 
                 with w_tab:
-                    st.caption(f"**Phase Focus**: {p_info['phase']} | **Target Prescribed Loading**: {p_info['intensity']} ({p_info['sets']})")
+                    # Phase Header Banner Card
+                    st.markdown(f"""
+                    <div style="background: rgba(30, 41, 59, 0.7); border-left: 4px solid #38bdf8; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px;">
+                        <span style="color: #38bdf8; font-weight: 700; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px;">Phase Focus: {p_info['phase']}</span><br>
+                        <span style="color: #f8fafc; font-size: 1rem; font-weight: 600;">🎯 Target Prescribed Loading: <span style="color: #a855f7;">{p_info['intensity']}</span> ({p_info['sets']})</span>
+                    </div>
+                    """, unsafe_allow_html=True)
 
                     plan_data = [
-                        {
-                            "Category": "1. Postural & ROM Corrective Prep",
-                            "Exercise": rx_month["Corrective Prep"],
-                            "Prescription": "2 Sets x 10 Reps / Side",
-                            "Target Intensity": "Controlled Mobility",
-                            "Tempo": "2-1-2-0"
-                        },
-                        {
-                            "Category": "2. Neuromuscular Power / Speed",
-                            "Exercise": rx_month["Power Exercise"],
-                            "Prescription": "4 Sets x 3 Reps" if w_num != 4 else "2 Sets x 3 Reps",
-                            "Target Intensity": "Maximal Explosive Intent",
-                            "Tempo": "X-0-X-0"
-                        },
-                        {
-                            "Category": "3. Lower Body Primary Lift",
-                            "Exercise": rx_month["Lower Exercise"],
-                            "Prescription": p_info["sets"],
-                            "Target Intensity": p_info["intensity"],
-                            "Tempo": p_info["tempo"]
-                        },
-                        {
-                            "Category": "4. Upper Body Primary Press",
-                            "Exercise": rx_month["Upper Exercise"],
-                            "Prescription": p_info["sets"],
-                            "Target Intensity": p_info["intensity"],
-                            "Tempo": p_info["tempo"]
-                        },
-                        {
-                            "Category": "5. Energy System Development (ESD)",
-                            "Exercise": rx_month["ESD Protocol"],
-                            "Prescription": "12 Minutes Total Work",
-                            "Target Intensity": "Zone 4 (120% MAS)",
-                            "Tempo": "Dynamic Shuttle"
-                        }
+                        ("1. Postural & ROM Corrective Prep", rx_month["Corrective Prep"], "2 Sets x 10 Reps / Side", "Controlled Mobility", "2-1-2-0", "#38bdf8"),
+                        ("2. Neuromuscular Power / Speed", rx_month["Power Exercise"], "4 Sets x 3 Reps" if w_num != 4 else "2 Sets x 3 Reps", "Maximal Explosive Intent", "X-0-X-0", "#ec4899"),
+                        ("3. Lower Body Primary Lift", rx_month["Lower Exercise"], p_info["sets"], p_info["intensity"], p_info["tempo"], "#6366f1"),
+                        ("4. Upper Body Primary Press", rx_month["Upper Exercise"], p_info["sets"], p_info["intensity"], p_info["tempo"], "#a855f7"),
+                        ("5. Energy System Development (ESD)", rx_month["ESD Protocol"], "12 Minutes Total Work", "Zone 4 (120% MAS)", "Dynamic Shuttle", "#10b981")
                     ]
-                    st.dataframe(pd.DataFrame(plan_data), use_container_width=True)
+
+                    # Card-Based Modern Workout Grid
+                    for cat, ex_name, rx_sets, intensity, tempo, accent_color in plan_data:
+                        st.markdown(f"""
+                        <div style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255, 255, 255, 0.08); border-left: 5px solid {accent_color}; border-radius: 12px; padding: 16px; margin-bottom: 12px; backdrop-filter: blur(10px);">
+                            <div style="font-size: 0.75rem; font-weight: 800; color: {accent_color}; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px;">
+                                {cat}
+                            </div>
+                            <div style="font-size: 1.15rem; font-weight: 700; color: #ffffff; margin-bottom: 10px;">
+                                {ex_name}
+                            </div>
+                            <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                                <span style="background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.12); color: #f8fafc; padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: 600;">
+                                    📌 {rx_sets}
+                                </span>
+                                <span style="background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.3); color: #38bdf8; padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: 600;">
+                                    ⚡ {intensity}
+                                </span>
+                                <span style="background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.3); color: #a855f7; padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: 600;">
+                                    ⏱️ Tempo: {tempo}
+                                </span>
+                            </div>
+                        </div>
+                        """, unsafe_allow_html=True)
