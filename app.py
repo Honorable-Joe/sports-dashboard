@@ -1,3 +1,4 @@
+
 import json
 from dataclasses import dataclass, field, asdict
 from datetime import date, datetime
@@ -154,6 +155,10 @@ class AthleteProfile:
     left_jump: float
     right_jump: float
     notes: str = ""
+    posture_anterior: Dict[str, str] = field(default_factory=dict)
+    posture_lateral: Dict[str, str] = field(default_factory=dict)
+    posture_posterior: Dict[str, str] = field(default_factory=dict)
+    movement_screen: Dict[str, str] = field(default_factory=dict)
 
 
 # ============================================================
@@ -245,6 +250,8 @@ DEFAULTS = {
     "cmj":40.0,"broad_jump":210.0,"sprint_5m":1.10,"sprint_10m":1.80,"cod":10.5,
     "squat_1rm":100.0,"bench_1rm":70.0,"ohp_1rm":45.0,"pullups":8,"pushups":30,"cooper_m":2400,
     "left_jump":105.0,"right_jump":104.0,"notes":"",
+    "posture_anterior":{},"posture_lateral":{},"posture_posterior":{},
+    "movement_screen":{},
 }
 
 if "athlete" not in st.session_state:
@@ -255,6 +262,8 @@ if "records" not in st.session_state:
     st.session_state.records = []
 if "generated_plan" not in st.session_state:
     st.session_state.generated_plan = None
+if "rotation_map" not in st.session_state:
+    st.session_state.rotation_map = {}
 
 
 def update(key, value):
@@ -262,7 +271,12 @@ def update(key, value):
 
 
 def profile_from_state() -> AthleteProfile:
-    d = st.session_state.athlete
+    d = dict(st.session_state.athlete)
+    # Backwards-compatible defaults for profiles created before Athlete-IQ 2.1.
+    d.setdefault("posture_anterior", {})
+    d.setdefault("posture_lateral", {})
+    d.setdefault("posture_posterior", {})
+    d.setdefault("movement_screen", {})
     return AthleteProfile(**d)
 
 
@@ -371,12 +385,84 @@ def priorities(a: AthleteProfile) -> Dict[str,float]:
     mapping = {"Strength":"Strength","Power":"Power","Acceleration":"Acceleration","COD":"COD","Aerobic":"Aerobic","Stability":"Stability"}
     deficits = {k:max(0,100-scores.get(k,50)) for k in mapping}
     weighted = {k: deficits[k]*sport.get(k,0.1) for k in deficits}
-    # Goal boost
     goal_map = {"Max Strength":"Strength","Strength":"Strength","Hypertrophy":"Strength","Power":"Power","Speed":"Acceleration","Agility":"COD","Endurance":"Aerobic","Sport Performance":"Power","Fat Loss":"Aerobic","General Fitness":"Strength"}
     if goal_map.get(a.goal) in weighted:
         weighted[goal_map[a.goal]] *= 1.35
+    # Screening observations influence the decision engine without pretending to diagnose.
+    screen_adj = screening_priority_adjustment(a)
+    weighted["Stability"] = weighted.get("Stability", 0) + screen_adj["Stability"]
+    weighted["Strength"] = weighted.get("Strength", 0) + screen_adj["Strength"]
+    weighted["Power"] = weighted.get("Power", 0) + screen_adj["Power"]
+    # Mobility is tracked as an explicit priority even though it is not part of SPORT_DEMANDS.
+    weighted["Mobility"] = max(0.0, 100 - scores.get("Mobility", 50)) * 0.12 + screen_adj["Mobility"]
     total = sum(weighted.values()) or 1
     return {k:round(v/total*100,1) for k,v in sorted(weighted.items(), key=lambda x:x[1], reverse=True)}
+
+
+def posture_score(view: Dict[str, str]) -> int:
+    """Simple coaching-screen score; not a diagnostic or validated clinical scale."""
+    score = 0
+    for value in view.values():
+        if value == "Mild deviation":
+            score += 1
+        elif value == "Marked deviation":
+            score += 2
+    return score
+
+
+def posture_flags(a: AthleteProfile) -> List[str]:
+    flags = []
+    for view_name, view in [
+        ("Anterior", a.posture_anterior),
+        ("Lateral", a.posture_lateral),
+        ("Posterior", a.posture_posterior),
+    ]:
+        for item, value in view.items():
+            if value in ("Mild deviation", "Marked deviation"):
+                flags.append(f"{view_name} view — {item}: {value.lower()}.")
+    return flags
+
+
+def movement_screen_flags(a: AthleteProfile) -> List[str]:
+    flags = []
+    for pattern, result in a.movement_screen.items():
+        if result in ("FP — Functional / Painful", "DP — Dysfunctional / Painful"):
+            flags.append(f"Movement screen: {pattern} is painful ({result.split(' — ')[0]}).")
+        elif result == "DN — Dysfunctional / Non-painful":
+            flags.append(f"Movement screen: {pattern} is dysfunctional without reported pain.")
+    return flags
+
+
+def screening_priority_adjustment(a: AthleteProfile) -> Dict[str, float]:
+    """Converts screening observations into coaching priorities; not a clinical diagnosis."""
+    out = {"Mobility": 0.0, "Stability": 0.0, "Strength": 0.0, "Power": 0.0}
+    pflags = posture_flags(a)
+    mflags = movement_screen_flags(a)
+    out["Mobility"] += sum("position" in x.lower() or "curve" in x.lower() or "alignment" in x.lower() for x in pflags) * 2
+    out["Stability"] += sum("scapular" in x.lower() or "pelvic" in x.lower() or "knee" in x.lower() for x in pflags) * 2
+    out["Mobility"] += sum("flexion" in x.lower() or "rotation" in x.lower() or "extension" in x.lower() for x in mflags) * 3
+    out["Stability"] += sum("stance" in x.lower() or "squat" in x.lower() or "upper extremity" in x.lower() for x in mflags) * 2
+    if any("painful" in x.lower() for x in mflags):
+        out["Strength"] *= 0.75
+        out["Power"] *= 0.60
+    return out
+
+
+def screen_summary(a: AthleteProfile) -> Dict[str, object]:
+    posture_total = posture_score(a.posture_anterior) + posture_score(a.posture_lateral) + posture_score(a.posture_posterior)
+    assessed_posture = sum(len(v) for v in [a.posture_anterior, a.posture_lateral, a.posture_posterior])
+    movement_assessed = sum(1 for v in a.movement_screen.values() if v != "Not assessed")
+    movement_pain = sum(1 for v in a.movement_screen.values() if "Painful" in v)
+    movement_dysfunction = sum(1 for v in a.movement_screen.values() if "Dysfunctional" in v)
+    return {
+        "posture_score": posture_total,
+        "posture_assessed": assessed_posture,
+        "movement_assessed": movement_assessed,
+        "movement_pain": movement_pain,
+        "movement_dysfunction": movement_dysfunction,
+        "posture_flags": posture_flags(a),
+        "movement_flags": movement_screen_flags(a),
+    }
 
 
 def mobility_flags(a: AthleteProfile) -> List[str]:
@@ -419,8 +505,19 @@ def exercise_allowed(ex: Exercise, a: AthleteProfile) -> bool:
     return True
 
 
-def score_exercise(ex: Exercise, a: AthleteProfile, priority: Dict[str,float]) -> float:
+def exercise_family(ex: Exercise) -> str:
+    family_map = {
+        "Squat":"Squat Pattern", "Hinge":"Hinge Pattern", "Horizontal Push":"Horizontal Push",
+        "Overhead Press":"Vertical Push", "Pull":"Vertical / Horizontal Pull", "Power":"Power",
+        "Core":"Core / Trunk", "Accessory":"Accessory", "Conditioning":"Conditioning",
+        "Mobility":"Mobility", "Agility":"Change of Direction",
+    }
+    return family_map.get(ex.pattern, ex.pattern)
+
+
+def score_exercise(ex: Exercise, a: AthleteProfile, priority: Dict[str,float], recent_ids: Optional[List[str]]=None) -> float:
     score=0.0
+    recent_ids = recent_ids or []
     if a.sport in ex.sport_tags: score += 20
     if "General Fitness" in ex.sport_tags: score += 4
     level_order={"Beginner":0,"Intermediate":1,"Advanced":2,"Elite":3}
@@ -431,15 +528,56 @@ def score_exercise(ex: Exercise, a: AthleteProfile, priority: Dict[str,float]) -
     if a.rom_shoulder<165 and ex.pattern != "Overhead Press": score += 3
     for q in ex.quality:
         score += priority.get(q,0)*0.15
+    # Screening-driven bonuses.
+    if priority.get("Mobility",0) > 20 and ex.pattern in ["Mobility","Core"]:
+        score += 5
+    if priority.get("Stability",0) > 20 and (ex.unilateral or "Stability" in ex.quality):
+        score += 6
+    # Recent exposure penalty encourages variation without forcing pointless novelty.
+    if ex.id in recent_ids:
+        score -= 14
     score -= ex.fatigue * (max(0, 80-readiness_score(a))/100) * 8
     if a.season == "In-Season / Competition" and ex.fatigue >= 4: score -= 8
     return score
 
 
-def select_exercises(a: AthleteProfile, pattern: str, priority: Dict[str,float], n: int=1) -> List[Exercise]:
+def select_exercises(a: AthleteProfile, pattern: str, priority: Dict[str,float], n: int=1,
+                     month: int=1, rotation_history: Optional[Dict[str, List[str]]]=None,
+                     force_family: Optional[str]=None) -> List[Exercise]:
     candidates=[x for x in E if x.pattern==pattern and exercise_allowed(x,a)]
-    candidates.sort(key=lambda x:score_exercise(x,a,priority), reverse=True)
+    if not candidates:
+        return []
+    history = rotation_history or {}
+    recent_ids = history.get(exercise_family(candidates[0]), [])
+    candidates.sort(key=lambda x:score_exercise(x,a,priority,recent_ids), reverse=True)
+    # Rotate when alternatives exist, but preserve the movement family and quality.
+    if month > 1 and len(candidates) > 1:
+        non_recent = [x for x in candidates if x.id not in recent_ids]
+        if non_recent:
+            candidates = non_recent + [x for x in candidates if x.id in recent_ids]
     return candidates[:n]
+
+
+def build_rotation_map(a: AthleteProfile, months: int) -> Dict[int, Dict[str, str]]:
+    """Select one primary variant per movement family for each mesocycle."""
+    priority = priorities(a)
+    rotation: Dict[int, Dict[str, str]] = {}
+    history: Dict[str, List[str]] = {}
+    patterns = ["Power", "Squat", "Hinge", "Horizontal Push", "Pull", "Overhead Press", "Core", "Accessory"]
+    for month in range(1, months + 1):
+        rotation[month] = {}
+        for pattern in patterns:
+            candidates = [x for x in E if x.pattern == pattern and exercise_allowed(x,a)]
+            if not candidates:
+                continue
+            family = exercise_family(candidates[0])
+            candidates.sort(key=lambda x:score_exercise(x,a,priority,history.get(family,[])), reverse=True)
+            # Prefer an unexposed variant for the new mesocycle. If none exists, retain the best-ranked option.
+            fresh = [x for x in candidates if x.id not in history.get(family,[])]
+            chosen = fresh[0] if fresh else candidates[0]
+            rotation[month][pattern] = chosen.id
+            history.setdefault(family, []).append(chosen.id)
+    return rotation
 
 
 def estimate_load(arm: float, pct: float) -> float:
@@ -504,7 +642,7 @@ def render_session_cards(a, session, week):
     if extra:
         ex=extra["exercise"]; render_program_card("6. Supplemental / Core",ex.name,f"{extra['sets']} Sets x {extra['reps']} Reps",extra["intensity"],extra["tempo"],ex.plane,ex.stability,"#f59e0b")
 
-def build_week(a: AthleteProfile, week: int) -> List[Dict[str,object]]:
+def build_week(a: AthleteProfile, week: int, month: int=1, rotation_map: Optional[Dict[int, Dict[str, str]]]=None) -> List[Dict[str,object]]:
     priority=priorities(a)
     load=week_loading(a,week)
     days=max(1,min(a.gym_days_available,4))
@@ -517,22 +655,28 @@ def build_week(a: AthleteProfile, week: int) -> List[Dict[str,object]]:
         3:["Power","Squat","Hinge","Overhead Press","Core"],
         4:["Hinge","Horizontal Push","Pull","Accessory"],
     }
+    month_map = (rotation_map or {}).get(month, {})
     for day in range(1,days+1):
         patterns=pattern_days[day]
         exercises=[]
         for pat in patterns:
+            chosen_id = month_map.get(pat)
+            chosen = EXERCISES.get(chosen_id) if chosen_id else None
+            if chosen and exercise_allowed(chosen,a):
+                exercises.append(chosen)
+                continue
             if pat=="Accessory":
                 opts=[x for x in E if x.pattern in ["Accessory","Core"] and exercise_allowed(x,a)]
                 opts.sort(key=lambda x:score_exercise(x,a,priority),reverse=True)
                 if opts: exercises.append(opts[0])
             else:
-                opts=select_exercises(a,pat,priority)
+                opts=select_exercises(a,pat,priority,month=month)
                 if opts: exercises.append(opts[0])
         session=[]
         for idx,ex in enumerate(exercises):
             if ex.pattern=="Power":
                 sets=3 if week<4 else 2; reps=3
-                pct=None; tempo=ex.tempo_power; intensity="Maximal intent; stop if velocity/technique drops"
+                pct=None; tempo=ex.tempo_power; intensity="Maximal explosive intent; stop if velocity/technique drops"
             elif ex.pattern in ["Core","Accessory"]:
                 sets=2; reps=10 if ex.pattern=="Accessory" else 8
                 pct=None; tempo="2-1-2-0"; intensity="RPE 6–7"
@@ -547,13 +691,17 @@ def build_week(a: AthleteProfile, week: int) -> List[Dict[str,object]]:
             if readiness_score(a)<60:
                 sets=max(1,sets-1)
                 intensity += " | Readiness adjustment: -1 set"
-            session.append({"exercise":ex,"sets":sets,"reps":reps,"pct":pct,"tempo":tempo,"intensity":intensity})
+            session.append({"exercise":ex,"sets":sets,"reps":reps,"pct":pct,"tempo":tempo,"intensity":intensity,"month":month})
         sessions.append({"day":day,"focus":phase_for(a,week),"exercises":session})
     return sessions
 
 
 def build_macrocycle(a: AthleteProfile, months: int=3) -> Dict[int,Dict[int,List[Dict[str,object]]]]:
-    return {m:{w:build_week(a,w) for w in range(1,5)} for m in range(1,months+1)}
+    rotation_map = build_rotation_map(a, months)
+    plan = {m:{w:build_week(a,w,month=m,rotation_map=rotation_map) for w in range(1,5)} for m in range(1,months+1)}
+    # Store the decision map for transparency in the UI.
+    st.session_state.rotation_map = rotation_map
+    return plan
 
 
 def explain_plan(a: AthleteProfile) -> List[str]:
@@ -563,6 +711,10 @@ def explain_plan(a: AthleteProfile) -> List[str]:
     if readiness_score(a)<60: reasons.append("Current readiness is below the normal training target, so volume is reduced.")
     if asymmetry(a.left_jump,a.right_jump)>=8: reasons.append("Meaningful left/right jump asymmetry increases the selection score for unilateral work.")
     if mobility_flags(a): reasons.append("ROM flags are used to exclude exercises with higher prerequisite demands.")
+    if posture_flags(a): reasons.append(f"Postural screening recorded {len(posture_flags(a))} observation flag(s) across the three views.")
+    if movement_screen_flags(a): reasons.append(f"Movement screening recorded {len(movement_screen_flags(a))} movement-quality flag(s).")
+    if st.session_state.get("rotation_map"):
+        reasons.append("Exercise rotation is mesocycle-based: movement families remain stable while suitable variants are rotated between months when alternatives exist.")
     return reasons
 
 # ============================================================
@@ -574,7 +726,7 @@ st.sidebar.caption("Assessment → Decision Engine → Program → Adaptation")
 module=st.sidebar.radio("Jump to Module",[
     "1. Athlete Profile",
     "2. Load, Injury & Readiness",
-    "3. Movement & ROM",
+    "3. Comprehensive Screening",
     "4. Performance Testing",
     "5. Analysis Dashboard",
     "6. Adaptive Program Generator",
@@ -653,24 +805,66 @@ elif module=="2. Load, Injury & Readiness":
 # ============================================================
 # MODULE 3
 # ============================================================
-elif module=="3. Movement & ROM":
-    st.markdown('<div class="banner-header">Movement Quality • ROM Matrix • Screening Flags</div>',unsafe_allow_html=True)
+elif module=="3. Comprehensive Screening":
+    st.markdown('<div class="banner-header">Comprehensive Screening • ROM • Posture • Movement Quality</div>',unsafe_allow_html=True)
     d=st.session_state.athlete
+    a=profile_from_state()
+
+    st.subheader("A. Range of Motion")
     c1,c2,c3,c4,c5=st.columns(5)
     with c1: update("rom_ankle",st.number_input("Ankle Dorsiflexion (°)",min_value=0.0,max_value=50.0,value=float(d["rom_ankle"]),step=0.5))
     with c2: update("rom_hip_flex",st.number_input("Hip Flexion (°)",min_value=50.0,max_value=150.0,value=float(d["rom_hip_flex"]),step=0.5))
     with c3: update("rom_hip_ext",st.number_input("Hip Extension (°)",min_value=0.0,max_value=40.0,value=float(d["rom_hip_ext"]),step=0.5))
     with c4: update("rom_tspine",st.number_input("T-Spine Rotation (°)",min_value=10.0,max_value=70.0,value=float(d["rom_tspine"]),step=0.5))
     with c5: update("rom_shoulder",st.number_input("Shoulder Flexion (°)",min_value=90.0,max_value=180.0,value=float(d["rom_shoulder"]),step=0.5))
-    st.markdown("---")
-    st.subheader("Screening flags")
-    flags=mobility_flags(profile_from_state())
-    if flags:
-        for f in flags: st.warning(f)
-    else: st.success("No ROM flags triggered by the current thresholds.")
-    st.caption("ROM thresholds in this application are screening heuristics, not diagnoses or universal clinical norms.")
 
-# ============================================================
+    st.markdown("---")
+    st.subheader("B. Three-View Postural Screen")
+    st.caption("Coach-observed screening only. A photograph can support documentation, but these fields do not diagnose structural or medical conditions.")
+    view_tabs=st.tabs(["Anterior View","Lateral View","Posterior View"])
+    state_keys={"Anterior":"posture_anterior","Lateral":"posture_lateral","Posterior":"posture_posterior"}
+    for tab,view in zip(view_tabs,["Anterior","Lateral","Posterior"]):
+        with tab:
+            key=state_keys[view]
+            current=dict(d.get(key,{}))
+            upload=st.file_uploader(f"Optional {view.lower()} photo reference",type=["png","jpg","jpeg"],key=f"posture_upload_{view.lower()}")
+            if upload is not None:
+                st.image(upload,caption=f"{view} screening reference",use_container_width=True)
+            cols=st.columns(2)
+            for i,item in enumerate(POSTURE_FIELDS[view]):
+                with cols[i%2]:
+                    val=st.selectbox(item,POSTURE_OPTIONS,index=POSTURE_OPTIONS.index(current.get(item,"Not assessed")),key=f"posture_{view}_{i}")
+                    current[item]=val
+            update(key,current)
+            st.markdown(f"**{view} observation score:** {posture_score(current)}")
+
+    st.markdown("---")
+    st.subheader("C. SFMA-Compatible Movement Screen")
+    st.caption("Enter the coach's recorded classification. Use the licensed/official SFMA protocol and training requirements where applicable; this module is a decision-support record, not a clinical diagnosis.")
+    current=dict(d.get("movement_screen",{}))
+    cols=st.columns(2)
+    for i,pattern in enumerate(MOVEMENT_SCREEN_PATTERNS):
+        with cols[i%2]:
+            val=st.selectbox(pattern,MOVEMENT_SCREEN_OPTIONS,index=MOVEMENT_SCREEN_OPTIONS.index(current.get(pattern,"Not assessed")),key=f"movement_screen_{i}")
+            current[pattern]=val
+    update("movement_screen",current)
+
+    summary=screen_summary(profile_from_state())
+    st.markdown("---")
+    c1,c2,c3,c4=st.columns(4)
+    c1.metric("Postural Observations",summary["posture_assessed"])
+    c2.metric("Postural Deviation Score",summary["posture_score"])
+    c3.metric("Movement Patterns Assessed",summary["movement_assessed"])
+    c4.metric("Painful Movement Results",summary["movement_pain"])
+
+    flags=summary["posture_flags"]+summary["movement_flags"]+mobility_flags(profile_from_state())
+    if flags:
+        st.subheader("Screening Flags")
+        for f in flags: st.warning(f)
+    else:
+        st.success("No screening flags recorded yet.")
+    st.caption("ROM thresholds and the observation score are coaching heuristics. They are not universal clinical norms and should not be used to diagnose disease or injury.")
+
 # MODULE 4
 # ============================================================
 elif module=="4. Performance Testing":
@@ -726,7 +920,7 @@ elif module=="5. Analysis Dashboard":
     st.subheader("Why the engine is making these decisions")
     for reason in explain_plan(a): st.write("• "+reason)
     st.subheader("Flags")
-    for f in injury_flags(a)+mobility_flags(a): st.warning(f)
+    for f in injury_flags(a)+mobility_flags(a)+posture_flags(a)+movement_screen_flags(a): st.warning(f)
 
 # ============================================================
 # MODULE 6
@@ -745,8 +939,18 @@ elif module=="6. Adaptive Program Generator":
         c2.metric("Top Priority",next(iter(p)))
         c3.metric("Gym Days",a.gym_days_available)
         c4.metric("Season",a.season)
+        rotation_map=st.session_state.get("rotation_map",{})
         for m in range(1,plan_months+1):
             with st.expander(f"MONTH {m} — {phase_for(a,1)} / Progressive Block",expanded=(m==1)):
+                st.markdown("**🔄 Exercise Rotation for this Mesocycle**")
+                selected_variants=[]
+                for pat,eid in rotation_map.get(m,{}).items():
+                    if eid in EXERCISES:
+                        ex=EXERCISES[eid]
+                        selected_variants.append(f"{pat}: **{ex.name}**")
+                if selected_variants:
+                    st.markdown(" • ".join(selected_variants))
+                st.caption("Rotation preserves the movement family and training objective; it changes the exercise variant only when an appropriate alternative exists.")
                 tabs=st.tabs([f"Week {w}" for w in range(1,5)])
                 for w,tab in enumerate(tabs,1):
                     with tab:
@@ -794,11 +998,13 @@ elif module=="7. Data / Profiles":
         st.subheader("Historical Assessment Records")
         st.dataframe(df,use_container_width=True,hide_index=True)
         st.download_button("⬇️ Download CSV",df.to_csv(index=False),"athlete_iq_history.csv","text/csv")
-    payload=json.dumps(st.session_state.athlete,default=str,indent=2)
+    export_payload=dict(st.session_state.athlete)
+    export_payload["exercise_rotation_map"]=st.session_state.get("rotation_map",{})
+    payload=json.dumps(export_payload,default=str,indent=2)
     st.download_button("⬇️ Export Current Athlete JSON",payload,"athlete_iq_profile.json","application/json")
 
 # ============================================================
 # FOOTER / SAFETY
 # ============================================================
 st.markdown("---")
-st.caption("Athlete-IQ v2 • Rule-based coaching software. Screening thresholds and performance classifications are heuristic unless explicitly validated. This application does not diagnose, prescribe medical treatment, or replace qualified clinical assessment.")
+st.caption("Athlete-IQ v2.1 • Rule-based coaching software. Screening thresholds and performance classifications are heuristic unless explicitly validated. This application does not diagnose, prescribe medical treatment, or replace qualified clinical assessment.")
