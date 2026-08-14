@@ -1110,63 +1110,80 @@ elif active_module == "🚀 6. ADAPTIVE PROGRAM GENERATOR":
         rx_month = engine.generate_program_for_month(m_num, esd_mode_selected)
         
         with m_tab:
-            m_title, _ = get_macrocycle_phase(m_num, 1, rx_month["Squat 1RM Target"], rx_month["Bench 1RM Target"], st.session_state.form_data.get("season_phase", "In-Season (Competition)"))
+            m_title, _ = get_macrocycle_phase(
+                m_num, 1, 
+                rx_month["Squat 1RM Target"], 
+                rx_month["Bench 1RM Target"], 
+                st.session_state.form_data.get("season_phase", "In-Season (Competition)")
+            )
             st.subheader(f"📌 {m_title}")
             
             w_tabs = st.tabs([f"Week {w}" for w in range(1, 5)])
 
             for w_idx, w_tab in enumerate(w_tabs):
                 w_num = w_idx + 1
-                _, p_info = get_macrocycle_phase(m_num, w_num, rx_month["Squat 1RM Target"], rx_month["Bench 1RM Target"], st.session_state.form_data.get("season_phase", "In-Season (Competition)"))
+                _, p_info = get_macrocycle_phase(
+                    m_num, w_num, 
+                    rx_month["Squat 1RM Target"], 
+                    rx_month["Bench 1RM Target"], 
+                    st.session_state.form_data.get("season_phase", "In-Season (Competition)")
+                )
                 
                 with w_tab:
-                    # Phase Header Banner Card
-                    st.markdown(f"""
-                    <div style="background: rgba(30, 41, 59, 0.7); border-left: 4px solid #38bdf8; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px;">
-                        <span style="color: #38bdf8; font-weight: 700; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px;">Phase Focus: {p_info['phase']}</span><br>
-                        <span style="color: #f8fafc; font-size: 1rem; font-weight: 600;">🎯 Target Prescribed Loading: <span style="color: #a855f7;">{p_info['intensity']}</span> ({p_info['sets']})</span>
-                    </div>
-                    """, unsafe_allow_html=True)
+                    # Periodization HUD Top Metrics
+                    pcol1, pcol2, pcol3, pcol4 = st.columns(4)
+                    pcol1.metric("Microcycle Focus", p_info["phase"])
+                    pcol2.metric("Target Volume", p_info["sets"])
+                    pcol3.metric("Prescribed Intensity", p_info["intensity"])
+                    pcol4.metric("Contraction Tempo", p_info["tempo"])
 
-                    # Unpack Exercise Objects
-                    low_ex = rx_month["Lower Exercise Obj"]
-                    upp_ex = rx_month["Upper Exercise Obj"]
-                    pow_ex = rx_month["Power Exercise Obj"]
+                    st.markdown("---")
 
-                    plan_data = [
-                        ("1. Postural & ROM Corrective Prep", rx_month["Corrective Prep"], "2 Sets x 10 Reps / Side", "Controlled Mobility", "2-1-2-0", "Sagittal / Multi-planar", "Corrective / Activation", "#38bdf8"),
-                        ("2. Neuromuscular Power / Speed", pow_ex.name, "4 Sets x 3 Reps" if w_num != 4 else "2 Sets x 3 Reps", "Maximal Explosive Intent", pow_ex.power_tempo, pow_ex.plane_of_motion, pow_ex.stability_tier, "#ec4899"),
-                        ("3. Lower Body Primary Lift", low_ex.name, p_info["sets"], p_info["intensity"], p_info["tempo"], low_ex.plane_of_motion, low_ex.stability_tier, "#6366f1"),
-                        ("4. Upper Body Primary Press", upp_ex.name, p_info["sets"], p_info["intensity"], p_info["tempo"], upp_ex.plane_of_motion, upp_ex.stability_tier, "#a855f7"),
-                        ("5. Dynamic MetCon / ESD Protocol", rx_month["ESD Protocol"], "12 Minutes Total Work", f"Selected Mode: {esd_mode_selected}", "Dynamic Pace", "Multi-planar", "Metabolic Conditioning", "#10b981")
-                    ]
+                    # Corrective Prep Header
+                    st.markdown("##### 🧘 Movement Preparation & Corrective Warm-Up")
+                    st.info(rx_month["Corrective Prep"])
 
-                    # Card-Based Modern Workout Grid
-                    for cat, ex_name, rx_sets, intensity, tempo, plane_m, stab_t, accent_color in plan_data:
+                    st.markdown("##### 🏋️ Exercise Prescription")
+
+                    # Lower Body Movement Card
+                    lower_ex: Exercise = rx_month["Lower Exercise Obj"]
+                    with st.container():
                         st.markdown(f"""
-                        <div style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255, 255, 255, 0.08); border-left: 5px solid {accent_color}; border-radius: 12px; padding: 16px; margin-bottom: 12px; backdrop-filter: blur(10px);">
-                            <div style="font-size: 0.75rem; font-weight: 800; color: {accent_color}; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px;">
-                                {cat}
-                            </div>
-                            <div style="font-size: 1.15rem; font-weight: 700; color: #ffffff; margin-bottom: 10px;">
-                                {ex_name}
-                            </div>
-                            <div style="display: flex; flex-wrap: wrap; gap: 8px;">
-                                <span style="background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.12); color: #f8fafc; padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: 600;">
-                                    📌 {rx_sets}
-                                </span>
-                                <span style="background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.3); color: #38bdf8; padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: 600;">
-                                    ⚡ {intensity}
-                                </span>
-                                <span style="background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.3); color: #a855f7; padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: 600;">
-                                    ⏱️ OPEX Tempo (E-P-C-P): {tempo}
-                                </span>
-                                <span style="background: rgba(236, 72, 153, 0.1); border: 1px solid rgba(236, 72, 153, 0.3); color: #ec4899; padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: 600;">
-                                    📐 Plane: {plane_m}
-                                </span>
-                                <span style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); color: #10b981; padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: 600;">
-                                    🛡️ Tier: {stab_t}
-                                </span>
-                            </div>
+                        <div class="metric-card">
+                            <h4 style="color:#38bdf8; margin:0;">🦵 Lower Body Primary ({lower_ex.pattern}): {lower_ex.name}</h4>
+                            <p style="margin:5px 0 0 0; color:#cbd5e1;">
+                                <b>Equipment:</b> {lower_ex.equipment_type} | <b>Plane:</b> {lower_ex.plane_of_motion} | <b>Stability:</b> {lower_ex.stability_tier}<br/>
+                                <b>Sets & Reps:</b> {p_info['sets']} @ {p_info['intensity']} | <b>Tempo:</b> {p_info['tempo']}
+                            </p>
                         </div>
                         """, unsafe_allow_html=True)
+
+                    # Upper Body Movement Card
+                    upper_ex: Exercise = rx_month["Upper Exercise Obj"]
+                    with st.container():
+                        st.markdown(f"""
+                        <div class="metric-card">
+                            <h4 style="color:#a855f7; margin:0;">💪 Upper Body Primary ({upper_ex.pattern}): {upper_ex.name}</h4>
+                            <p style="margin:5px 0 0 0; color:#cbd5e1;">
+                                <b>Equipment:</b> {upper_ex.equipment_type} | <b>Plane:</b> {upper_ex.plane_of_motion} | <b>Stability:</b> {upper_ex.stability_tier}<br/>
+                                <b>Sets & Reps:</b> {p_info['sets']} @ {p_info['intensity']} | <b>Tempo:</b> {p_info['tempo']}
+                            </p>
+                        </div>
+                        """, unsafe_allow_html=True)
+
+                    # Power/Explosive Movement Card
+                    power_ex: Exercise = rx_month["Power Exercise Obj"]
+                    with st.container():
+                        st.markdown(f"""
+                        <div class="metric-card">
+                            <h4 style="color:#ec4899; margin:0;">⚡ Power / Ballistics: {power_ex.name}</h4>
+                            <p style="margin:5px 0 0 0; color:#cbd5e1;">
+                                <b>Equipment:</b> {power_ex.equipment_type} | <b>Plane:</b> {power_ex.plane_of_motion} | <b>Stability:</b> {power_ex.stability_tier}<br/>
+                                <b>Prescription:</b> 3 Sets x 4-5 Reps (Max Intent) | <b>Tempo:</b> {power_ex.power_tempo}
+                            </p>
+                        </div>
+                        """, unsafe_allow_html=True)
+
+                    # ESD / MetCon Conditioning Protocol
+                    st.markdown("##### 🏃 Energy System Development (ESD) Protocol")
+                    st.success(f"**Modality ({esd_mode_selected}):** {rx_month['ESD Protocol']}")
