@@ -75,6 +75,8 @@ st.markdown(
 .warn {color:#fbbf24;font-weight:800;}
 .bad {color:#fb7185;font-weight:800;}
 .info {color:#38bdf8;font-weight:800;}
+[data-testid="stMetricLabel"],[data-testid="stMetricValue"]{white-space:normal!important;word-break:break-word!important;overflow-wrap:break-word!important;}
+div[data-testid="stMetricValue"]>div{font-size:1.1rem!important;line-height:1.25!important;}
 </style>
 """,
     unsafe_allow_html=True,
@@ -458,6 +460,50 @@ def conditioning(a: AthleteProfile, priority: Dict[str,float], week: int) -> Dic
     return {"mode":"Mixed conditioning","work":"8–12 × 30 s work / 30–60 s recovery","intensity":"RPE 7–8/10","reason":"General work capacity"}
 
 
+SPORT_WARMUPS = {
+    "Racket Sports (Squash/Padel)": ["Wrist & Forearm Dynamic Rotations", "Thoracic Spine Openers (Transverse Plane)", "Lateral Multi-Directional Shuttles"],
+    "Tennis": ["Wrist & Forearm Dynamic Rotations", "Thoracic Spine Openers (Transverse Plane)", "Lateral Multi-Directional Shuttles"],
+    "Soccer": ["Dynamic Hamstring Sweeps & Adductor Mobilization", "Ankle Mobility & Single-Leg Balance Hops", "Multi-Directional Change of Direction (COD) Shuttles"],
+    "Basketball": ["Ankle Mobility & Achilles Stiffness Hops", "Drop Landings (Landing Mechanics Prep)", "Reactive Vertical Jump Hops"],
+    "Volleyball": ["Scapular Y-T-W Wall Slides & Rotator Cuff Band Mobilization", "Ankle Stiffness Hops & Depth Landings", "Multi-Planar Lateral Bounds & Block Hops"],
+    "Combat Sports (MMA/Boxing)": ["Thoracic Dynamic Windmills & Neck Isometric Prep", "Hip 90/90 Flow & Dynamic Adductor Sweeps", "Explosive Banded Rotational Punches & Footwork Shuttles"],
+    "Track & Field (Sprints/Jumps)": ["A-Skips, B-Skips & Ankling Drills", "Dynamic Hamstring Decompression Sweeps", "Banded Glute Activation & Sprint Acceleration Wall Drills"],
+    "Rugby/American Football": ["Neck Isometric Holds & Upper Trapezius Prep", "Dynamic Groin / Adductor Mobilization", "Resisted Sled / Banded Acceleration Starts"],
+    "General Fitness": ["World's Greatest Stretch", "Band Pull-Aparts & Glute Bridges", "Bodyweight Squats & Arm Circles"],
+}
+
+def render_program_card(category, exercise_name, prescription, intensity, tempo, plane, tier, accent):
+    html = f"""<div style='background:rgba(15,23,42,.82);border:1px solid rgba(255,255,255,.08);border-left:5px solid {accent};border-radius:12px;padding:16px;margin-bottom:12px;backdrop-filter:blur(10px);'>
+<div style='font-size:.75rem;font-weight:800;color:{accent};text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;'>{category}</div>
+<div style='font-size:1.15rem;font-weight:700;color:#fff;margin-bottom:10px;line-height:1.45;word-break:break-word;'>{exercise_name}</div>
+<div style='display:flex;flex-wrap:wrap;gap:8px;'>
+<span style='background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:#f8fafc;padding:5px 10px;border-radius:7px;font-size:.8rem;font-weight:600;'>📌 {prescription}</span>
+<span style='background:rgba(56,189,248,.10);border:1px solid rgba(56,189,248,.30);color:#38bdf8;padding:5px 10px;border-radius:7px;font-size:.8rem;font-weight:600;'>⚡ {intensity}</span>
+<span style='background:rgba(168,85,247,.10);border:1px solid rgba(168,85,247,.30);color:#a855f7;padding:5px 10px;border-radius:7px;font-size:.8rem;font-weight:600;'>⏱️ OPEX Tempo (E-P-C-P): {tempo}</span>
+<span style='background:rgba(236,72,153,.10);border:1px solid rgba(236,72,153,.30);color:#ec4899;padding:5px 10px;border-radius:7px;font-size:.8rem;font-weight:600;'>📐 Plane: {plane}</span>
+<span style='background:rgba(16,185,129,.10);border:1px solid rgba(16,185,129,.30);color:#10b981;padding:5px 10px;border-radius:7px;font-size:.8rem;font-weight:600;'>🛡️ Tier: {tier}</span>
+</div></div>"""
+    st.markdown(html, unsafe_allow_html=True)
+
+def render_session_cards(a, session, week):
+    exercises=session["exercises"]
+    power=next((x for x in exercises if x["exercise"].pattern=="Power"),None)
+    lower=next((x for x in exercises if x["exercise"].pattern in ["Squat","Hinge"]),None)
+    upper=next((x for x in exercises if x["exercise"].pattern in ["Horizontal Push","Overhead Press"]),None)
+    extra=next((x for x in exercises if x["exercise"].pattern in ["Pull","Accessory","Core"]),None)
+    warmups=SPORT_WARMUPS.get(a.sport,SPORT_WARMUPS["General Fitness"])
+    render_program_card("1. Postural & ROM Corrective Prep",f"Sport Prep ({a.sport}): {' + '.join(warmups)}","2 Sets x 10 Reps / Side","Controlled Mobility","2-1-2-0","Sagittal / Multi-planar","Corrective / Activation","#38bdf8")
+    if power:
+        ex=power["exercise"]; render_program_card("2. Neuromuscular Power / Speed",ex.name,f"{power['sets']} Sets x {power['reps']} Reps","Maximal Explosive Intent",power["tempo"],ex.plane,ex.stability,"#ec4899")
+    if lower:
+        ex=lower["exercise"]; render_program_card("3. Lower Body Primary Lift",ex.name,f"{lower['sets']} Sets x {lower['reps']} Reps",lower["intensity"],lower["tempo"],ex.plane,ex.stability,"#6366f1")
+    if upper:
+        ex=upper["exercise"]; render_program_card("4. Upper Body Primary Press",ex.name,f"{upper['sets']} Sets x {upper['reps']} Reps",upper["intensity"],upper["tempo"],ex.plane,ex.stability,"#a855f7")
+    cond=conditioning(a,priorities(a),week)
+    render_program_card("5. Dynamic MetCon / ESD Protocol",cond["mode"],cond["work"],f"Selected Mode: {cond['intensity']}","Dynamic Pace","Multi-planar","Metabolic Conditioning","#10b981")
+    if extra:
+        ex=extra["exercise"]; render_program_card("6. Supplemental / Core",ex.name,f"{extra['sets']} Sets x {extra['reps']} Reps",extra["intensity"],extra["tempo"],ex.plane,ex.stability,"#f59e0b")
+
 def build_week(a: AthleteProfile, week: int) -> List[Dict[str,object]]:
     priority=priorities(a)
     load=week_loading(a,week)
@@ -554,8 +600,8 @@ if module=="1. Athlete Profile":
         update("name",st.text_input("Athlete Name",d["name"]))
         update("age",st.number_input("Age",12,80,d["age"]))
         update("sex",st.selectbox("Sex",["Male","Female","Other"],index=["Male","Female","Other"].index(d["sex"])))
-        update("height_cm",st.number_input("Height (cm)",120.,230.,d["height_cm"]))
-        update("weight_kg",st.number_input("Weight (kg)",30.,250.,d["weight_kg"]))
+        update("height_cm",st.number_input("Height (cm)",min_value=120.0,max_value=230.0,value=float(d["height_cm"]),step=0.5))
+        update("weight_kg",st.number_input("Weight (kg)",min_value=30.0,max_value=250.0,value=float(d["weight_kg"]),step=0.5))
     with c2:
         sport_options=list(SPORT_DEMANDS.keys())
         sport=st.selectbox("Sport / Discipline",sport_options,index=sport_options.index(d["sport"]))
@@ -569,7 +615,7 @@ if module=="1. Athlete Profile":
     with c3:
         seasons=["General / No Competition","Off-Season","Pre-Season","In-Season / Competition","Taper / Peak"]
         update("season",st.selectbox("Season / Calendar Phase",seasons,index=seasons.index(d["season"])))
-        update("training_years",st.number_input("Strength & Conditioning Experience (years)",0.,30.,d["training_years"],step=.5))
+        update("training_years",st.number_input("Strength & Conditioning Experience (years)",min_value=0.0,max_value=30.0,value=float(d["training_years"]),step=0.5))
         update("gym_days_available",st.slider("Gym Days Available / Week",1,7,d["gym_days_available"]))
         update("equipment",st.multiselect("Available Equipment",EQUIPMENT,default=d["equipment"]))
     st.markdown("---")
@@ -590,7 +636,7 @@ elif module=="2. Load, Injury & Readiness":
         team_hours=d["team_days"]*d["team_minutes"]/60
         st.metric("Team Exposure",f"{team_hours:.1f} h/week")
     with c2:
-        update("sleep_hours",st.slider("Sleep (hours)",3.,12.,d["sleep_hours"],.5))
+        update("sleep_hours",st.slider("Sleep (hours)",min_value=3.0,max_value=12.0,value=float(d["sleep_hours"]),step=0.5))
         update("readiness",st.slider("Subjective Readiness",0,100,d["readiness"]))
         update("stress",st.slider("Stress",0,10,d["stress"]))
         update("soreness",st.slider("Soreness",0,10,d["soreness"]))
@@ -611,11 +657,11 @@ elif module=="3. Movement & ROM":
     st.markdown('<div class="banner-header">Movement Quality • ROM Matrix • Screening Flags</div>',unsafe_allow_html=True)
     d=st.session_state.athlete
     c1,c2,c3,c4,c5=st.columns(5)
-    with c1: update("rom_ankle",st.number_input("Ankle Dorsiflexion (°)",0.,50.,d["rom_ankle"]))
-    with c2: update("rom_hip_flex",st.number_input("Hip Flexion (°)",50.,150.,d["rom_hip_flex"]))
-    with c3: update("rom_hip_ext",st.number_input("Hip Extension (°)",0.,40.,d["rom_hip_ext"]))
-    with c4: update("rom_tspine",st.number_input("T-Spine Rotation (°)",10.,70.,d["rom_tspine"]))
-    with c5: update("rom_shoulder",st.number_input("Shoulder Flexion (°)",90.,180.,d["rom_shoulder"]))
+    with c1: update("rom_ankle",st.number_input("Ankle Dorsiflexion (°)",min_value=0.0,max_value=50.0,value=float(d["rom_ankle"]),step=0.5))
+    with c2: update("rom_hip_flex",st.number_input("Hip Flexion (°)",min_value=50.0,max_value=150.0,value=float(d["rom_hip_flex"]),step=0.5))
+    with c3: update("rom_hip_ext",st.number_input("Hip Extension (°)",min_value=0.0,max_value=40.0,value=float(d["rom_hip_ext"]),step=0.5))
+    with c4: update("rom_tspine",st.number_input("T-Spine Rotation (°)",min_value=10.0,max_value=70.0,value=float(d["rom_tspine"]),step=0.5))
+    with c5: update("rom_shoulder",st.number_input("Shoulder Flexion (°)",min_value=90.0,max_value=180.0,value=float(d["rom_shoulder"]),step=0.5))
     st.markdown("---")
     st.subheader("Screening flags")
     flags=mobility_flags(profile_from_state())
@@ -632,19 +678,19 @@ elif module=="4. Performance Testing":
     d=st.session_state.athlete
     c1,c2,c3=st.columns(3)
     with c1:
-        update("cmj",st.number_input("Countermovement Jump (cm)",5.,100.,d["cmj"]))
-        update("broad_jump",st.number_input("Broad Jump (cm)",50.,350.,d["broad_jump"]))
-        update("left_jump",st.number_input("Single-Leg Jump Left (cm)",5.,250.,d["left_jump"]))
-        update("right_jump",st.number_input("Single-Leg Jump Right (cm)",5.,250.,d["right_jump"]))
+        update("cmj",st.number_input("Countermovement Jump (cm)",min_value=5.0,max_value=100.0,value=float(d["cmj"]),step=0.5))
+        update("broad_jump",st.number_input("Broad Jump (cm)",min_value=50.0,max_value=350.0,value=float(d["broad_jump"]),step=1.0))
+        update("left_jump",st.number_input("Single-Leg Jump Left (cm)",min_value=5.0,max_value=250.0,value=float(d["left_jump"]),step=0.5))
+        update("right_jump",st.number_input("Single-Leg Jump Right (cm)",min_value=5.0,max_value=250.0,value=float(d["right_jump"]),step=0.5))
     with c2:
-        update("sprint_5m",st.number_input("5m Sprint (s)",.5,4.,d["sprint_5m"]))
-        update("sprint_10m",st.number_input("10m Sprint (s)",1.,5.,d["sprint_10m"]))
-        update("cod",st.number_input("COD / T-Drill (s)",5.,30.,d["cod"]))
-        update("cooper_m",st.number_input("12-Min Cooper Distance (m)",500.,5000.,d["cooper_m"]))
+        update("sprint_5m",st.number_input("5m Sprint (s)",min_value=0.5,max_value=4.0,value=float(d["sprint_5m"]),step=0.01))
+        update("sprint_10m",st.number_input("10m Sprint (s)",min_value=1.0,max_value=5.0,value=float(d["sprint_10m"]),step=0.01))
+        update("cod",st.number_input("COD / T-Drill (s)",min_value=5.0,max_value=30.0,value=float(d["cod"]),step=0.01))
+        update("cooper_m",st.number_input("12-Min Cooper Distance (m)",min_value=500.0,max_value=5000.0,value=float(d["cooper_m"]),step=50.0))
     with c3:
-        update("squat_1rm",st.number_input("Back Squat 1RM (kg)",20.,350.,d["squat_1rm"]))
-        update("bench_1rm",st.number_input("Bench Press 1RM (kg)",20.,250.,d["bench_1rm"]))
-        update("ohp_1rm",st.number_input("Overhead Press 1RM (kg)",10.,180.,d["ohp_1rm"]))
+        update("squat_1rm",st.number_input("Back Squat 1RM (kg)",min_value=20.0,max_value=350.0,value=float(d["squat_1rm"]),step=2.5))
+        update("bench_1rm",st.number_input("Bench Press 1RM (kg)",min_value=20.0,max_value=250.0,value=float(d["bench_1rm"]),step=2.5))
+        update("ohp_1rm",st.number_input("Overhead Press 1RM (kg)",min_value=10.0,max_value=180.0,value=float(d["ohp_1rm"]),step=1.0))
         update("pullups",st.number_input("Max Pull-Ups",0,60,d["pullups"]))
         update("pushups",st.number_input("Max Push-Ups",0,120,d["pushups"]))
     a=profile_from_state(); scores=test_profile(a); p=priorities(a)
@@ -706,20 +752,8 @@ elif module=="6. Adaptive Program Generator":
                     with tab:
                         load=week_loading(a,w); st.markdown(f"**Phase:** {phase_for(a,w)}  |  **Loading:** {load['sets']}×{load['reps']} @ {load['pct']*100:.0f}% estimated 1RM  |  **Target RPE:** {load['rpe']}")
                         for session in st.session_state.generated_plan[m][w]:
-                            st.markdown(f"### Day {session['day']} — {session['focus']}")
-                            rows=[]
-                            for item in session["exercises"]:
-                                ex=item["exercise"]
-                                load_str="—"
-                                if item["pct"] is not None:
-                                    if ex.pattern=="Squat": load_str=f"{estimate_load(a.squat_1rm,item['pct']):.1f} kg"
-                                    elif ex.pattern in ["Horizontal Push","Overhead Press"]:
-                                        arm=a.bench_1rm if ex.pattern=="Horizontal Push" else a.ohp_1rm
-                                        load_str=f"{estimate_load(arm,item['pct']):.1f} kg"
-                                rows.append({"Exercise":ex.name,"Sets":item["sets"],"Reps":item["reps"],"Load":load_str,"Intensity":item["intensity"],"Tempo":item["tempo"],"Plane":ex.plane})
-                            st.dataframe(pd.DataFrame(rows),use_container_width=True,hide_index=True)
-                            cond=conditioning(a,p,w)
-                            st.info(f"**Conditioning:** {cond['mode']} • {cond['work']} • {cond['intensity']} • {cond['reason']}")
+                            st.markdown(f"<div class='banner-header' style='font-size:1.05rem;'>DAY {session['day']} • {session['focus']}</div>",unsafe_allow_html=True)
+                            render_session_cards(a,session,w)
                             st.markdown("---")
         st.warning("This is a coaching/programming engine, not a medical diagnostic or rehabilitation system. Pain, acute injury, or unexplained symptoms require appropriate professional assessment.")
 
