@@ -404,7 +404,7 @@ class AthleteIQEngine:
         self.warnings.append(f"🔄 Gear Fallback Active: Prescribed {fallback_ex.fallback_exercise}")
         return fallback_ex
 
-    # --- ADVANCED METCON & ESD LOGIC ENGINE (Option B Integration) ---
+    # --- ADVANCED METCON & ESD LOGIC ENGINE ---
     def select_esd_protocol(self, month: int, esd_mode: str = "Linear MAS Shuttles") -> str:
         mas = self.calculate_mas()
         shuttle_dist = round(mas * (1.15 + (month * 0.05)) * 15, 1)
