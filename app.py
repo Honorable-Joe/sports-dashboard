@@ -93,7 +93,7 @@ class AthleteProfile:
 class Exercise:
     id: str
     name: str
-    pattern: str                 # "Squat", "Horizontal Push", "Overhead Press", "Hinge", "Pull", "Power", "Calisthenics / CKC"
+    pattern: str                 # "Squat", "Horizontal Push", "Overhead Press", "Hinge", "Pull", "Power", "Calisthenics / CKC", "Rehab / Prehab"
     equipment_type: str
     prerequisites: List[str]
     month_block: int
@@ -105,6 +105,8 @@ class Exercise:
     regression_id: str = ""
     plane_of_motion: str = "Sagittal"      # "Sagittal", "Frontal", "Transverse", "Multi-planar"
     stability_tier: str = "Free Weight"    # "Stable/Machine", "Free Weight", "Unilateral/Unstable", "Bodyweight CKC"
+    sport_tags: List[str] = field(default_factory=list)
+    prehab_tags: List[str] = field(default_factory=list)
 
 
 # ==========================================
@@ -113,41 +115,48 @@ class Exercise:
 
 EXERCISE_DATABASE = [
     # --- SQUAT PATTERN ---
-    Exercise("sq01", "Barbell Back Squat", "Squat", "Barbells & Plates", ["ankle_dorsiflexion"], 1, "Goblet Squat", "Dumbbells", "4-1-1-0", "X-0-X-0", "sq03", "sq02", "Sagittal", "Free Weight"),
-    Exercise("sq02", "Heel-Elevated Goblet Squat", "Squat", "Dumbbells", [], 1, "Bodyweight Heel-Elevated Squat", "Bodyweight", "3-1-1-0", "X-0-X-0", "sq01", "", "Sagittal", "Free Weight"),
-    Exercise("sq03", "Barbell Front Squat", "Squat", "Barbells & Plates", ["ankle_dorsiflexion"], 2, "Double KB Front Squat", "Kettlebells", "3-1-1-0", "X-0-X-0", "sq06", "sq01", "Sagittal", "Free Weight"),
-    Exercise("sq04", "Machine Hack Squat", "Squat", "Cable Systems & Selectorized", [], 2, "Banded Hack Squat", "Resistance Bands", "3-1-1-0", "X-0-X-0", "sq03", "sq02", "Sagittal", "Stable/Machine"),
-    Exercise("sq05", "Seated Leg Press", "Squat", "Cable Systems & Selectorized", [], 3, "Banded Leg Press Resistance", "Resistance Bands", "3-1-1-0", "X-0-X-0", "sq04", "", "Sagittal", "Stable/Machine"),
-    Exercise("sq06", "Safety Bar Zercher Squat", "Squat", "Barbells & Plates", ["ankle_dorsiflexion"], 3, "Zercher DB Squat", "Dumbbells", "3-1-1-0", "X-0-X-0", "", "sq03", "Sagittal", "Free Weight"),
+    Exercise("sq01", "Barbell Back Squat", "Squat", "Barbells & Plates", ["ankle_dorsiflexion"], 1, "Goblet Squat", "Dumbbells", "4-1-1-0", "X-0-X-0", "sq03", "sq02", "Sagittal", "Free Weight", ["Soccer", "Basketball"], ["Knee Stability"]),
+    Exercise("sq02", "Heel-Elevated Goblet Squat", "Squat", "Dumbbells", [], 1, "Bodyweight Heel-Elevated Squat", "Bodyweight", "3-1-1-0", "X-0-X-0", "sq01", "", "Sagittal", "Free Weight", ["Basketball", "General Fitness"], ["Patellar Conditioning"]),
+    Exercise("sq03", "Barbell Front Squat", "Squat", "Barbells & Plates", ["ankle_dorsiflexion"], 2, "Double KB Front Squat", "Kettlebells", "3-1-1-0", "X-0-X-0", "sq06", "sq01", "Sagittal", "Free Weight", ["Soccer", "Rugby/American Football"], ["Core Stability"]),
+    Exercise("sq04", "Machine Hack Squat", "Squat", "Cable Systems & Selectorized", [], 2, "Banded Hack Squat", "Resistance Bands", "3-1-1-0", "X-0-X-0", "sq03", "sq02", "Sagittal", "Stable/Machine", ["General Fitness"], []),
+    Exercise("sq05", "Seated Leg Press", "Squat", "Cable Systems & Selectorized", [], 3, "Banded Leg Press Resistance", "Resistance Bands", "3-1-1-0", "X-0-X-0", "sq04", "", "Sagittal", "Stable/Machine", ["General Fitness"], []),
+    Exercise("sq06", "Safety Bar Zercher Squat", "Squat", "Barbells & Plates", ["ankle_dorsiflexion"], 3, "Zercher DB Squat", "Dumbbells", "3-1-1-0", "X-0-X-0", "", "sq03", "Sagittal", "Free Weight", ["Combat Sports (MMA/Boxing)", "Rugby/American Football"], ["Upper Back Durability"]),
 
     # --- HORIZONTAL PUSH & CALISTHENICS PATTERN ---
-    Exercise("hp01", "Flat Barbell Bench Press", "Horizontal Push", "Barbells & Plates", [], 1, "Dumbbell Floor Press", "Dumbbells", "3-1-1-0", "X-0-X-0", "hp02", "hp04", "Sagittal", "Free Weight"),
-    Exercise("hp02", "Incline Dumbbell Bench Press", "Horizontal Push", "Dumbbells", [], 2, "Incline Push-Up", "Bodyweight", "3-1-1-0", "X-0-X-0", "hp01", "hp04", "Sagittal", "Free Weight"),
-    Exercise("hp03", "Seated Chest Press Machine", "Horizontal Push", "Cable Systems & Selectorized", [], 3, "Banded Chest Press", "Resistance Bands", "3-1-1-0", "X-0-X-0", "hp01", "hp02", "Sagittal", "Stable/Machine"),
-    Exercise("hp04", "Weighted Ring Push-Up", "Horizontal Push", "Rigs & Suspension (TRX/Wood Rings)", [], 1, "Deficit Push-Up", "Bodyweight", "3-1-1-0", "X-0-X-0", "hp01", "hp05", "Multi-planar", "Bodyweight CKC"),
-    Exercise("hp05", "Incline Bodyweight Push-Up", "Horizontal Push", "Rigs & Suspension (TRX/Wood Rings)", [], 1, "Wall Push-Up", "Bodyweight", "3-1-1-0", "X-0-X-0", "hp04", "", "Sagittal", "Bodyweight CKC"),
+    Exercise("hp01", "Flat Barbell Bench Press", "Horizontal Push", "Barbells & Plates", [], 1, "Dumbbell Floor Press", "Dumbbells", "3-1-1-0", "X-0-X-0", "hp02", "hp04", "Sagittal", "Free Weight", ["Rugby/American Football", "Combat Sports (MMA/Boxing)"], []),
+    Exercise("hp02", "Incline Dumbbell Bench Press", "Horizontal Push", "Dumbbells", [], 2, "Incline Push-Up", "Bodyweight", "3-1-1-0", "X-0-X-0", "hp01", "hp04", "Sagittal", "Free Weight", ["Basketball", "Tennis"], []),
+    Exercise("hp03", "Seated Chest Press Machine", "Horizontal Push", "Cable Systems & Selectorized", [], 3, "Banded Chest Press", "Resistance Bands", "3-1-1-0", "X-0-X-0", "hp01", "hp02", "Sagittal", "Stable/Machine", ["General Fitness"], []),
+    Exercise("hp04", "Weighted Ring Push-Up", "Horizontal Push", "Rigs & Suspension (TRX/Wood Rings)", [], 1, "Deficit Push-Up", "Bodyweight", "3-1-1-0", "X-0-X-0", "hp01", "hp05", "Multi-planar", "Bodyweight CKC", ["Racket Sports (Squash/Padel)", "Volleyball"], ["Shoulder Stability"]),
+    Exercise("hp05", "Incline Bodyweight Push-Up", "Horizontal Push", "Rigs & Suspension (TRX/Wood Rings)", [], 1, "Wall Push-Up", "Bodyweight", "3-1-1-0", "X-0-X-0", "hp04", "", "Sagittal", "Bodyweight CKC", ["General Fitness"], []),
 
     # --- OVERHEAD PRESS PATTERN ---
-    Exercise("op01", "Standing Barbell Overhead Press", "Overhead Press", "Barbells & Plates", ["overhead_flexion"], 1, "Half-Kneeling Single-Arm DB Press", "Dumbbells", "3-1-1-0", "X-0-X-0", "op02", "op03", "Sagittal", "Free Weight"),
-    Exercise("op02", "Seated Dumbbell Shoulder Press", "Overhead Press", "Dumbbells", [], 2, "Seated Machine Shoulder Press", "Cable Systems & Selectorized", "3-1-1-0", "X-0-X-0", "op01", "op03", "Sagittal", "Free Weight"),
-    Exercise("op03", "Half-Kneeling Angled Landmine Press", "Overhead Press", "Barbells & Plates", [], 1, "Banded Overhead Press", "Resistance Bands", "3-1-1-0", "X-0-X-0", "op01", "", "Sagittal", "Unilateral/Unstable"),
+    Exercise("op01", "Standing Barbell Overhead Press", "Overhead Press", "Barbells & Plates", ["overhead_flexion"], 1, "Half-Kneeling Single-Arm DB Press", "Dumbbells", "3-1-1-0", "X-0-X-0", "op02", "op03", "Sagittal", "Free Weight", ["Volleyball", "Basketball"], ["Core Anti-Extension"]),
+    Exercise("op02", "Seated Dumbbell Shoulder Press", "Overhead Press", "Dumbbells", [], 2, "Seated Machine Shoulder Press", "Cable Systems & Selectorized", "3-1-1-0", "X-0-X-0", "op01", "op03", "Sagittal", "Free Weight", ["Tennis", "Racket Sports (Squash/Padel)"], []),
+    Exercise("op03", "Half-Kneeling Angled Landmine Press", "Overhead Press", "Barbells & Plates", [], 1, "Banded Overhead Press", "Resistance Bands", "3-1-1-0", "X-0-X-0", "op01", "", "Sagittal", "Unilateral/Unstable", ["Combat Sports (MMA/Boxing)", "Racket Sports (Squash/Padel)"], ["Shoulder Impingement Prevention"]),
 
     # --- HINGE PATTERN ---
-    Exercise("hg01", "Conventional Barbell Deadlift", "Hinge", "Barbells & Plates", ["hip_flexion"], 1, "Trap Bar Deadlift", "Barbells & Plates", "3-1-1-0", "X-0-X-0", "hg03", "hg02", "Sagittal", "Free Weight"),
-    Exercise("hg02", "Dumbbell Romanian Deadlift (RDL)", "Hinge", "Dumbbells", [], 1, "Single-Leg DB RDL", "Dumbbells", "3-1-1-0", "X-0-X-0", "hg01", "", "Sagittal", "Free Weight"),
-    Exercise("hg03", "Barbell Hip Thrust", "Hinge", "Barbells & Plates", [], 2, "Single-Leg Glute Bridge", "Bodyweight", "3-1-1-0", "X-0-X-0", "", "hg02", "Sagittal", "Free Weight"),
+    Exercise("hg01", "Conventional Barbell Deadlift", "Hinge", "Barbells & Plates", ["hip_flexion"], 1, "Trap Bar Deadlift", "Barbells & Plates", "3-1-1-0", "X-0-X-0", "hg03", "hg02", "Sagittal", "Free Weight", ["Track & Field (Sprints/Jumps)", "Rugby/American Football"], ["Posterior Chain Power"]),
+    Exercise("hg02", "Dumbbell Romanian Deadlift (RDL)", "Hinge", "Dumbbells", [], 1, "Single-Leg DB RDL", "Dumbbells", "3-1-1-0", "X-0-X-0", "hg01", "", "Sagittal", "Free Weight", ["Soccer", "Basketball", "Tennis"], ["Hamstring Strain Prevention", "ACL Prevention"]),
+    Exercise("hg03", "Barbell Hip Thrust", "Hinge", "Barbells & Plates", [], 2, "Single-Leg Glute Bridge", "Bodyweight", "3-1-1-0", "X-0-X-0", "", "hg02", "Sagittal", "Free Weight", ["Soccer", "Track & Field (Sprints/Jumps)"], ["Glute Activation"]),
 
     # --- PULL PATTERN (VERTICAL & HORIZONTAL) ---
-    Exercise("pl01", "Strict Bodyweight Pull-Up", "Pull", "Bodyweight", ["overhead_flexion"], 1, "TRX Lat Inverted Row", "Rigs & Suspension (TRX/Wood Rings)", "3-1-1-0", "X-0-X-0", "pl03", "pl02", "Sagittal", "Bodyweight CKC"),
-    Exercise("pl02", "Lat Pulldown (Cable/Selectorized)", "Pull", "Cable Systems & Selectorized", [], 1, "Banded Lat Pulldown", "Resistance Bands", "3-1-1-0", "X-0-X-0", "pl01", "", "Sagittal", "Stable/Machine"),
-    Exercise("pl03", "Chest-Supported Dumbbell Row", "Pull", "Dumbbells", [], 2, "Standing Cable Row", "Cable Systems & Selectorized", "3-1-1-0", "X-0-X-0", "pl01", "pl02", "Sagittal", "Free Weight"),
+    Exercise("pl01", "Strict Bodyweight Pull-Up", "Pull", "Bodyweight", ["overhead_flexion"], 1, "TRX Lat Inverted Row", "Rigs & Suspension (TRX/Wood Rings)", "3-1-1-0", "X-0-X-0", "pl03", "pl02", "Sagittal", "Bodyweight CKC", ["Combat Sports (MMA/Boxing)", "Volleyball"], ["Scapular Health"]),
+    Exercise("pl02", "Lat Pulldown (Cable/Selectorized)", "Pull", "Cable Systems & Selectorized", [], 1, "Banded Lat Pulldown", "Resistance Bands", "3-1-1-0", "X-0-X-0", "pl01", "", "Sagittal", "Stable/Machine", ["General Fitness"], []),
+    Exercise("pl03", "Chest-Supported Dumbbell Row", "Pull", "Dumbbells", [], 2, "Standing Cable Row", "Cable Systems & Selectorized", "3-1-1-0", "X-0-X-0", "pl01", "pl02", "Sagittal", "Free Weight", ["Racket Sports (Squash/Padel)", "Tennis", "Soccer"], ["Rotator Cuff Health"]),
 
     # --- POWER / SPEED / BALLISTICS PATTERN ---
-    Exercise("pw01", "Medicine Ball Rotational Launch", "Power", "Medicine & Slam Balls", [], 1, "Banded Rotational Punch", "Resistance Bands", "2-0-X-0", "X-0-X-0", "pw02", "", "Transverse", "Free Weight"),
-    Exercise("pw02", "Heavy Trap-Bar Jump Squat", "Power", "Barbells & Plates", [], 2, "Dumbbell Jump Squat", "Dumbbells", "2-0-X-0", "X-0-X-0", "pw03", "pw01", "Sagittal", "Free Weight"),
-    Exercise("pw03", "Plyometric Box Jumps", "Power", "Plyo Boxes & Agility Ladders", [], 3, "Tuck Jumps", "Bodyweight", "1-0-X-0", "X-0-X-0", "pw05", "pw02", "Sagittal", "Bodyweight CKC"),
-    Exercise("pw04", "Sled Acceleration Starts", "Power", "Sleds & Prowler", [], 1, "Banded Sprint Resisted Starts", "Resistance Bands", "1-0-X-0", "X-0-X-0", "pw02", "", "Sagittal", "Free Weight"),
-    Exercise("pw05", "Explosive Kettlebell Snatch", "Power", "Kettlebells", [], 2, "Single-Arm KB Swing", "Kettlebells", "1-0-X-0", "X-0-X-0", "", "pw01", "Multi-planar", "Free Weight")
+    Exercise("pw01", "Medicine Ball Rotational Launch", "Power", "Medicine & Slam Balls", [], 1, "Banded Rotational Punch", "Resistance Bands", "2-0-X-0", "X-0-X-0", "pw02", "", "Transverse", "Free Weight", ["Tennis", "Racket Sports (Squash/Padel)", "Combat Sports (MMA/Boxing)"], ["Rotational Power"]),
+    Exercise("pw02", "Heavy Trap-Bar Jump Squat", "Power", "Barbells & Plates", [], 2, "Dumbbell Jump Squat", "Dumbbells", "2-0-X-0", "X-0-X-0", "pw03", "pw01", "Sagittal", "Free Weight", ["Basketball", "Volleyball", "Track & Field (Sprints/Jumps)"], ["Vertical Jump Power"]),
+    Exercise("pw03", "Plyometric Box Jumps", "Power", "Plyo Boxes & Agility Ladders", [], 3, "Tuck Jumps", "Bodyweight", "1-0-X-0", "X-0-X-0", "pw05", "pw02", "Sagittal", "Bodyweight CKC", ["Basketball", "Soccer"], ["Landing Mechanics"]),
+    Exercise("pw04", "Sled Acceleration Starts", "Power", "Sleds & Prowler", [], 1, "Banded Sprint Resisted Starts", "Resistance Bands", "1-0-X-0", "X-0-X-0", "pw02", "", "Sagittal", "Free Weight", ["Soccer", "Rugby/American Football"], ["Sprint Acceleration"]),
+    Exercise("pw05", "Explosive Kettlebell Snatch", "Power", "Kettlebells", [], 2, "Single-Arm KB Swing", "Kettlebells", "1-0-X-0", "X-0-X-0", "", "pw01", "Multi-planar", "Free Weight", ["Combat Sports (MMA/Boxing)", "General Fitness"], ["Hip Hinge Velocity"]),
+
+    # --- EXPANDED FUNCTIONAL EQUIPMENT, REHAB & PREHAB PATTERNS ---
+    Exercise("rh01", "Single-Leg DB / KB Romanian Deadlift", "Rehab / Prehab", "Dumbbells", [], 1, "Bodyweight Single-Leg RDL", "Bodyweight", "3-1-1-0", "X-0-X-0", "", "", "Sagittal", "Unilateral/Unstable", ["Soccer", "Basketball", "Tennis"], ["ACL Prevention", "Ankle Stability", "Hamstring Strain Prevention"]),
+    Exercise("rh02", "Rotational Cable / Band Woodchop", "Rehab / Prehab", "Cable Systems & Selectorized", [], 1, "Banded Woodchop", "Resistance Bands", "2-1-1-0", "X-0-X-0", "", "", "Transverse", "Free Weight", ["Racket Sports (Squash/Padel)", "Tennis"], ["Core Rotational Stability", "Lumbar Protection"]),
+    Exercise("rh03", "Nordic Hamstring Curl", "Rehab / Prehab", "Bodyweight", [], 1, "Banded Nordic Curl", "Resistance Bands", "4-0-1-0", "X-0-X-0", "", "", "Sagittal", "Bodyweight CKC", ["Soccer", "Rugby/American Football"], ["Hamstring Strain Prevention", "ACL Support"]),
+    Exercise("rh04", "Shoulder External Rotation & Y-T-W Series", "Rehab / Prehab", "Dumbbells", [], 1, "Banded Face Pull & External Rotation", "Resistance Bands", "2-1-2-0", "X-0-X-0", "", "", "Multi-planar", "Free Weight", ["Racket Sports (Squash/Padel)", "Tennis", "Volleyball"], ["Rotator Cuff Health", "Shoulder Impingement Prevention"]),
+    Exercise("rh05", "Depth Jump to Broad Jump", "Power", "Plyo Boxes & Agility Ladders", [], 1, "Broad Jump Stick Landing", "Bodyweight", "1-0-X-0", "X-0-X-0", "", "", "Multi-planar", "Bodyweight CKC", ["Basketball", "Soccer"], ["Landing Mechanics", "Patellar Tendon Conditioning"])
 ]
 
 SPORT_WARMUPS = {
@@ -170,6 +179,26 @@ SPORT_WARMUPS = {
         "Ankle Mobility & Achilles Stiffness Hops",
         "Drop Landings (Landing Mechanics Prep)",
         "Reactive Vertical Jump Hops"
+    ],
+    "Volleyball": [
+        "Scapular Y-T-W Wall Slides & Rotator Cuff Band Mobilization",
+        "Ankle Stiffness Hops & Depth Landings",
+        "Multi-Planar Lateral Bounds & Block Hops"
+    ],
+    "Combat Sports (MMA/Boxing)": [
+        "Thoracic Dynamic Windmills & Neck Isometric Prep",
+        "Hip 90/90 Flow & Dynamic Adductor Sweeps",
+        "Explosive Banded Rotational Punches & Footwork Shuttles"
+    ],
+    "Track & Field (Sprints/Jumps)": [
+        "A-Skips, B-Skips & Ankling Drills",
+        "Dynamic Hamstring Decompression Sweeps",
+        "Banded Glute Activation & Sprint Acceleration Wall Drills"
+    ],
+    "Rugby/American Football": [
+        "Neck Isometric Holds & Upper Trapezius Prep",
+        "Dynamic Groin / Adductor Mobilization",
+        "Resisted Sled / Banded Acceleration Starts"
     ],
     "General Fitness": [
         "World's Greatest Stretch",
@@ -313,15 +342,15 @@ class AthleteIQEngine:
         if has_injury:
             if any("Knee" in k or "ACL" in k for k in injury_sites):
                 self.warnings.append("🚨 Knee/ACL Active Injury: Knee flexion loading regressed.")
-                return Exercise("reg_k", "Spanish Squat Isometric Hold (Knee-Sparing)", "Squat", "Bodyweight", [], month, plane_of_motion="Sagittal", stability_tier="Bodyweight CKC")
+                return Exercise("reg_k", "Spanish Squat Isometric Hold (Knee-Sparing)", "Squat", "Bodyweight", [], month, plane_of_motion="Sagittal", stability_tier="Bodyweight CKC", prehab_tags=["ACL Prevention", "Knee Stability"])
 
             elif any("Hamstring" in k for k in injury_sites):
                 self.warnings.append("🚨 Hamstring Strain: Replaced with Glute Bridge / Hip Thrust variations.")
-                return Exercise("reg_h", "Barbell Glute Bridge / Cable Hip Thrust", "Squat", "Barbells & Plates", [], month, plane_of_motion="Sagittal", stability_tier="Free Weight")
+                return Exercise("reg_h", "Barbell Glute Bridge / Cable Hip Thrust", "Squat", "Barbells & Plates", [], month, plane_of_motion="Sagittal", stability_tier="Free Weight", prehab_tags=["Hamstring Strain Prevention"])
 
             elif any("Lumbar" in k or "Back" in k for k in injury_sites):
                 self.warnings.append("🚨 Lumbar Spine Strain: Axially unloaded movement prescribed.")
-                return Exercise("reg_l", "Supported Dumbbell Step-Ups", "Squat", "Dumbbells", [], month, plane_of_motion="Sagittal", stability_tier="Unilateral/Unstable")
+                return Exercise("reg_l", "Supported Dumbbell Step-Ups", "Squat", "Dumbbells", [], month, plane_of_motion="Sagittal", stability_tier="Unilateral/Unstable", prehab_tags=["Lumbar Protection"])
 
         if self.d.get("overhead_squat") == "Dysfunctional Painful":
             self.warnings.append("🚨 Painful Overhead Squat: Regressed to Parallel Box Variations.")
@@ -329,7 +358,7 @@ class AthleteIQEngine:
             
         if self.evaluate_horizontal_asymmetry() > 10.0 or self.evaluate_vertical_asymmetry() > 10.0:
             self.warnings.append(f"⚠️ Asymmetry >10%: Prescribed Unilateral Primaries.")
-            return Exercise("reg_asym", "Bulgarian Split Squat (Unilateral Correction)", "Squat", "Dumbbells", [], month, plane_of_motion="Sagittal", stability_tier="Unilateral/Unstable")
+            return Exercise("reg_asym", "Bulgarian Split Squat (Unilateral Correction)", "Squat", "Dumbbells", [], month, plane_of_motion="Sagittal", stability_tier="Unilateral/Unstable", prehab_tags=["Posterior Chain Balance"])
 
         ex = self.filter_engine.get_valid_exercise("Squat", month, self.athlete)
         if ex:
@@ -345,11 +374,11 @@ class AthleteIQEngine:
 
         if has_injury and any(k in str(injury_sites) for k in ["Shoulder", "Rotator", "Pectoralis"]):
             self.warnings.append("🚨 Upper Extremity Strain: Replaced with Neutral-Grip variations.")
-            return Exercise("reg_up", "Neutral-Grip Dumbbell Press", "Horizontal Push", "Dumbbells", [], month, plane_of_motion="Sagittal", stability_tier="Free Weight")
+            return Exercise("reg_up", "Neutral-Grip Dumbbell Press", "Horizontal Push", "Dumbbells", [], month, plane_of_motion="Sagittal", stability_tier="Free Weight", prehab_tags=["Rotator Cuff Health"])
 
         if self.d.get("shoulder") == "Dysfunctional Painful" or self.mobility.overhead_flexion_deg < 155.0:
             self.warnings.append("🚨 Shoulder Flexion Restriction: Prescribed Angled Pressing.")
-            return Exercise("reg_sh", "Half-Kneeling Landmine Press", "Horizontal Push", "Barbells & Plates", [], month, plane_of_motion="Sagittal", stability_tier="Unilateral/Unstable")
+            return Exercise("reg_sh", "Half-Kneeling Landmine Press", "Horizontal Push", "Barbells & Plates", [], month, plane_of_motion="Sagittal", stability_tier="Unilateral/Unstable", prehab_tags=["Shoulder Impingement Prevention"])
 
         ex = self.filter_engine.get_valid_exercise("Horizontal Push", month, self.athlete)
         if ex:
@@ -423,7 +452,15 @@ class AthleteIQEngine:
 
     def generate_program_for_month(self, month: int, esd_mode: str = "Linear MAS Shuttles") -> dict:
         club_hours = self.d.get("club_days", 4) * self.d.get("club_hours_per_day", 2.0)
-        vol_schema = "2 Sets / Ex (Low Vol, High Density)" if club_hours >= 10 else "4 Sets / Ex (Standard Build)"
+        season_phase = self.d.get("season_phase", "In-Season (Competition)")
+        
+        # Periodization Volume Schema Logic (In-Season vs Off-Season)
+        if season_phase == "In-Season (Competition)":
+            vol_schema = "2 Sets / Ex (In-Season: High Velocity, Low Fatigue)"
+        elif club_hours >= 10:
+            vol_schema = "2 Sets / Ex (High External Load Condensation)"
+        else:
+            vol_schema = "4 Sets / Ex (Off-Season: Maximal Overload & Volume Build)"
 
         sq_1rm = self.athlete.estimated_1rm["Squat"]
         bench_1rm = self.athlete.estimated_1rm["Horizontal Push"]
@@ -457,6 +494,7 @@ if "form_data" not in st.session_state:
         "weight_kg": 75.0,
         "height_cm": 178.0,
         "sport_type": "Soccer",
+        "season_phase": "In-Season (Competition)",
         "evaluating_coach": "Coach Ahmed Youssef 👑",
         "assessment_date": datetime.now().date(),
         "assessment_type": "Baseline (Initial)",
@@ -532,36 +570,69 @@ def safe_index(options_list, key):
     val = bind_input(key)
     return options_list.index(val) if val in options_list else 0
 
-def get_macrocycle_phase(month_num: int, week_num: int, sq_1rm: float, bench_1rm: float):
-    macro = {
-        1: {
-            "title": "Month 1: Accumulation Phase (Work Capacity & Base Build)",
-            "weeks": {
-                1: {"sets": "3 x 10 Reps", "intensity": f"65% 1RM (Sq: {round(sq_1rm*0.65,1)}kg, Bench: {round(bench_1rm*0.65,1)}kg)", "phase": "Base Accumulation", "tempo": "3-1-1-0"},
-                2: {"sets": "4 x 8 Reps", "intensity": f"70% 1RM (Sq: {round(sq_1rm*0.70,1)}kg, Bench: {round(bench_1rm*0.70,1)}kg)", "phase": "Volume Build", "tempo": "3-1-1-0"},
-                3: {"sets": "4 x 8 Reps", "intensity": f"75% 1RM (Sq: {round(sq_1rm*0.75,1)}kg, Bench: {round(bench_1rm*0.75,1)}kg)", "phase": "Overload Peak", "tempo": "3-1-1-0"},
-                4: {"sets": "2 x 8 Reps", "intensity": f"60% 1RM (Sq: {round(sq_1rm*0.60,1)}kg, Bench: {round(bench_1rm*0.60,1)}kg)", "phase": "Deload & Regeneration", "tempo": "2-0-1-0"}
-            }
-        },
-        2: {
-            "title": "Month 2: Intensification Phase (Max Strength & Dynamic Force)",
-            "weeks": {
-                1: {"sets": "4 x 6 Reps", "intensity": f"78% 1RM (Sq: {round(sq_1rm*0.78,1)}kg, Bench: {round(bench_1rm*0.78,1)}kg)", "phase": "Strength Introduction", "tempo": "2-1-1-0"},
-                2: {"sets": "4 x 5 Reps", "intensity": f"82% 1RM (Sq: {round(sq_1rm*0.82,1)}kg, Bench: {round(bench_1rm*0.82,1)}kg)", "phase": "Heavy Loading", "tempo": "2-1-1-0"},
-                3: {"sets": "5 x 3 Reps", "intensity": f"88% 1RM (Sq: {round(sq_1rm*0.88,1)}kg, Bench: {round(bench_1rm*0.88,1)}kg)", "phase": "Maximal Load Peak", "tempo": "2-0-1-0"},
-                4: {"sets": "2 x 5 Reps", "intensity": f"65% 1RM (Sq: {round(sq_1rm*0.65,1)}kg, Bench: {round(bench_1rm*0.65,1)}kg)", "phase": "Deload & Regeneration", "tempo": "2-0-1-0"}
-            }
-        },
-        3: {
-            "title": "Month 3: Realization Phase (Peak Power, Speed & Taper)",
-            "weeks": {
-                1: {"sets": "4 x 3 Reps", "intensity": f"85% 1RM (Sq: {round(sq_1rm*0.85,1)}kg, Bench: {round(bench_1rm*0.85,1)}kg)", "phase": "Power Realization", "tempo": "1-0-1-0"},
-                2: {"sets": "4 x 2 Reps", "intensity": f"90% 1RM (Sq: {round(sq_1rm*0.90,1)}kg, Bench: {round(bench_1rm*0.90,1)}kg)", "phase": "Peaking Block", "tempo": "1-0-1-0"},
-                3: {"sets": "3 x 2 Reps", "intensity": f"93% 1RM (Sq: {round(sq_1rm*0.93,1)}kg, Bench: {round(bench_1rm*0.93,1)}kg)", "phase": "Maximal Output Peak", "tempo": "1-0-1-0"},
-                4: {"sets": "2 x 3 Reps", "intensity": "50% 1RM (Explosive Speed)", "phase": "Match-Ready Taper", "tempo": "1-0-1-0"}
+def get_macrocycle_phase(month_num: int, week_num: int, sq_1rm: float, bench_1rm: float, season_phase: str = "In-Season (Competition)"):
+    # Periodization Logic (Off-Season Hypertrophy/Strength vs In-Season Velocity/Maintenance)
+    if season_phase == "Off-Season (Hypertrophy / Max Power)":
+        macro = {
+            1: {
+                "title": "Month 1: Off-Season Accumulation (Hypertrophy & Work Capacity)",
+                "weeks": {
+                    1: {"sets": "4 x 10 Reps", "intensity": f"65% 1RM (Sq: {round(sq_1rm*0.65,1)}kg, Bench: {round(bench_1rm*0.65,1)}kg)", "phase": "Volume Accumulation", "tempo": "3-1-1-0"},
+                    2: {"sets": "4 x 8 Reps", "intensity": f"72% 1RM (Sq: {round(sq_1rm*0.72,1)}kg, Bench: {round(bench_1rm*0.72,1)}kg)", "phase": "Volume Overload", "tempo": "3-1-1-0"},
+                    3: {"sets": "5 x 8 Reps", "intensity": f"77% 1RM (Sq: {round(sq_1rm*0.77,1)}kg, Bench: {round(bench_1rm*0.77,1)}kg)", "phase": "Hypertrophy Peak", "tempo": "3-1-1-0"},
+                    4: {"sets": "2 x 8 Reps", "intensity": f"60% 1RM (Sq: {round(sq_1rm*0.60,1)}kg, Bench: {round(bench_1rm*0.60,1)}kg)", "phase": "Deload & Regeneration", "tempo": "2-0-1-0"}
+                }
+            },
+            2: {
+                "title": "Month 2: Off-Season Intensification (Max Strength & Dynamic Force)",
+                "weeks": {
+                    1: {"sets": "4 x 6 Reps", "intensity": f"80% 1RM (Sq: {round(sq_1rm*0.80,1)}kg, Bench: {round(bench_1rm*0.80,1)}kg)", "phase": "Strength Introduction", "tempo": "2-1-1-0"},
+                    2: {"sets": "4 x 5 Reps", "intensity": f"85% 1RM (Sq: {round(sq_1rm*0.85,1)}kg, Bench: {round(bench_1rm*0.85,1)}kg)", "phase": "Heavy Loading", "tempo": "2-1-1-0"},
+                    3: {"sets": "5 x 3 Reps", "intensity": f"90% 1RM (Sq: {round(sq_1rm*0.90,1)}kg, Bench: {round(bench_1rm*0.90,1)}kg)", "phase": "Maximal Overload Peak", "tempo": "2-0-1-0"},
+                    4: {"sets": "2 x 5 Reps", "intensity": f"65% 1RM (Sq: {round(sq_1rm*0.65,1)}kg, Bench: {round(bench_1rm*0.65,1)}kg)", "phase": "Deload & Regeneration", "tempo": "2-0-1-0"}
+                }
+            },
+            3: {
+                "title": "Month 3: Off-Season Realization (Peak Speed Power & Elasticity)",
+                "weeks": {
+                    1: {"sets": "4 x 3 Reps", "intensity": f"88% 1RM (Sq: {round(sq_1rm*0.88,1)}kg, Bench: {round(bench_1rm*0.88,1)}kg)", "phase": "Power Realization", "tempo": "1-0-1-0"},
+                    2: {"sets": "4 x 2 Reps", "intensity": f"92% 1RM (Sq: {round(sq_1rm*0.92,1)}kg, Bench: {round(bench_1rm*0.92,1)}kg)", "phase": "Peaking Block", "tempo": "1-0-1-0"},
+                    3: {"sets": "3 x 2 Reps", "intensity": f"95% 1RM (Sq: {round(sq_1rm*0.95,1)}kg, Bench: {round(bench_1rm*0.95,1)}kg)", "phase": "Maximal Output Peak", "tempo": "1-0-1-0"},
+                    4: {"sets": "2 x 3 Reps", "intensity": "50% 1RM (Explosive Speed)", "phase": "Match-Ready Taper", "tempo": "1-0-1-0"}
+                }
             }
         }
-    }
+    else:
+        # In-Season Competition Maintenance Logic
+        macro = {
+            1: {
+                "title": "Month 1: In-Season Maintenance & Fatigue Management",
+                "weeks": {
+                    1: {"sets": "2 x 5 Reps", "intensity": f"75% 1RM (Sq: {round(sq_1rm*0.75,1)}kg, Bench: {round(bench_1rm*0.75,1)}kg)", "phase": "In-Season Velocity Maintenance", "tempo": "X-0-1-0"},
+                    2: {"sets": "2 x 4 Reps", "intensity": f"80% 1RM (Sq: {round(sq_1rm*0.80,1)}kg, Bench: {round(bench_1rm*0.80,1)}kg)", "phase": "In-Season Strength Retention", "tempo": "X-0-1-0"},
+                    3: {"sets": "3 x 3 Reps", "intensity": f"85% 1RM (Sq: {round(sq_1rm*0.85,1)}kg, Bench: {round(bench_1rm*0.85,1)}kg)", "phase": "In-Season High-Intent Power", "tempo": "X-0-1-0"},
+                    4: {"sets": "2 x 3 Reps", "intensity": f"65% 1RM (Sq: {round(sq_1rm*0.65,1)}kg, Bench: {round(bench_1rm*0.65,1)}kg)", "phase": "Match-Week Readiness Deload", "tempo": "X-0-1-0"}
+                }
+            },
+            2: {
+                "title": "Month 2: In-Season Explosive Power & Joint Health Protection",
+                "weeks": {
+                    1: {"sets": "2 x 5 Reps", "intensity": f"75% 1RM (Sq: {round(sq_1rm*0.75,1)}kg, Bench: {round(bench_1rm*0.75,1)}kg)", "phase": "Neural Priming", "tempo": "X-0-1-0"},
+                    2: {"sets": "2 x 4 Reps", "intensity": f"82% 1RM (Sq: {round(sq_1rm*0.82,1)}kg, Bench: {round(bench_1rm*0.82,1)}kg)", "phase": "In-Season Heavy Maintenance", "tempo": "X-0-1-0"},
+                    3: {"sets": "3 x 2 Reps", "intensity": f"87% 1RM (Sq: {round(sq_1rm*0.87,1)}kg, Bench: {round(bench_1rm*0.87,1)}kg)", "phase": "Rate of Force Development (RFD)", "tempo": "X-0-1-0"},
+                    4: {"sets": "2 x 3 Reps", "intensity": f"60% 1RM (Sq: {round(sq_1rm*0.60,1)}kg, Bench: {round(bench_1rm*0.60,1)}kg)", "phase": "Active Recovery & Joint Decompression", "tempo": "2-0-1-0"}
+                }
+            },
+            3: {
+                "title": "Month 3: In-Season Taper & High-Velocity Peak",
+                "weeks": {
+                    1: {"sets": "2 x 4 Reps", "intensity": f"78% 1RM (Sq: {round(sq_1rm*0.78,1)}kg, Bench: {round(bench_1rm*0.78,1)}kg)", "phase": "In-Season Elasticity", "tempo": "X-0-1-0"},
+                    2: {"sets": "2 x 3 Reps", "intensity": f"84% 1RM (Sq: {round(sq_1rm*0.84,1)}kg, Bench: {round(bench_1rm*0.84,1)}kg)", "phase": "Peak Velocity Maintenance", "tempo": "X-0-1-0"},
+                    3: {"sets": "2 x 2 Reps", "intensity": f"88% 1RM (Sq: {round(sq_1rm*0.88,1)}kg, Bench: {round(bench_1rm*0.88,1)}kg)", "phase": "Playoff / Finals Priming", "tempo": "X-0-1-0"},
+                    4: {"sets": "2 x 3 Reps", "intensity": "50% 1RM (Explosive Speed)", "phase": "Championship Match Taper", "tempo": "X-0-1-0"}
+                }
+            }
+        }
     m_data = macro.get(month_num, macro[1])
     w_data = m_data["weeks"].get(week_num, m_data["weeks"][1])
     return m_data["title"], w_data
@@ -667,6 +738,8 @@ if active_module == "📋 1. Demographics & Coach Sign-off":
         v_height = st.number_input("Height (cm)", 120.0, 230.0, value=bind_input("height_cm"))
         sports_list = ["Tennis", "Volleyball", "Combat Sports (MMA/Boxing)", "Racket Sports (Squash/Padel)", "Soccer", "Basketball", "Track & Field (Sprints/Jumps)", "Rugby/American Football", "General Fitness"]
         v_sport = st.selectbox("Sport / Discipline", sports_list, index=safe_index(sports_list, "sport_type"))
+        season_phases = ["In-Season (Competition)", "Off-Season (Hypertrophy / Max Power)"]
+        v_season = st.selectbox("Periodization Phase", season_phases, index=safe_index(season_phases, "season_phase"), help="In-Season focuses on velocity/maintenance; Off-Season focuses on max overload.")
     with c2:
         st.subheader("🧢 Evaluating Coach Details")
         v_coach = st.text_input("Evaluating Coach Name", value=bind_input("evaluating_coach"))
@@ -681,6 +754,7 @@ if active_module == "📋 1. Demographics & Coach Sign-off":
     update_state("weight_kg", v_weight)
     update_state("height_cm", v_height)
     update_state("sport_type", v_sport)
+    update_state("season_phase", v_season)
     update_state("evaluating_coach", v_coach)
     update_state("assessment_date", v_date)
     update_state("assessment_type", v_phase)
@@ -899,13 +973,13 @@ elif active_module == "💥 4. Sport-Specific Assessment & 1RM Suite":
         
         if is_racket_sport:
             st.markdown("🎯 **Racquet / Rotational Athlete Metrics**")
-            v_fh_throw = st.number_input("Forehand Throw Med-Ball (m)", 1.0, 30.0, value=bind_input("p_forehand_throw"))
-            v_bh_throw = st.number_input("Backhand Throw Med-Ball (m)", 1.0, 30.0, value=bind_input("p_backhand_throw"))
+            v_fh_throw = st.number_input("Forehand Throw Med-Ball (m)", 1.0, 30.0, value=bind_input("p_forehand_throw"), help="Tests rotational core power for racquet sports.")
+            v_bh_throw = st.number_input("Backhand Throw Med-Ball (m)", 1.0, 30.0, value=bind_input("p_backhand_throw"), help="Tests non-dominant rotational core power.")
             update_state("p_forehand_throw", v_fh_throw)
             update_state("p_backhand_throw", v_bh_throw)
             
         v_oh_throw = st.number_input("Overhead Throw Med-Ball (m)", 1.0, 30.0, value=bind_input("p_overhead_throw"))
-        v_cmj = st.number_input("Countermovement Jump (CMJ) (cm)", 10.0, 100.0, value=bind_input("p_cmj"))
+        v_cmj = st.number_input("Countermovement Jump (CMJ) (cm)", 10.0, 100.0, value=bind_input("p_cmj"), help="Measures vertical power output baseline.")
         
         v_horiz_bi = st.number_input("Horizontal Jump Both Legs (cm)", 50.0, 350.0, value=bind_input("p_horiz_jump_bi"))
         v_horiz_uni_l = st.number_input("Horizontal Jump Left (cm)", 20.0, 250.0, value=bind_input("p_horiz_jump_uni_l"))
@@ -931,7 +1005,7 @@ elif active_module == "💥 4. Sport-Specific Assessment & 1RM Suite":
         v_pushups = st.number_input("Max Push-Ups (1 Min)", 0, 120, value=bind_input("c_pushups"))
         v_situps = st.number_input("Max Sit-Ups (1 Min)", 0, 120, value=bind_input("c_situps"))
         v_pullups = st.number_input("Max Pull-Ups", 0, 60, value=bind_input("c_pullups"))
-        v_cooper = st.number_input("12-Min Cooper Test (m)", 500, 5000, value=bind_input("c_cooper"))
+        v_cooper = st.number_input("12-Min Cooper Test (m)", 500, 5000, value=bind_input("c_cooper"), help="Evaluates aerobic capacity baseline.")
 
     vo2max = round((v_cooper - 504.9) / 44.73, 1)
     horiz_asym = round(abs(v_horiz_uni_l - v_horiz_uni_r) / max(v_horiz_uni_l, v_horiz_uni_r) * 100, 1)
@@ -1036,14 +1110,14 @@ elif active_module == "🚀 6. ADAPTIVE PROGRAM GENERATOR":
         rx_month = engine.generate_program_for_month(m_num, esd_mode_selected)
         
         with m_tab:
-            m_title, _ = get_macrocycle_phase(m_num, 1, rx_month["Squat 1RM Target"], rx_month["Bench 1RM Target"])
+            m_title, _ = get_macrocycle_phase(m_num, 1, rx_month["Squat 1RM Target"], rx_month["Bench 1RM Target"], st.session_state.form_data.get("season_phase", "In-Season (Competition)"))
             st.subheader(f"📌 {m_title}")
             
             w_tabs = st.tabs([f"Week {w}" for w in range(1, 5)])
 
             for w_idx, w_tab in enumerate(w_tabs):
                 w_num = w_idx + 1
-                _, p_info = get_macrocycle_phase(m_num, w_num, rx_month["Squat 1RM Target"], rx_month["Bench 1RM Target"])
+                _, p_info = get_macrocycle_phase(m_num, w_num, rx_month["Squat 1RM Target"], rx_month["Bench 1RM Target"], st.session_state.form_data.get("season_phase", "In-Season (Competition)"))
                 
                 with w_tab:
                     # Phase Header Banner Card
