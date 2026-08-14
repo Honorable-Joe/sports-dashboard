@@ -71,7 +71,7 @@ st.markdown("""
         color: #a7f3d0; padding: 12px; border-radius: 8px; margin-bottom: 15px;
     }
 </style>
-""", unsafe_allow_clause="true")
+""", unsafe_allow_html=True)
 
 # Initialize Session State
 if 'athlete_data' not in st.session_state:
@@ -253,7 +253,7 @@ elif page == "4. Sport-Specific Assessment & 1RM Suite":
 
     perf = st.session_state.athlete_data["performance"]
 
-    t1, t2, t3 = t1, t2, t3 = st.tabs(["Speed & Power", "Cardiovascular / MAS", "1RM & Muscular Strength"])
+    t1, t2, t3 = st.tabs(["Speed & Power", "Cardiovascular / MAS", "1RM & Muscular Strength"])
 
     with t1:
         st.subheader("Racket & Jump Metrics")
@@ -349,37 +349,37 @@ elif page == "6. ADAPTIVE PROGRAM GENERATOR":
             <div class="hud-metric-title">Force-Velocity Profile</div>
             <div class="hud-metric-value">{"Velocity-Dominant" if perf["cmj_height"] > 40 else "Force-Deficient"}</div>
             <div class="hud-metric-sub">CMJ: {perf["cmj_height"]} cm</div>
-        </div>""", unsafe_allow_clause="true")
+        </div>""", unsafe_allow_html=True)
     with m2:
         st.markdown(f"""<div class="hud-card">
             <div class="hud-metric-title">Max Aerobic Speed</div>
             <div class="hud-metric-value">{mas_val} m/s</div>
             <div class="hud-metric-sub">Cooper: {perf["cooper_dist"]} m</div>
-        </div>""", unsafe_allow_clause="true")
+        </div>""", unsafe_allow_html=True)
     with m3:
         st.markdown(f"""<div class="hud-card">
             <div class="hud-metric-title">Limb Asymmetry</div>
             <div class="hud-metric-value">{hj_asym}%</div>
             <div class="hud-metric-sub">HJ Left: {perf["hj_left"]} | Right: {perf["hj_right"]}</div>
-        </div>""", unsafe_allow_clause="true")
+        </div>""", unsafe_allow_html=True)
     with m4:
         st.markdown(f"""<div class="hud-card">
             <div class="hud-metric-title">Weekly S&C Target</div>
             <div class="hud-metric-value">{"2 Sessions" if data["club_hours"] > 12 else "3 Sessions"}</div>
             <div class="hud-metric-sub">Club Volume: {data["club_hours"]} hrs/wk</div>
-        </div>""", unsafe_allow_clause="true")
+        </div>""", unsafe_allow_html=True)
 
     # 2. Safety Alerts
     if hj_asym > 10 or vj_asym > 10:
         st.markdown(f"""<div class="alert-box">
             ⚠️ <b>High Asymmetry Detected ({max(hj_asym, vj_asym)}%):</b> Unilateral plyometric & strength progressions enforced to restore balance.
-        </div>""", unsafe_allow_clause="true")
+        </div>""", unsafe_allow_html=True)
     
     active_injuries = [k for k, v in injuries.items() if v]
     if active_injuries:
         st.markdown(f"""<div class="alert-box">
             🩹 <b>Active Clinical Regressions Enforced For:</b> {', '.join(active_injuries)}
-        </div>""", unsafe_allow_clause="true")
+        </div>""", unsafe_allow_html=True)
 
     # 3. Dynamic Workout Prescription Engine
     st.subheader("🏋️ Prescribed Workout Plan")
@@ -423,7 +423,7 @@ elif page == "6. ADAPTIVE PROGRAM GENERATOR":
                 <p><b>Prescription:</b> 4 Sets x 5 Reps @ 82% 1RM</p>
                 <p><b>OPEX Tempo:</b> <code>3-1-1-0</code> (3s Eccentric, 1s Pause, Fast Concentric)</p>
                 <p><b>Rest:</b> 180 seconds</p>
-            </div>""", unsafe_allow_clause="true")
+            </div>""", unsafe_allow_html=True)
         with c2:
             st.markdown(f"""<div class="hud-card">
                 <h4>Plyometric Power Block</h4>
@@ -431,7 +431,7 @@ elif page == "6. ADAPTIVE PROGRAM GENERATOR":
                 <p><b>Prescription:</b> 3 Sets x 5 Contacts</p>
                 <p><b>OPEX Tempo:</b> <code>X-X-X-X</code> (Max Explosive Rebound)</p>
                 <p><b>Rest:</b> 120 seconds</p>
-            </div>""", unsafe_allow_clause="true")
+            </div>""", unsafe_allow_html=True)
 
     with w_tab2:
         st.markdown("### 🏋️ Upper Body & Rotational Power Block")
@@ -443,7 +443,7 @@ elif page == "6. ADAPTIVE PROGRAM GENERATOR":
                 <p><b>Prescription:</b> 4 Sets x 6 Reps @ 78% 1RM</p>
                 <p><b>OPEX Tempo:</b> <code>2-1-1-0</code></p>
                 <p><b>Rest:</b> 120 seconds</p>
-            </div>""", unsafe_allow_clause="true")
+            </div>""", unsafe_allow_html=True)
         with c2:
             st.markdown(f"""<div class="hud-card">
                 <h4>Rotational Power (Sport-Specific)</h4>
@@ -451,7 +451,7 @@ elif page == "6. ADAPTIVE PROGRAM GENERATOR":
                 <p><b>Prescription:</b> 3 Sets x 6 Reps / Side</p>
                 <p><b>OPEX Tempo:</b> <code>1-0-X-0</code></p>
                 <p><b>Rest:</b> 90 seconds</p>
-            </div>""", unsafe_allow_clause="true")
+            </div>""", unsafe_allow_html=True)
 
     with w_tab3:
         st.markdown("### 🏃 Aerobic Conditioning & Energy System Development")
@@ -463,4 +463,4 @@ elif page == "6. ADAPTIVE PROGRAM GENERATOR":
             <p><b>Target Work Speed (105% MAS):</b> {work_pace} m/s ({round(work_pace * 3.6, 1)} km/h)</p>
             <p><b>Active Recovery Speed (70% MAS):</b> {rec_pace} m/s ({round(rec_pace * 3.6, 1)} km/h)</p>
             <p><b>Set Rest:</b> 3 minutes</p>
-        </div>""", unsafe_allow_clause="true")
+        </div>""", unsafe_allow_html=True)
