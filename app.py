@@ -93,7 +93,7 @@ class AthleteProfile:
 class Exercise:
     id: str
     name: str
-    pattern: str                 # "Squat", "Horizontal Push", "Overhead Press", "Hinge", "Power", "Calisthenics / CKC"
+    pattern: str                 # "Squat", "Horizontal Push", "Overhead Press", "Hinge", "Pull", "Power", "Calisthenics / CKC"
     equipment_type: str
     prerequisites: List[str]
     month_block: int
@@ -101,7 +101,6 @@ class Exercise:
     fallback_equipment: str = ""
     hypertrophy_tempo: str = "3-1-1-0"
     power_tempo: str = "X-0-X-0"
-    # --- EXPANDED NASM & CALISTHENICS FIELDS ---
     progression_id: str = ""
     regression_id: str = ""
     plane_of_motion: str = "Sagittal"      # "Sagittal", "Frontal", "Transverse", "Multi-planar"
@@ -109,7 +108,7 @@ class Exercise:
 
 
 # ==========================================
-# 3. EXERCISE DATABASE & SPORT WARMUPS
+# 3. EXPANDED EXERCISE DATABASE & SPORT WARMUPS
 # ==========================================
 
 EXERCISE_DATABASE = [
@@ -128,11 +127,27 @@ EXERCISE_DATABASE = [
     Exercise("hp04", "Weighted Ring Push-Up", "Horizontal Push", "Rigs & Suspension (TRX/Wood Rings)", [], 1, "Deficit Push-Up", "Bodyweight", "3-1-1-0", "X-0-X-0", "hp01", "hp05", "Multi-planar", "Bodyweight CKC"),
     Exercise("hp05", "Incline Bodyweight Push-Up", "Horizontal Push", "Rigs & Suspension (TRX/Wood Rings)", [], 1, "Wall Push-Up", "Bodyweight", "3-1-1-0", "X-0-X-0", "hp04", "", "Sagittal", "Bodyweight CKC"),
 
+    # --- OVERHEAD PRESS PATTERN ---
+    Exercise("op01", "Standing Barbell Overhead Press", "Overhead Press", "Barbells & Plates", ["overhead_flexion"], 1, "Half-Kneeling Single-Arm DB Press", "Dumbbells", "3-1-1-0", "X-0-X-0", "op02", "op03", "Sagittal", "Free Weight"),
+    Exercise("op02", "Seated Dumbbell Shoulder Press", "Overhead Press", "Dumbbells", [], 2, "Seated Machine Shoulder Press", "Cable Systems & Selectorized", "3-1-1-0", "X-0-X-0", "op01", "op03", "Sagittal", "Free Weight"),
+    Exercise("op03", "Half-Kneeling Angled Landmine Press", "Overhead Press", "Barbells & Plates", [], 1, "Banded Overhead Press", "Resistance Bands", "3-1-1-0", "X-0-X-0", "op01", "", "Sagittal", "Unilateral/Unstable"),
+
+    # --- HINGE PATTERN ---
+    Exercise("hg01", "Conventional Barbell Deadlift", "Hinge", "Barbells & Plates", ["hip_flexion"], 1, "Trap Bar Deadlift", "Barbells & Plates", "3-1-1-0", "X-0-X-0", "hg03", "hg02", "Sagittal", "Free Weight"),
+    Exercise("hg02", "Dumbbell Romanian Deadlift (RDL)", "Hinge", "Dumbbells", [], 1, "Single-Leg DB RDL", "Dumbbells", "3-1-1-0", "X-0-X-0", "hg01", "", "Sagittal", "Free Weight"),
+    Exercise("hg03", "Barbell Hip Thrust", "Hinge", "Barbells & Plates", [], 2, "Single-Leg Glute Bridge", "Bodyweight", "3-1-1-0", "X-0-X-0", "", "hg02", "Sagittal", "Free Weight"),
+
+    # --- PULL PATTERN (VERTICAL & HORIZONTAL) ---
+    Exercise("pl01", "Strict Bodyweight Pull-Up", "Pull", "Bodyweight", ["overhead_flexion"], 1, "TRX Lat Inverted Row", "Rigs & Suspension (TRX/Wood Rings)", "3-1-1-0", "X-0-X-0", "pl03", "pl02", "Sagittal", "Bodyweight CKC"),
+    Exercise("pl02", "Lat Pulldown (Cable/Selectorized)", "Pull", "Cable Systems & Selectorized", [], 1, "Banded Lat Pulldown", "Resistance Bands", "3-1-1-0", "X-0-X-0", "pl01", "", "Sagittal", "Stable/Machine"),
+    Exercise("pl03", "Chest-Supported Dumbbell Row", "Pull", "Dumbbells", [], 2, "Standing Cable Row", "Cable Systems & Selectorized", "3-1-1-0", "X-0-X-0", "pl01", "pl02", "Sagittal", "Free Weight"),
+
     # --- POWER / SPEED / BALLISTICS PATTERN ---
     Exercise("pw01", "Medicine Ball Rotational Launch", "Power", "Medicine & Slam Balls", [], 1, "Banded Rotational Punch", "Resistance Bands", "2-0-X-0", "X-0-X-0", "pw02", "", "Transverse", "Free Weight"),
     Exercise("pw02", "Heavy Trap-Bar Jump Squat", "Power", "Barbells & Plates", [], 2, "Dumbbell Jump Squat", "Dumbbells", "2-0-X-0", "X-0-X-0", "pw03", "pw01", "Sagittal", "Free Weight"),
-    Exercise("pw03", "Plyometric Box Jumps", "Power", "Plyo Boxes & Agility Ladders", [], 3, "Tuck Jumps", "Bodyweight", "1-0-X-0", "X-0-X-0", "", "pw02", "Sagittal", "Bodyweight CKC"),
-    Exercise("pw04", "Sled Acceleration Starts", "Power", "Sleds & Prowler", [], 1, "Banded Sprint Resisted Starts", "Resistance Bands", "1-0-X-0", "X-0-X-0", "pw02", "", "Sagittal", "Free Weight")
+    Exercise("pw03", "Plyometric Box Jumps", "Power", "Plyo Boxes & Agility Ladders", [], 3, "Tuck Jumps", "Bodyweight", "1-0-X-0", "X-0-X-0", "pw05", "pw02", "Sagittal", "Bodyweight CKC"),
+    Exercise("pw04", "Sled Acceleration Starts", "Power", "Sleds & Prowler", [], 1, "Banded Sprint Resisted Starts", "Resistance Bands", "1-0-X-0", "X-0-X-0", "pw02", "", "Sagittal", "Free Weight"),
+    Exercise("pw05", "Explosive Kettlebell Snatch", "Power", "Kettlebells", [], 2, "Single-Arm KB Swing", "Kettlebells", "1-0-X-0", "X-0-X-0", "", "pw01", "Multi-planar", "Free Weight")
 ]
 
 SPORT_WARMUPS = {
@@ -360,10 +375,36 @@ class AthleteIQEngine:
         self.warnings.append(f"🔄 Gear Fallback Active: Prescribed {fallback_ex.fallback_exercise}")
         return fallback_ex
 
-    def select_esd_protocol(self, month: int) -> str:
+    # --- ADVANCED METCON & ESD LOGIC ENGINE (Option B Integration) ---
+    def select_esd_protocol(self, month: int, esd_mode: str = "Linear MAS Shuttles") -> str:
         mas = self.calculate_mas()
         shuttle_dist = round(mas * (1.15 + (month * 0.05)) * 15, 1)
 
+        if esd_mode == "EMOM MetCon (Density Focus)":
+            emoms = [
+                f"12-Min EMOM: Min 1 = 12 Kettlebell Swings (24kg) | Min 2 = 10 Deficit Push-ups | Min 3 = 12 Calories AirBike",
+                f"15-Min EMOM: Min 1 = 8 Dumbbell Thrusters | Min 2 = 10 Ring Rows | Min 3 = 40m Shuttle Run @ {shuttle_dist}m Target",
+                f"16-Min EMOM: Min 1 = 10 Medicine Ball Slams | Min 2 = 12 Box Jump Overs | Min 3 = 15 Calories Rower | Min 4 = Rest"
+            ]
+            return emoms[(month - 1) % len(emoms)]
+
+        elif esd_mode == "AMRAP MetCon (Work Capacity)":
+            amraps = [
+                f"10-Min AMRAP: 8 Burpees-Over-Bar + 12 Dumbbell Goblet Squats + 200m Shuttle Run",
+                f"12-Min AMRAP: 10 KB Swings + 10 Hand-Release Push-ups + 12 Calorie SkiErg",
+                f"14-Min AMRAP: 6 Dumbbell Clean & Press + 12 Inverted TRX Rows + 15 Air Squats"
+            ]
+            return amraps[(month - 1) % len(amraps)]
+
+        elif esd_mode == "Tabata Functional Intervals (HIFT)":
+            tabatas = [
+                f"Tabata HIFT (8 Rounds per exercise / 20s Work : 10s Rest): KB Swings -> Ring Rows -> Shuttle Sprints",
+                f"Tabata HIFT (8 Rounds per exercise / 20s Work : 10s Rest): Med-Ball Slams -> Push-Ups -> Ergometer Sprints",
+                f"Tabata HIFT (8 Rounds per exercise / 20s Work : 10s Rest): Sled Pushes -> TRX Rows -> Box Jump Hops"
+            ]
+            return tabatas[(month - 1) % len(tabatas)]
+
+        # Default: Linear MAS Shuttles
         if self.d.get("s_tdrill", 10.2) > 10.8 or self.d.get("s_7x7", 14.2) > 15.0:
             self.warnings.append("🏃 Agility Diagnostic: COD deficit detected -> Integrated COD Shuttle Drills.")
             esd_cod = [
@@ -380,7 +421,7 @@ class AthleteIQEngine:
         ]
         return esd_linear[(month - 1) % len(esd_linear)]
 
-    def generate_program_for_month(self, month: int) -> dict:
+    def generate_program_for_month(self, month: int, esd_mode: str = "Linear MAS Shuttles") -> dict:
         club_hours = self.d.get("club_days", 4) * self.d.get("club_hours_per_day", 2.0)
         vol_schema = "2 Sets / Ex (Low Vol, High Density)" if club_hours >= 10 else "4 Sets / Ex (Standard Build)"
 
@@ -392,7 +433,7 @@ class AthleteIQEngine:
             "Lower Exercise Obj": self.select_lower_compound(month),
             "Upper Exercise Obj": self.select_upper_press(month),
             "Power Exercise Obj": self.select_power_exercise(month),
-            "ESD Protocol": self.select_esd_protocol(month),
+            "ESD Protocol": self.select_esd_protocol(month, esd_mode),
             "FV Profile": self.evaluate_force_velocity_deficit(),
             "MAS": self.calculate_mas(),
             "Horiz Asymmetry": self.evaluate_horizontal_asymmetry(),
@@ -554,6 +595,18 @@ plan_months = st.sidebar.select_slider(
     options=[1, 2, 3],
     value=2,
     format_func=lambda x: f"{x}-Month Macrocycle Block"
+)
+
+st.sidebar.markdown("---")
+st.sidebar.markdown("### 🏃 MetCon Conditioning Engine Mode")
+esd_mode_selected = st.sidebar.selectbox(
+    "Select ESD Modality:",
+    [
+        "Linear MAS Shuttles",
+        "EMOM MetCon (Density Focus)",
+        "AMRAP MetCon (Work Capacity)",
+        "Tabata Functional Intervals (HIFT)"
+    ]
 )
 
 st.sidebar.markdown("---")
@@ -952,14 +1005,14 @@ elif active_module == "📈 5. Saved Records & Historical Progress":
         st.dataframe(df, use_container_width=True)
 
 # ------------------------------------------
-# MODULE 6: ADAPTIVE PROGRAM GENERATOR (Modern HUD Card View)
+# MODULE 6: ADAPTIVE PROGRAM GENERATOR (HUD View)
 # ------------------------------------------
 elif active_module == "🚀 6. ADAPTIVE PROGRAM GENERATOR":
     st.markdown("<div class='banner-header'>🚀 Dynamic Multi-Month Periodization Engine</div>", unsafe_allow_html=True)
     
     engine = AthleteIQEngine(st.session_state.form_data, equipment_selected)
 
-    rx_m1 = engine.generate_program_for_month(1)
+    rx_m1 = engine.generate_program_for_month(1, esd_mode_selected)
     
     m1, m2, m3, m4, m5 = st.columns(5)
     
@@ -980,7 +1033,7 @@ elif active_module == "🚀 6. ADAPTIVE PROGRAM GENERATOR":
 
     for m_idx, m_tab in enumerate(m_tabs):
         m_num = m_idx + 1
-        rx_month = engine.generate_program_for_month(m_num)
+        rx_month = engine.generate_program_for_month(m_num, esd_mode_selected)
         
         with m_tab:
             m_title, _ = get_macrocycle_phase(m_num, 1, rx_month["Squat 1RM Target"], rx_month["Bench 1RM Target"])
@@ -1011,7 +1064,7 @@ elif active_module == "🚀 6. ADAPTIVE PROGRAM GENERATOR":
                         ("2. Neuromuscular Power / Speed", pow_ex.name, "4 Sets x 3 Reps" if w_num != 4 else "2 Sets x 3 Reps", "Maximal Explosive Intent", pow_ex.power_tempo, pow_ex.plane_of_motion, pow_ex.stability_tier, "#ec4899"),
                         ("3. Lower Body Primary Lift", low_ex.name, p_info["sets"], p_info["intensity"], p_info["tempo"], low_ex.plane_of_motion, low_ex.stability_tier, "#6366f1"),
                         ("4. Upper Body Primary Press", upp_ex.name, p_info["sets"], p_info["intensity"], p_info["tempo"], upp_ex.plane_of_motion, upp_ex.stability_tier, "#a855f7"),
-                        ("5. Energy System Development (ESD)", rx_month["ESD Protocol"], "12 Minutes Total Work", "Zone 4 (120% MAS)", "Dynamic Pace", "Multi-planar", "Metabolic Conditioning", "#10b981")
+                        ("5. Dynamic MetCon / ESD Protocol", rx_month["ESD Protocol"], "12 Minutes Total Work", f"Selected Mode: {esd_mode_selected}", "Dynamic Pace", "Multi-planar", "Metabolic Conditioning", "#10b981")
                     ]
 
                     # Card-Based Modern Workout Grid
