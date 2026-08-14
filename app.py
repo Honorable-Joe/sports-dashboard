@@ -73,7 +73,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Initialize Session State
+# Initialize Session State Baseline Data
 if 'athlete_data' not in st.session_state:
     st.session_state.athlete_data = {
         "name": "Alex Mercer", "age": 22, "gender": "Male", "height": 180.0, "weight": 78.0,
@@ -122,9 +122,9 @@ if page == "1. Demographics & Coach Sign-off":
     st.title("📋 Demographics & Assessment Sign-off")
     st.markdown("Database Profile Management and Core Demographic Logging.")
     
-    col_db1, col_db2, col_db3 = st.columns(3)
+    col_db1, col_db2 = st.columns(2)
     with col_db1:
-        profile_action = st.selectbox("Database Action", ["Load Existing Profile", "Create New Profile"])
+        profile_action = st.selectbox("Database Action", ["Create / Update Profile", "Load Existing Profile", "Delete Profile"])
     
     conn = sqlite3.connect(DB_FILE)
     c = conn.cursor()
@@ -133,16 +133,30 @@ if page == "1. Demographics & Coach Sign-off":
     conn.close()
 
     if profile_action == "Load Existing Profile" and existing_profiles:
-        selected_prof = st.selectbox("Select Profile", existing_profiles)
-        if st.button("Load Profile"):
-            conn = sqlite3.connect(DB_FILE)
-            c = conn.cursor()
-            c.execute("SELECT data_json FROM profiles WHERE name=?", (selected_prof,))
-            row = c.fetchone()
-            conn.close()
-            if row:
-                st.session_state.athlete_data = json.loads(row[0])
-                st.success(f"Profile '{selected_prof}' loaded successfully!")
+        with col_db2:
+            selected_prof = st.selectbox("Select Profile to Load", existing_profiles)
+            if st.button("📥 Load Profile Data"):
+                conn = sqlite3.connect(DB_FILE)
+                c = conn.cursor()
+                c.execute("SELECT data_json FROM profiles WHERE name=?", (selected_prof,))
+                row = c.fetchone()
+                conn.close()
+                if row:
+                    st.session_state.athlete_data = json.loads(row[0])
+                    st.success(f"Profile '{selected_prof}' loaded successfully!")
+                    st.rerun()
+
+    elif profile_action == "Delete Profile" and existing_profiles:
+        with col_db2:
+            del_prof = st.selectbox("Select Profile to Delete", existing_profiles)
+            if st.button("❌ Confirm Delete"):
+                conn = sqlite3.connect(DB_FILE)
+                c = conn.cursor()
+                c.execute("DELETE FROM profiles WHERE name=?", (del_prof,))
+                conn.commit()
+                conn.close()
+                st.warning(f"Profile '{del_prof}' deleted.")
+                st.rerun()
 
     st.markdown("---")
     c1, c2 = st.columns(2)
@@ -161,6 +175,7 @@ if page == "1. Demographics & Coach Sign-off":
         st.session_state.athlete_data["phase"] = st.selectbox("Season Phase", ["Off-Season", "Pre-Season", "In-Season", "Rehab / Transition"], index=0)
         st.session_state.athlete_data["training_years"] = st.number_input("Training Experience (Years)", 0, 30, int(st.session_state.athlete_data["training_years"]))
 
+    st.markdown("---")
     if st.button("💾 Save Profile Snapshot to Local DB"):
         conn = sqlite3.connect(DB_FILE)
         c = conn.cursor()
@@ -172,7 +187,7 @@ if page == "1. Demographics & Coach Sign-off":
                    json.dumps(st.session_state.athlete_data)))
         conn.commit()
         conn.close()
-        st.success(f"Snapshot for {st.session_state.athlete_data['name']} saved to SQLite DB.")
+        st.success(f"Snapshot for '{st.session_state.athlete_data['name']}' saved to database.")
 
 # ==========================================
 # PAGE 2: CLUB LOAD & MULTI-INJURY DIAGNOSTICS
@@ -189,7 +204,7 @@ elif page == "2. Club Load & Multi-Injury Diagnostics":
         
         tot_vol = st.session_state.athlete_data["club_hours"]
         if tot_vol > 12.0:
-            st.warning("⚠️ High External Volume Detected: Engine will limit S&C frequency to 2 sessions/week to prevent overtraining.")
+            st.warning("⚠️ High External Volume Detected: Engine will cap S&C frequency to 2 sessions/week to manage cumulative fatigue.")
         else:
             st.info("✅ Moderate External Volume: Standard 3-4 session S&C split permitted.")
 
@@ -226,9 +241,9 @@ elif page == "3. SFMA, Anatomical Views & ROM Matrix":
     with t2:
         st.subheader("3-View Static Posture Evaluation")
         posture = st.session_state.athlete_data["posture"]
-        posture["Anterior"] = st.selectbox("Anterior View", ["Normal", "Pes Planus (Flat Feet)", "Genu Valgum (Knock Knees)", "Genu Varum (Bow Legs)"])
-        posture["Posterior"] = st.selectbox("Posterior View", ["Normal", "Scapular Winging", "Asymmetric Pelvic Height"])
-        posture["Lateral"] = st.selectbox("Lateral View", ["Normal", "Anterior Pelvic Tilt", "Excessive Thoracic Kyphosis", "Forward Head Posture"])
+        posture["Anterior"] = st.selectbox("Anterior View", ["Normal", "Pes Planus (Flat Feet)", "Genu Valgum (Knock Knees)", "Genu Varum (Bow Legs)"], index=0)
+        posture["Posterior"] = st.selectbox("Posterior View", ["Normal", "Scapular Winging", "Asymmetric Pelvic Height"], index=0)
+        posture["Lateral"] = st.selectbox("Lateral View", ["Normal", "Anterior Pelvic Tilt", "Excessive Thoracic Kyphosis", "Forward Head Posture"], index=0)
         st.session_state.athlete_data["posture"] = posture
 
     with t3:
@@ -280,7 +295,6 @@ elif page == "4. Sport-Specific Assessment & 1RM Suite":
         st.subheader("Aerobic & Maximal Aerobic Speed (MAS)")
         perf["cooper_dist"] = st.number_input("12-Min Cooper Test Distance (meters)", 500, 5000, int(perf.get("cooper_dist", 2800)))
         
-        # MAS Calculation: (Distance - 504) / 45 / 3.6 -> m/s
         mas = round((perf["cooper_dist"] - 504) / 720.0, 2)
         vo2 = round((perf["cooper_dist"] - 504.9) / 44.73, 1)
         st.info(f"📊 Calculated VO2Max: **{vo2} mL/kg/min** | Maximal Aerobic Speed (MAS): **{mas} m/s**")
@@ -319,10 +333,31 @@ elif page == "5. Saved Records & Historical Progress":
     conn.close()
 
     if not df_hist.empty:
-        st.subheader("Logged History Snapshots")
-        st.dataframe(df_hist[["id", "assessment_date", "athlete_name"]])
+        st.subheader("Logged History Snapshots Table")
+        st.dataframe(df_hist[["id", "assessment_date", "athlete_name"]], use_container_width=True)
+        
+        # Extract Historical Metrics for Plotting
+        dates = []
+        squats = []
+        benches = []
+        cmjs = []
+        
+        for idx, row in df_hist.iterrows():
+            d = json.loads(row['data_json'])
+            dates.append(row['assessment_date'])
+            p = d.get('performance', {})
+            squats.append(p.get('squat_1rm', 0))
+            benches.append(p.get('bench_1rm', 0))
+            cmjs.append(p.get('cmj_height', 0))
+
+        plot_df = pd.DataFrame({"Date": dates, "Squat 1RM": squats, "Bench 1RM": benches, "CMJ Height": cmjs})
+        
+        st.subheader("Longitudinal Strength & Power Adaptation")
+        fig = px.line(plot_df, x="Date", y=["Squat 1RM", "Bench 1RM", "CMJ Height"], markers=True, title="Progress Tracking Over Time")
+        fig.update_layout(template="plotly_dark")
+        st.plotly_chart(fig, use_container_width=True)
     else:
-        st.info("No historical snapshots logged for this athlete yet.")
+        st.info("No historical snapshots logged for this athlete yet. Click the button above to log your first assessment.")
 
 # ==========================================
 # PAGE 6: ADAPTIVE PROGRAM GENERATOR
@@ -392,7 +427,7 @@ elif page == "6. ADAPTIVE PROGRAM GENERATOR":
         "Phase 5: Power / Explosiveness"
     ])
 
-    # Dynamic Exercise Rule System
+    # Dynamic Exercise Selection Logic
     squat_exercise = "Barbell Back Squat"
     ohp_exercise = "Barbell Overhead Press"
     plyo_exercise = "Depth Rebound Jumps (Fast Plyo, GCT < 250ms)"
