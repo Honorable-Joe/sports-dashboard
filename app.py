@@ -317,12 +317,38 @@ COMPLEXES_BY_ID={c.id:c for c in COMPLEXES}
 # ============================================================
 # SCREENING / WARM-UP DATA
 # ============================================================
-POSTURE_OPTIONS = ["Not assessed","No notable deviation","Mild deviation","Marked deviation"]
-POSTURE_FIELDS = {
-    "Anterior":["Head / neck","Shoulder height","Pelvic level","Knee alignment","Foot / arch position"],
-    "Lateral":["Head position","Thoracic curve","Lumbar curve","Pelvic tilt","Knee position"],
-    "Posterior":["Scapular position","Spinal alignment","Pelvic level","Knee alignment","Foot / heel alignment"],
+# Structured postural-observation taxonomy. This is intentionally an observation
+# screen, not a medical diagnosis. Findings are coach-observed and should be
+# confirmed by an appropriately qualified clinician when clinically relevant.
+POSTURE_SEVERITY = ["Not assessed", "None / neutral", "Mild", "Moderate", "Marked"]
+POSTURE_FINDINGS = {
+    "Anterior": {
+        "Head / neck": ["Not assessed", "Neutral", "Forward head", "Head tilt", "Head rotation asymmetry"],
+        "Shoulder height": ["Not assessed", "Level", "Right elevated", "Left elevated", "Right depressed", "Left depressed"],
+        "Pelvic level": ["Not assessed", "Level", "Right pelvic hike", "Left pelvic hike", "Pelvic rotation asymmetry"],
+        "Knee alignment": ["Not assessed", "Neutral", "Dynamic/static valgus appearance", "Varus appearance", "Hyperextension appearance"],
+        "Foot / arch position": ["Not assessed", "Neutral", "Excessive pronation", "Supination", "Toe-out", "Toe-in", "Arch asymmetry"],
+    },
+    "Lateral": {
+        "Head position": ["Not assessed", "Neutral", "Forward head", "Chin protraction", "Excessive extension"],
+        "Shoulder position": ["Not assessed", "Neutral", "Rounded / protracted", "Retracted", "Anterior shoulder translation"],
+        "Thoracic curve": ["Not assessed", "Neutral", "Increased kyphotic posture", "Reduced kyphotic posture", "Thoracic asymmetry"],
+        "Lumbar curve": ["Not assessed", "Neutral", "Increased lordotic posture", "Reduced lordotic posture", "Lumbar asymmetry"],
+        "Pelvic tilt": ["Not assessed", "Neutral", "Anterior pelvic tilt", "Posterior pelvic tilt", "Pelvic rotation"],
+        "Knee position": ["Not assessed", "Neutral", "Hyperextension posture", "Flexed posture", "Anterior/posterior translation"],
+        "Ankle / foot": ["Not assessed", "Neutral", "Limited dorsiflexed posture", "Excessive pronation", "Supination", "Heel lift asymmetry"],
+    },
+    "Posterior": {
+        "Scapular position": ["Not assessed", "Neutral", "Scapular winging", "Scapular elevation", "Scapular depression", "Scapular protraction", "Scapular asymmetry"],
+        "Spinal alignment": ["Not assessed", "Neutral", "Lateral shift", "Lateral curvature appearance", "Thoracic asymmetry", "Lumbar asymmetry"],
+        "Pelvic level": ["Not assessed", "Level", "Right pelvic hike", "Left pelvic hike", "Pelvic rotation asymmetry"],
+        "Knee alignment": ["Not assessed", "Neutral", "Valgus appearance", "Varus appearance", "Knee height asymmetry"],
+        "Foot / heel alignment": ["Not assessed", "Neutral", "Heel eversion", "Heel inversion", "Excessive pronation", "Supination", "Foot asymmetry"],
+    },
 }
+# Backward-compatible aliases for older saved profiles.
+POSTURE_OPTIONS = POSTURE_SEVERITY
+POSTURE_FIELDS = {view: list(fields.keys()) for view, fields in POSTURE_FINDINGS.items()}
 MOVEMENT_SCREEN_PATTERNS = ["Deep Squat","Hurdle Step","Inline Lunge","Shoulder Mobility","Active Straight Leg Raise","Trunk Stability Push-Up","Rotary Stability"]
 MOVEMENT_SCREEN_OPTIONS = ["Not assessed","FN — Functional / Non-painful","FP — Functional / Painful","DN — Dysfunctional / Non-painful","DP — Dysfunctional / Painful"]
 SPORT_WARMUPS = {
@@ -433,7 +459,13 @@ def screening_flags(a):
     flags=[]
     for view,d in [("Anterior",a.posture_anterior),("Lateral",a.posture_lateral),("Posterior",a.posture_posterior)]:
         for item,val in d.items():
-            if val in ("Mild deviation","Marked deviation"):
+            # New format stores a structured observation string: finding || severity.
+            # Legacy profiles may still contain the old severity-only values.
+            if isinstance(val, str) and " || " in val:
+                finding, severity = val.split(" || ", 1)
+                if finding not in ("Not assessed", "Neutral", "Level") and severity not in ("Not assessed", "None / neutral"):
+                    flags.append(f"{view}: {item} — {finding} ({severity})")
+            elif val in ("Mild deviation", "Moderate deviation", "Marked deviation"):
                 flags.append(f"{view}: {item} = {val}")
     for pattern,result in a.movement_screen.items():
         if result in ("FP — Functional / Painful","DP — Dysfunctional / Painful"):
@@ -643,20 +675,38 @@ def speed_dose(a,week,constraints):
     return f"{sets} × 10–30 m", "90–180 s", "Max intent; full recovery"
 
 def conditioning_decision(a,p,constraints,week):
-    # Every upstream change changes this block.
+    # The ESD output is executable: exact order, prescription, work/rest and rounds.
+    # Sport demand now changes the station content instead of only changing the label.
     if constraints["pain_gate"]:
-        return {"system":"Aerobic","name":"Low-impact recovery conditioning","stations":["Bike / AirBike easy","Walking or easy cyclical work","Mobility reset"],"work":"15–25 min","rest":"As needed","intensity":"RPE 4–5/10","reason":"Pain/readiness gate"}
+        return {"system":"Aerobic","name":"Low-Impact Recovery Circuit","stations":["1. Bike / AirBike — 2 min easy","2. Walking — 1 min easy","3. Breathing + mobility reset — 1 min"],"work":"4-min block × 3–5 rounds","rest":"60 s between rounds","intensity":"RPE 4–5/10","reason":"Pain/readiness gate"}
     if constraints["band"]=="RED":
-        return {"system":"Aerobic","name":"Recovery aerobic station","stations":["Bike / Rower easy","Easy walk","Breathing + mobility reset"],"work":"15–20 min","rest":"As needed","intensity":"RPE 4–5/10","reason":"Low readiness"}
-    if a.season in ["In-Season / Competition","Taper / Peak"] and a.competition_days>0:
-        return {"system":"Aerobic","name":"Competition-support aerobic work","stations":["Bike / Rower","Easy tempo movement","Mobility reset"],"work":"6–8 × 45 s / 60 s easy","rest":"60 s","intensity":"RPE 5–6/10","reason":"Protect sport performance around competition"}
+        return {"system":"Aerobic","name":"Recovery Aerobic Circuit","stations":["1. Rower / Bike — 90 s easy","2. Easy walk — 60 s","3. Mobility reset — 30 s"],"work":"3-min block × 4 rounds","rest":"60 s between rounds","intensity":"RPE 4–5/10","reason":"Low readiness"}
+
+    sport=a.sport
+    if sport in ["Tennis","Racket Sports (Squash/Padel)"]:
+        if p.get("Anaerobic",0)>=20 and constraints["high_fatigue_allowed"]:
+            return {"system":"Anaerobic / Repeated Sprint","name":"Racket-Sport Repeat-Sprint + COD EMOM","stations":["Minute 1 — Split Step → Lateral Shuffle → 5 m Sprint: 15 s work","Minute 2 — Rotational Medicine-Ball Scoop Toss: 5/side","Minute 3 — AirBike / Rower: 20 s hard","Minute 4 — Walk + T-spine reset: 40 s"],"work":"EMOM 16 min — 4 rounds","rest":"Remaining minute / 60 s between rounds","intensity":"RPE 8–9 on work minutes","reason":"Racket-sport acceleration, rotation and repeated-effort demand"}
+        return {"system":"Agility / COD","name":"Racket-Sport Movement Circuit","stations":["1. Split Step → Lateral Shuffle — 15 s","2. Crossover Run → 5 m Acceleration — 15 s","3. Rotational Medicine-Ball Throw — 5/side","4. Tempo Bike — 30 s"],"work":"4 stations × 4 rounds","rest":"60–90 s between rounds","intensity":"High-quality movement; RPE 7/10","reason":"Sport-specific COD + rotational power + repeatability"}
+
+    if sport=="Combat Sports (MMA/Boxing)":
+        return {"system":"Anaerobic / Repeated Sprint","name":"Combat Repeat-Effort EMOM","stations":["Minute 1 — Med-Ball Rotational Scoop Toss: 5/side","Minute 2 — Battle Rope Power Waves: 25 s","Minute 3 — Sprawl → Stand: 6 reps","Minute 4 — AirBike: 20 s hard"],"work":"EMOM 16 min — 4 rounds","rest":"Remaining minute","intensity":"RPE 8/10","reason":"Combat-specific repeated high-intensity effort and trunk/whole-body power"}
+
+    if sport=="Rugby/American Football":
+        return {"system":"Anaerobic / Repeated Sprint","name":"Collision-Sport Work Capacity EMOM","stations":["Minute 1 — Sled Push: 15–20 m","Minute 2 — Med-Ball Ground Slam: 8 reps","Minute 3 — 10 m Acceleration Shuttle: 2 reps","Minute 4 — Bike: 20 s hard"],"work":"EMOM 16 min — 4 rounds","rest":"Remaining minute","intensity":"RPE 8/10","reason":"Acceleration, force production and repeat-effort demand"}
+
+    if sport in ["Soccer","Basketball","Volleyball"]:
+        return {"system":"Anaerobic / Repeated Sprint","name":"Field / Court Repeat-Sprint EMOM","stations":["Minute 1 — Lateral Shuffle → 10 m Sprint: 2 reps","Minute 2 — Wall Balls: 10 reps","Minute 3 — Bike / Rower: 20 s hard","Minute 4 — Walking Recovery + Calf/Achilles Reset: 40 s"],"work":"EMOM 16 min — 4 rounds","rest":"Remaining minute","intensity":"RPE 7–8/10","reason":"Court/field repeat-sprint and whole-body work capacity"}
+
+    if sport=="Track & Field (Sprints/Jumps)":
+        return {"system":"Anaerobic / Repeated Sprint","name":"Sprint Athlete Power-Endurance Circuit","stations":["1. Sled Acceleration: 15 m","2. Med-Ball Chest Pass: 5 reps","3. Bike Sprint: 15 s","4. Walking Recovery: 45 s"],"work":"4 stations × 4 rounds","rest":"90 s between rounds","intensity":"RPE 7–8/10; preserve speed","reason":"Acceleration and power-endurance without excessive conditioning volume"}
+
     if p.get("Anaerobic",0)>=20 and constraints["high_fatigue_allowed"]:
-        return {"system":"Anaerobic / Repeated Sprint","name":"Repeated Sprint Station","stations":["10–20 m shuttle sprint","Lateral cone shuffle","AirBike 15–20 s hard"],"work":"2–3 rounds × 3 stations","rest":"40–60 s between reps; 3 min rounds","intensity":"RPE 8–9/10","reason":"Anaerobic gap + sport demand"}
+        return {"system":"Anaerobic / Repeated Sprint","name":"General Repeat-Sprint EMOM","stations":["Minute 1 — 10–20 m Shuttle Sprint: 2 reps","Minute 2 — Wall Balls: 10 reps","Minute 3 — AirBike: 20 s hard","Minute 4 — Easy walk / breathing: 40 s"],"work":"EMOM 16 min — 4 rounds","rest":"Remaining minute","intensity":"RPE 8–9/10","reason":"Anaerobic gap + work-capacity target"}
     if p.get("COD",0)>=18:
-        return {"system":"Agility / COD","name":"Agility Station Circuit","stations":["5-10-5 Shuttle","Reactive Cone Drill","Lateral Shuffle → Sprint"],"work":"2–3 rounds × 3 stations","rest":"60–90 s","intensity":"High quality, not failure","reason":"COD/agility priority"}
+        return {"system":"Agility / COD","name":"Agility Station Circuit","stations":["1. 5-10-5 Shuttle — 1 rep","2. Reactive Cone Drill — 15 s","3. Lateral Shuffle → Sprint — 2 reps","4. Walk / reset — 45 s"],"work":"4 stations × 3 rounds","rest":"60–90 s between rounds","intensity":"High quality, not failure","reason":"COD/agility priority"}
     if p.get("Aerobic",0)>=20:
-        return {"system":"Aerobic","name":"Aerobic Interval Station","stations":["AirBike / Rower","Tempo Shuttle or Bike","Easy walk / mobility reset"],"work":"6–10 × 2 min work","rest":"1 min easy","intensity":"RPE 6–7/10","reason":"Aerobic gap + work capacity target"}
-    return {"system":"Aerobic","name":"Mixed Energy-System Circuit","stations":["Cyclical aerobic station","Tempo locomotion","Core / mobility reset"],"work":"3–4 rounds × 4 min","rest":"60–90 s","intensity":"RPE 6–7/10","reason":"Whole-athlete work-capacity balance"}
+        return {"system":"Aerobic","name":"Aerobic Interval EMOM","stations":["Minute 1 — AirBike / Rower: 45 s @ RPE 7","Minute 2 — Tempo Shuttle: 40 s","Minute 3 — Easy walk: 45 s","Minute 4 — Core / mobility reset: 30 s"],"work":"EMOM 16 min — 4 rounds","rest":"Remaining minute","intensity":"RPE 6–7/10","reason":"Aerobic gap + work-capacity target"}
+    return {"system":"Aerobic","name":"Whole-Athlete Mixed ESD EMOM","stations":["Minute 1 — Bike / Rower: 40 s @ RPE 7","Minute 2 — Wall Balls: 10 reps","Minute 3 — Tempo Shuttle: 30 s","Minute 4 — Dead Bug + breathing reset: 30 s"],"work":"EMOM 16 min — 4 rounds","rest":"Remaining minute","intensity":"RPE 6–7/10","reason":"Whole-athlete work-capacity balance"}
 
 def session_template(a,day,system_scores,constraints):
     # The template is not fixed: the highest priorities determine the slots.
@@ -865,7 +915,11 @@ def render_session(a,session,week,engine):
         if cx.notes: st.caption(cx.notes)
     cond=session["conditioning"]
     st.markdown("#### 🔥 Metabolic / ESD Station")
-    render_card("5. Dynamic MetCon / ESD Protocol",cond["name"]+" — "+" | ".join(cond["stations"]),cond["work"]+" • Rest: "+cond["rest"],cond["intensity"]+" • "+cond["reason"],"Dynamic Pace","Multi-planar","Energy System / Conditioning",ACCENTS["Aerobic"])
+    render_card("5. Dynamic MetCon / ESD Protocol",cond["name"],cond["work"]+" • Rest: "+cond["rest"],cond["intensity"],"Dynamic Pace","Multi-planar","Energy System / Conditioning",ACCENTS["Aerobic"])
+    st.markdown("**Exact execution:**")
+    for station in cond["stations"]:
+        st.markdown(f"- **{station}**")
+    st.caption(cond["reason"])
 
 # ============================================================
 # SIDEBAR
@@ -945,7 +999,7 @@ elif module=="3. Comprehensive Screening":
     for col,(key,label,mn,mx,step) in zip(cs,fields):
         with col: setv(key,st.number_input(label,mn,mx,float(st.session_state[key]),step))
     st.markdown("---"); st.subheader("B. Three-View Postural Screen")
-    st.caption("Coach-observed documentation. Photo references can be uploaded; the app does not diagnose structural conditions.")
+    st.caption("Structured coach-observed posture findings. Record the visible deviation and severity for each region; this is a screening/documentation layer, not a medical diagnosis.")
     tabs=st.tabs(["Anterior View","Lateral View","Posterior View"])
     for tab,view in zip(tabs,["Anterior","Lateral","Posterior"]):
         with tab:
@@ -954,7 +1008,19 @@ elif module=="3. Comprehensive Screening":
             if upload: st.image(upload,caption=view,use_container_width=True)
             cols=st.columns(2)
             for i,item in enumerate(POSTURE_FIELDS[view]):
-                with cols[i%2]: current[item]=st.selectbox(item,POSTURE_OPTIONS,index=POSTURE_OPTIONS.index(current.get(item,"Not assessed")),key=f"{view}_{i}")
+                with cols[i%2]:
+                    legacy=current.get(item,"Not assessed")
+                    legacy_finding=legacy.split(" || ",1)[0] if isinstance(legacy,str) and " || " in legacy else "Not assessed"
+                    finding_options=POSTURE_FINDINGS[view][item]
+                    finding_default=legacy_finding if legacy_finding in finding_options else (legacy if legacy in finding_options else "Not assessed")
+                    finding=st.selectbox(f"{item} — Finding",finding_options,index=finding_options.index(finding_default),key=f"{view}_{i}_finding")
+                    severity_default="None / neutral"
+                    if isinstance(legacy,str) and " || " in legacy:
+                        severity_default=legacy.split(" || ",1)[1]
+                    elif legacy in ("Mild deviation","Marked deviation"):
+                        severity_default="Mild" if "Mild" in legacy else "Marked"
+                    severity=st.selectbox(f"{item} — Severity",POSTURE_SEVERITY,index=POSTURE_SEVERITY.index(severity_default) if severity_default in POSTURE_SEVERITY else 0,key=f"{view}_{i}_severity")
+                    current[item]=f"{finding} || {severity}"
             setv(key,current)
     st.markdown("---"); st.subheader("C. SFMA-Compatible Movement Screen")
     st.caption("Record the coach's classification. Use the licensed/official protocol where applicable.")
