@@ -971,6 +971,9 @@ elif module=="3. Comprehensive Screening":
 # ============================================================
 elif module=="4. Performance Testing":
     st.markdown('<div class="banner-header">04 • Performance Testing</div>',unsafe_allow_html=True)
+    # Build the athlete object before any sport-specific performance tests use it.
+    # This fixes the v5 NameError caused by referencing `a.sport` before `a=athlete()`.
+    a=athlete()
     c1,c2,c3=st.columns(3)
     with c1:
         setv("cmj",st.number_input("Countermovement Jump (cm)",5.0,100.0,float(st.session_state.cmj),0.5)); setv("broad_jump",st.number_input("Broad Jump (cm)",50.0,350.0,float(st.session_state.broad_jump),1.0))
@@ -991,7 +994,7 @@ elif module=="4. Performance Testing":
         asym=asymmetry(a.forehand_throw_m,a.backhand_throw_m)
         rr1,rr2=st.columns(2); rr1.metric("Forehand / Backhand Asymmetry",f"{asym:.1f}%"); rr2.metric("Rotational Power Index",f"{performance_scores(a)['Rotational Power']:.0f}/100")
         st.caption("Use the same standardized medicine-ball mass, technique, distance convention and testing conditions each time. The app treats these as performance tests, not diagnostic tests.")
-    a=athlete(); scores=performance_scores(a); vals=[("Relative Squat",relative_strength(a.squat_1rm,a.weight_kg)),("Relative Bench",relative_strength(a.bench_1rm,a.weight_kg)),("Jump Asymmetry",asymmetry(a.left_jump,a.right_jump)),("Estimated VO₂max",(a.cooper_m-504.9)/44.73)]
+    scores=performance_scores(a); vals=[("Relative Squat",relative_strength(a.squat_1rm,a.weight_kg)),("Relative Bench",relative_strength(a.bench_1rm,a.weight_kg)),("Jump Asymmetry",asymmetry(a.left_jump,a.right_jump)),("Estimated VO₂max",(a.cooper_m-504.9)/44.73)]
     cols=st.columns(4)
     for c,(lab,val) in zip(cols,vals): c.metric(lab,f"{val:.1f}" if "VO₂" in lab else f"{val:.2f}")
 
