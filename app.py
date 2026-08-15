@@ -86,9 +86,12 @@ SPORT_DEMANDS = {
     "Tennis": {"Strength":.10,"Hypertrophy":.03,"Power":.18,"Acceleration":.09,"COD":.14,"Aerobic":.14,"Anaerobic":.10,"Stability":.13,"Mobility":.09},
     "Racket Sports (Squash/Padel)": {"Strength":.10,"Hypertrophy":.03,"Power":.18,"Acceleration":.12,"COD":.15,"Aerobic":.13,"Anaerobic":.11,"Stability":.10,"Mobility":.08},
     "Volleyball": {"Strength":.13,"Hypertrophy":.03,"Power":.22,"Acceleration":.08,"COD":.10,"Aerobic":.08,"Anaerobic":.10,"Stability":.14,"Mobility":.12},
-    "Combat Sports (MMA/Boxing)": {"Strength":.14,"Hypertrophy":.03,"Power":.22,"Acceleration":.08,"COD":.06,"Aerobic":.15,"Anaerobic":.14,"Stability":.10,"Mobility":.08},
+    "Handball": {"Strength":.14,"Hypertrophy":.03,"Power":.20,"Acceleration":.10,"COD":.14,"Aerobic":.12,"Anaerobic":.12,"Stability":.11,"Mobility":.08},
+    "Boxing": {"Strength":.13,"Hypertrophy":.02,"Power":.24,"Acceleration":.10,"COD":.08,"Aerobic":.15,"Anaerobic":.16,"Stability":.08,"Mobility":.04},
+    "MMA": {"Strength":.16,"Hypertrophy":.03,"Power":.21,"Acceleration":.08,"COD":.07,"Aerobic":.14,"Anaerobic":.16,"Stability":.10,"Mobility":.08},
     "Track & Field (Sprints/Jumps)": {"Strength":.18,"Hypertrophy":.02,"Power":.22,"Acceleration":.22,"COD":.04,"Aerobic":.05,"Anaerobic":.08,"Stability":.10,"Mobility":.09},
     "Rugby/American Football": {"Strength":.22,"Hypertrophy":.06,"Power":.18,"Acceleration":.14,"COD":.09,"Aerobic":.08,"Anaerobic":.10,"Stability":.08,"Mobility":.05},
+    "Swimming": {"Strength":.14,"Hypertrophy":.04,"Power":.12,"Acceleration":.04,"COD":.01,"Aerobic":.28,"Anaerobic":.13,"Stability":.13,"Mobility":.11},
 }
 SPORT_POSITIONS = {
     "General Fitness":["General"],
@@ -97,9 +100,12 @@ SPORT_POSITIONS = {
     "Tennis":["Singles","Doubles"],
     "Racket Sports (Squash/Padel)":["Singles","Doubles"],
     "Volleyball":["Setter","Outside Hitter","Opposite","Middle Blocker","Libero"],
-    "Combat Sports (MMA/Boxing)":["Boxing","MMA","Kickboxing","Wrestling","BJJ"],
+    "Handball":["Wing","Backcourt","Pivot","Goalkeeper"],
+    "Boxing":["Amateur / Competitive Boxing","Professional Boxing"],
+    "MMA":["MMA"],
     "Track & Field (Sprints/Jumps)":["100m/200m","400m","Long Jump","High Jump"],
     "Rugby/American Football":["Forward/Front Seven","Back/Skill Position","Hybrid"],
+    "Swimming":["Freestyle","Backstroke","Breaststroke","Butterfly","Individual Medley"],
 }
 EQUIPMENT = [
     "Barbells & Plates","Dumbbells","Kettlebells","Rigs & Suspension (TRX/Wood Rings)",
@@ -295,6 +301,17 @@ E = [
     ex("r13","Landmine Rotation","Resistance","Rotation",["Strength","Power","Core / Trunk"],["Barbells & Plates"],"Intermediate",plane="Transverse",fatigue=3,sport_tags=["Tennis","Racket Sports (Squash/Padel)","Combat Sports (MMA/Boxing)"],avoid_if=["back"]),
     ex("r14","Kettlebell Swing","Resistance","Hinge Ballistic",["Power","Strength","Work Capacity"],["Kettlebells"],"Intermediate",fatigue=3,avoid_if=["back"]),
     ex("n4","Sled Push","Anaerobic / Repeated Sprint","Loaded Locomotion",["Power","Anaerobic","Work Capacity"],["Sleds & Prowler"],"Intermediate",fatigue=4,sport_tags=["Soccer","Basketball","Rugby/American Football"]),
+    ex("bx1","Shadow Boxing — Technical Flow","Agility / COD","Sport Skill",["Reaction","Coordination","Work Capacity"],["Bodyweight"],"Beginner",plane="Multi-planar",fatigue=2,sport_tags=["Boxing"],tags=["Boxing","Shadow Boxing"]),
+    ex("bx2","Shadow Boxing — High Output Flurries","Anaerobic / Repeated Sprint","Sport Conditioning",["Anaerobic","Speed","Work Capacity"],["Bodyweight"],"Beginner",plane="Multi-planar",fatigue=3,sport_tags=["Boxing"],tags=["Boxing","Shadow Boxing"]),
+    ex("bx3","Boxing Reaction Callout Drill","Agility / COD","Reactive Striking",["Reaction","Agility","Coordination"],["Bodyweight"],"Intermediate",plane="Multi-planar",fatigue=3,sport_tags=["Boxing"],tags=["Boxing","Reaction"]),
+    ex("bx4","Slip → Roll → Counter Shadow Sequence","Agility / COD","Defensive Footwork",["Agility","Reaction","COD"],["Bodyweight"],"Intermediate",plane="Multi-planar",fatigue=3,sport_tags=["Boxing"],tags=["Boxing","Footwork"]),
+    ex("bx5","Medicine-Ball Punch Throw","Plyometrics","Upper-Body Rotation",["Power","Rotation","Speed"],["Medicine & Slam Balls"],"Intermediate",plane="Transverse",fatigue=2,sport_tags=["Boxing"],tags=["Boxing","Punch Power"]),
+    ex("sw1","SkiErg Swim-Pull Intervals","Aerobic","Swim-Specific Pull",["Aerobic","Work Capacity","Pulling"],["Ergometers (AirBike/Rower/SkiErg)"],"Beginner",fatigue=3,sport_tags=["Swimming"],tags=["Swimming","Pull"]),
+    ex("sw2","Straight-Arm Cable Pulldown","Resistance","Swim Pull",["Strength","Strength Endurance"],["Cable Systems & Selectorized"],"Beginner",fatigue=2,sport_tags=["Swimming"],tags=["Swimming","Lat"]),
+    ex("sw3","Band Straight-Arm Swim Pull","Resistance","Swim Pull",["Strength Endurance","Stability"],["Bands"],"Beginner",fatigue=1,sport_tags=["Swimming"],tags=["Swimming","Scapular"]),
+    ex("sw4","Prone Y-T-W","Corrective / Activation","Scapular",["Stability","Movement Quality"],["Bodyweight","Bands"],"Beginner",fatigue=1,sport_tags=["Swimming"],tags=["Swimming","Scapular"]),
+    ex("sw5","Medicine-Ball Streamline Slam","Plyometrics","Overhead Ballistic",["Power","Core / Trunk"],["Medicine & Slam Balls"],"Intermediate",fatigue=2,sport_tags=["Swimming"],tags=["Swimming","Power"]),
+    ex("sw6","Swimmer Hollow-Body Hold","Stability / Core","Streamline Core",["Core / Trunk","Stability"],["Bodyweight"],"Beginner",fatigue=1,sport_tags=["Swimming"],tags=["Swimming","Streamline"]),
 ]
 EXERCISES = {x.id:x for x in E}
 
@@ -357,9 +374,11 @@ SPORT_WARMUPS = {
     "Tennis":["Wrist/Forearm Rotations","T-Spine Openers","Lateral Multi-Directional Shuttles"],
     "Racket Sports (Squash/Padel)":["Wrist/Forearm Rotations","T-Spine Openers","Lateral Multi-Directional Shuttles"],
     "Volleyball":["Scapular Activation","Ankle Stiffness Hops","Lateral Bounds + Block Hops"],
-    "Combat Sports (MMA/Boxing)":["T-Spine Windmills","Hip 90/90 Flow","Footwork + Rotational Prep"],
+    "Boxing":["T-Spine Windmills","Hip 90/90 Flow","Footwork + Shadow Boxing Flow","Scapular/Shoulder Prep"],
+    "MMA":["T-Spine Windmills","Hip 90/90 Flow","Footwork + Sprawl Prep"],
     "Track & Field (Sprints/Jumps)":["A-Skips / Ankling","Dynamic Hamstring Sweeps","Acceleration Wall Drills"],
     "Rugby/American Football":["Neck Prep","Groin/Adductor Mobility","Resisted Acceleration Starts"],
+    "Swimming":["Shoulder CARs","Scapular Activation","T-Spine Rotation","Streamline Core Prep"],
     "General Fitness":["World's Greatest Stretch","Band Pull-Aparts + Glute Bridges","Bodyweight Squats + Arm Circles"],
 }
 
@@ -623,7 +642,7 @@ def exercise_allowed(x,a,constraints):
 
 def exercise_score(x,a,p,system_scores,month,used_ids):
     score=0.0
-    if a.sport in x.sport_tags: score+=18
+    if a.sport in x.sport_tags: score+=28
     if "General Fitness" in x.sport_tags: score+=3
     score+=max([p.get(q,0) for q in x.quality]+[0])*.18
     score+=system_scores.get(x.system,0)*.08
@@ -674,39 +693,270 @@ def speed_dose(a,week,constraints):
     sets=2 if week==4 else 3 if constraints["band"]=="YELLOW" else 4
     return f"{sets} × 10–30 m", "90–180 s", "Max intent; full recovery"
 
-def conditioning_decision(a,p,constraints,week):
-    # The ESD output is executable: exact order, prescription, work/rest and rounds.
-    # Sport demand now changes the station content instead of only changing the label.
+MESOCYCLE_PHASES = {
+    1: "Foundation • Capacity + Movement Quality",
+    2: "Development • Load + Density",
+    3: "Specificity • Sport Transfer + Power-Endurance",
+    4: "Realization • High Quality + Specificity",
+    5: "Performance • Competition Support",
+    6: "Performance • Competition Support",
+}
+
+
+def mesocycle_phase(a, month):
+    # Competition phases override the generic calendar so the same 3-month
+    # horizon can be used for both development and competitive athletes.
+    if a.season == "In-Season / Competition":
+        return ["Maintenance • Capacity", "Maintenance • Specific Repeatability", "Maintenance • Speed/Power", "Deload • Competition Support", "Maintenance • Specificity", "Maintenance • Specificity"][min(month-1,5)]
+    if a.season == "Taper / Peak":
+        return ["Specificity • Low Volume", "Specificity • Speed/Power", "Taper • High Quality", "Competition Readiness", "Competition Readiness", "Competition Readiness"][min(month-1,5)]
+    return MESOCYCLE_PHASES.get(month, "Development • Progressive Variation")
+
+
+def _has(a, equipment):
+    return equipment in a.equipment
+
+
+def _tool(a, family):
+    # Pick one exact implement from the athlete's available equipment.
+    choices = {
+        "cyclical": [("Ergometers (AirBike/Rower/SkiErg)", "AirBike"), ("Bodyweight", "Tempo Run / Shuttle")],
+        "sled": [("Sleds & Prowler", "Sled Push"), ("Bands", "Band-Resisted March")],
+        "medball": [("Medicine & Slam Balls", "Medicine-Ball"), ("Dumbbells", "Dumbbell"), ("Bodyweight", "Bodyweight")],
+        "load": [("Barbells & Plates", "Barbell"), ("Dumbbells", "Dumbbell"), ("Kettlebells", "Kettlebell")],
+        "cone": [("Cones / Timing Gates", "Cone"), ("Bodyweight", "Line")],
+    }
+    for eq, label in choices.get(family, []):
+        if _has(a, eq):
+            return label
+    return choices.get(family, [("Bodyweight", "Bodyweight")])[-1][1]
+
+
+def conditioning_decision(a,p,constraints,week,month=1,day=1):
+    """Build an executable ESD block from sport, gaps, secondary targets,
+    readiness, mesocycle and day. The conditioning block is intentionally not
+    a fixed monthly template: the training objective stays stable while the
+    stimulus, density and exercise menu evolve.
+    """
+    phase = mesocycle_phase(a, month)
+    # Safety first: recovery work remains executable and equipment-aware.
     if constraints["pain_gate"]:
-        return {"system":"Aerobic","name":"Low-Impact Recovery Circuit","stations":["1. Bike / AirBike — 2 min easy","2. Walking — 1 min easy","3. Breathing + mobility reset — 1 min"],"work":"4-min block × 3–5 rounds","rest":"60 s between rounds","intensity":"RPE 4–5/10","reason":"Pain/readiness gate"}
+        bike = _tool(a,"cyclical")
+        return {"system":"Aerobic","name":"Low-Impact Recovery ESD — Day %d"%day,
+                "stations":[f"Minute 1 — {bike}: 60 s easy @ RPE 4–5",
+                            "Minute 2 — Walking: 40 s easy",
+                            "Minute 3 — Mobility reset: 40 s",
+                            "Minute 4 — Breathing reset: 30 s"],
+                "work":"EMOM 16 min — 4 rounds","rest":"Remaining minute",
+                "intensity":"RPE 4–5/10","reason":f"Pain/readiness gate • {phase}"}
     if constraints["band"]=="RED":
-        return {"system":"Aerobic","name":"Recovery Aerobic Circuit","stations":["1. Rower / Bike — 90 s easy","2. Easy walk — 60 s","3. Mobility reset — 30 s"],"work":"3-min block × 4 rounds","rest":"60 s between rounds","intensity":"RPE 4–5/10","reason":"Low readiness"}
+        bike = _tool(a,"cyclical")
+        return {"system":"Aerobic","name":"Recovery Aerobic Circuit — Day %d"%day,
+                "stations":[f"Minute 1 — {bike}: 60 s easy",
+                            "Minute 2 — Walk: 45 s",
+                            "Minute 3 — Mobility: 30 s",
+                            "Minute 4 — Breathing: 30 s"],
+                "work":"EMOM 16 min — 4 rounds","rest":"Remaining minute",
+                "intensity":"RPE 4–5/10","reason":f"Low readiness • {phase}"}
 
     sport=a.sport
-    if sport in ["Tennis","Racket Sports (Squash/Padel)"]:
-        if p.get("Anaerobic",0)>=20 and constraints["high_fatigue_allowed"]:
-            return {"system":"Anaerobic / Repeated Sprint","name":"Racket-Sport Repeat-Sprint + COD EMOM","stations":["Minute 1 — Split Step → Lateral Shuffle → 5 m Sprint: 15 s work","Minute 2 — Rotational Medicine-Ball Scoop Toss: 5/side","Minute 3 — AirBike / Rower: 20 s hard","Minute 4 — Walk + T-spine reset: 40 s"],"work":"EMOM 16 min — 4 rounds","rest":"Remaining minute / 60 s between rounds","intensity":"RPE 8–9 on work minutes","reason":"Racket-sport acceleration, rotation and repeated-effort demand"}
-        return {"system":"Agility / COD","name":"Racket-Sport Movement Circuit","stations":["1. Split Step → Lateral Shuffle — 15 s","2. Crossover Run → 5 m Acceleration — 15 s","3. Rotational Medicine-Ball Throw — 5/side","4. Tempo Bike — 30 s"],"work":"4 stations × 4 rounds","rest":"60–90 s between rounds","intensity":"High-quality movement; RPE 7/10","reason":"Sport-specific COD + rotational power + repeatability"}
+    racket = sport in ["Tennis","Racket Sports (Squash/Padel)"]
+    court = sport in ["Soccer","Basketball","Volleyball","Handball"]
+    boxing = sport=="Boxing"
+    combat = sport=="MMA"
+    swimming = sport=="Swimming"
+    collision = sport=="Rugby/American Football"
+    sprint = sport=="Track & Field (Sprints/Jumps)"
+    cyc=_tool(a,"cyclical"); med=_tool(a,"medball"); sled=_tool(a,"sled")
 
-    if sport=="Combat Sports (MMA/Boxing)":
-        return {"system":"Anaerobic / Repeated Sprint","name":"Combat Repeat-Effort EMOM","stations":["Minute 1 — Med-Ball Rotational Scoop Toss: 5/side","Minute 2 — Battle Rope Power Waves: 25 s","Minute 3 — Sprawl → Stand: 6 reps","Minute 4 — AirBike: 20 s hard"],"work":"EMOM 16 min — 4 rounds","rest":"Remaining minute","intensity":"RPE 8/10","reason":"Combat-specific repeated high-intensity effort and trunk/whole-body power"}
+    # Month controls the dominant conditioning stimulus.
+    # Week controls density/volume; day rotates the station menu.
+    if week==4:
+        density="Deload: 3 rounds"; rounds=3; work_rpe="RPE 6/10"
+    elif month==1:
+        density="Base: 4 rounds"; rounds=4; work_rpe="RPE 6–7/10"
+    elif month==2:
+        density="Development: 4 rounds"; rounds=4; work_rpe="RPE 7–8/10"
+    else:
+        density="Specific: 4–5 rounds"; rounds=4 if week<3 else 5; work_rpe="RPE 7–9/10"
 
-    if sport=="Rugby/American Football":
-        return {"system":"Anaerobic / Repeated Sprint","name":"Collision-Sport Work Capacity EMOM","stations":["Minute 1 — Sled Push: 15–20 m","Minute 2 — Med-Ball Ground Slam: 8 reps","Minute 3 — 10 m Acceleration Shuttle: 2 reps","Minute 4 — Bike: 20 s hard"],"work":"EMOM 16 min — 4 rounds","rest":"Remaining minute","intensity":"RPE 8/10","reason":"Acceleration, force production and repeat-effort demand"}
+    # Secondary targets can intentionally redirect the ESD stimulus.
+    target = ""
+    if p.get("Anaerobic",0)>=p.get("Aerobic",0)+8 or "Anaerobic Capacity" in a.secondary_goals:
+        target="anaerobic"
+    elif p.get("Aerobic",0)>=p.get("Anaerobic",0)+8 or "Aerobic Capacity" in a.secondary_goals or "Recovery / Work Capacity" in a.secondary_goals:
+        target="aerobic"
+    elif p.get("COD",0)>=18 or "Agility" in a.secondary_goals:
+        target="cod"
+    else:
+        target="mixed"
 
-    if sport in ["Soccer","Basketball","Volleyball"]:
-        return {"system":"Anaerobic / Repeated Sprint","name":"Field / Court Repeat-Sprint EMOM","stations":["Minute 1 — Lateral Shuffle → 10 m Sprint: 2 reps","Minute 2 — Wall Balls: 10 reps","Minute 3 — Bike / Rower: 20 s hard","Minute 4 — Walking Recovery + Calf/Achilles Reset: 40 s"],"work":"EMOM 16 min — 4 rounds","rest":"Remaining minute","intensity":"RPE 7–8/10","reason":"Court/field repeat-sprint and whole-body work capacity"}
+    if boxing:
+        day_variant = (day-1 + week-1) % 3
+        if month==1:
+            menus=[
+                ["Minute 1 — Shadow Boxing: 40 s technical flow","Minute 2 — Footwork: forward/back + lateral: 30 s","Minute 3 — {med} Rotational Scoop Toss: 4/side","Minute 4 — {cyc}: 30 s @ RPE 6–7"],
+                ["Minute 1 — Shadow Boxing: 30 s + 10 s reset","Minute 2 — Boxing Reaction Callout Drill: 20 s","Minute 3 — {med} Punch Throw: 4/side","Minute 4 — {cyc}: 30 s @ RPE 6–7"],
+                ["Minute 1 — Slip → Roll → Counter Shadow Sequence: 30 s","Minute 2 — Lateral Footwork + Exit: 30 s","Minute 3 — {med} Ground Slam: 8 reps","Minute 4 — {cyc}: 30 s @ RPE 6–7"]
+            ]
+            name="Boxing Aerobic-Skill Base EMOM"
+        elif month==2:
+            menus=[
+                ["Minute 1 — Shadow Boxing: 40 s high-output combinations","Minute 2 — Boxing Reaction Callout Drill: 25 s","Minute 3 — {med} Punch Throw: 5/side","Minute 4 — {cyc}: 25 s hard / 35 s easy"],
+                ["Minute 1 — 3-Punch Flurry + Footwork: 25 s","Minute 2 — Slip → Roll → Counter: 25 s","Minute 3 — {med} Rotational Scoop Toss: 5/side","Minute 4 — {cyc}: 20 s hard / 40 s easy"],
+                ["Minute 1 — Shadow Boxing: 20 s burst / 20 s technical","Minute 2 — Reactive Direction + Punch Callout: 20 s","Minute 3 — {med} Ground Slam: 10 reps","Minute 4 — {cyc}: 20 s hard / 40 s easy"]
+            ]
+            name="Boxing Repeat-Effort Development EMOM"
+        else:
+            menus=[
+                ["Minute 1 — Shadow Boxing: 20 s maximal flurry / 40 s technical","Minute 2 — Reaction Callout + Punch Combination: 20 s","Minute 3 — {med} Punch Throw: 5/side","Minute 4 — {cyc}: 15–20 s hard"],
+                ["Minute 1 — Footwork → Reactive Exit → Shadow Flurry: 20 s","Minute 2 — Slip → Roll → Counter: 20 s","Minute 3 — {med} Rotational Scoop Toss: 5/side","Minute 4 — {cyc}: 15–20 s hard"],
+                ["Minute 1 — Shadow Boxing: 15 s flurry / 15 s reset × 2","Minute 2 — Reactive Boxing Callout: 20 s","Minute 3 — {med} Ground Slam: 10 reps","Minute 4 — {cyc}: 15–20 s hard"]
+            ]
+            name="Boxing Specific Power-Endurance EMOM"
+        stations=[x.format(med=med,cyc=cyc) for x in menus[day_variant]]
+        return {"system":"Anaerobic / Repeated Sprint" if month>=2 else "Aerobic","name":name,"stations":stations,"work":f"EMOM {rounds*4} min — {rounds} rounds • {density}","rest":"Remaining minute","intensity":work_rpe,"reason":f"Boxing-specific striking, reaction, footwork and repeated-effort conditioning • {phase}"}
 
-    if sport=="Track & Field (Sprints/Jumps)":
-        return {"system":"Anaerobic / Repeated Sprint","name":"Sprint Athlete Power-Endurance Circuit","stations":["1. Sled Acceleration: 15 m","2. Med-Ball Chest Pass: 5 reps","3. Bike Sprint: 15 s","4. Walking Recovery: 45 s"],"work":"4 stations × 4 rounds","rest":"90 s between rounds","intensity":"RPE 7–8/10; preserve speed","reason":"Acceleration and power-endurance without excessive conditioning volume"}
+    if swimming:
+        day_variant=(day-1 + week-1)%3
+        if month==1:
+            menus=[
+                ["Minute 1 — SkiErg: 40 s @ RPE 6–7","Minute 2 — Band Straight-Arm Swim Pull: 12 reps","Minute 3 — Streamline Hollow-Body Hold: 25 s","Minute 4 — Shoulder CARs + T-Spine reset: 30 s"],
+                ["Minute 1 — Rower: 40 s @ RPE 6–7","Minute 2 — Straight-Arm Cable Pulldown: 10 reps","Minute 3 — Prone Y-T-W: 6/position","Minute 4 — Dead Bug + breathing reset: 30 s"],
+                ["Minute 1 — SkiErg: 30 s @ RPE 7","Minute 2 — Medicine-Ball Streamline Slam: 8 reps","Minute 3 — Streamline Hollow-Body Hold: 25 s","Minute 4 — Shoulder mobility reset: 30 s"]
+            ]
+            name="Swimming Aerobic-Strength Base EMOM"
+        elif month==2:
+            menus=[
+                ["Minute 1 — SkiErg: 30 s @ RPE 8","Minute 2 — Straight-Arm Cable Pulldown: 12 reps","Minute 3 — Streamline Hollow-Body Hold: 30 s","Minute 4 — Easy SkiErg: 30 s"],
+                ["Minute 1 — Rower: 25 s hard / 35 s easy","Minute 2 — Band Straight-Arm Swim Pull: 15 reps","Minute 3 — Medicine-Ball Streamline Slam: 8 reps","Minute 4 — T-Spine rotation reset: 30 s"],
+                ["Minute 1 — SkiErg: 20 s hard / 40 s easy","Minute 2 — Straight-Arm Pulldown: 10 reps","Minute 3 — Prone Y-T-W: 8/position","Minute 4 — Hollow-Body Hold: 30 s"]
+            ]
+            name="Swimming Aerobic-Anaerobic Development EMOM"
+        else:
+            menus=[
+                ["Minute 1 — SkiErg: 20 s hard / 40 s easy","Minute 2 — Swim Pull + 2 s squeeze: 10 reps","Minute 3 — Medicine-Ball Streamline Slam: 6 reps","Minute 4 — Hollow-Body Hold: 30 s"],
+                ["Minute 1 — Rower: 15–20 s hard / 40 s easy","Minute 2 — Straight-Arm Cable Pulldown: 8–10 reps","Minute 3 — Prone Y-T-W: 6/position","Minute 4 — Streamline Hold: 30 s"],
+                ["Minute 1 — SkiErg: 15 s hard / 45 s easy","Minute 2 — Band Swim Pull: 12 reps","Minute 3 — Medicine-Ball Slam: 6 reps","Minute 4 — Breathing + shoulder reset: 30 s"]
+            ]
+            name="Swimming Specific Power-Endurance EMOM"
+        stations=menus[day_variant]
+        return {"system":"Aerobic" if month==1 else "Anaerobic / Repeated Sprint","name":name,"stations":stations,"work":f"EMOM {rounds*4} min — {rounds} rounds • {density}","rest":"Remaining minute","intensity":work_rpe,"reason":f"Swimming-specific aerobic/anaerobic conditioning with pull capacity, scapular endurance and streamline trunk control • {phase}"}
 
-    if p.get("Anaerobic",0)>=20 and constraints["high_fatigue_allowed"]:
-        return {"system":"Anaerobic / Repeated Sprint","name":"General Repeat-Sprint EMOM","stations":["Minute 1 — 10–20 m Shuttle Sprint: 2 reps","Minute 2 — Wall Balls: 10 reps","Minute 3 — AirBike: 20 s hard","Minute 4 — Easy walk / breathing: 40 s"],"work":"EMOM 16 min — 4 rounds","rest":"Remaining minute","intensity":"RPE 8–9/10","reason":"Anaerobic gap + work-capacity target"}
-    if p.get("COD",0)>=18:
-        return {"system":"Agility / COD","name":"Agility Station Circuit","stations":["1. 5-10-5 Shuttle — 1 rep","2. Reactive Cone Drill — 15 s","3. Lateral Shuffle → Sprint — 2 reps","4. Walk / reset — 45 s"],"work":"4 stations × 3 rounds","rest":"60–90 s between rounds","intensity":"High quality, not failure","reason":"COD/agility priority"}
-    if p.get("Aerobic",0)>=20:
-        return {"system":"Aerobic","name":"Aerobic Interval EMOM","stations":["Minute 1 — AirBike / Rower: 45 s @ RPE 7","Minute 2 — Tempo Shuttle: 40 s","Minute 3 — Easy walk: 45 s","Minute 4 — Core / mobility reset: 30 s"],"work":"EMOM 16 min — 4 rounds","rest":"Remaining minute","intensity":"RPE 6–7/10","reason":"Aerobic gap + work-capacity target"}
-    return {"system":"Aerobic","name":"Whole-Athlete Mixed ESD EMOM","stations":["Minute 1 — Bike / Rower: 40 s @ RPE 7","Minute 2 — Wall Balls: 10 reps","Minute 3 — Tempo Shuttle: 30 s","Minute 4 — Dead Bug + breathing reset: 30 s"],"work":"EMOM 16 min — 4 rounds","rest":"Remaining minute","intensity":"RPE 6–7/10","reason":"Whole-athlete work-capacity balance"}
+    if racket:
+        if month==1:
+            stations=["Minute 1 — Split Step + Lateral Shuffle: 20 s",
+                      "Minute 2 — Rotational Medicine-Ball Scoop Toss: 4/side",
+                      f"Minute 3 — {cyc}: 35 s @ RPE 7",
+                      "Minute 4 — Walk + T-spine reset: 30 s"]
+            name="Racket Sport Aerobic-COD Base EMOM"
+            reason="Build repeatable movement capacity before higher-intensity sport-specific density"
+        elif month==2:
+            stations=["Minute 1 — Crossover Run → 5 m Acceleration: 2 reps",
+                      "Minute 2 — Lateral Shuffle → Deceleration: 2/side",
+                      "Minute 3 — Rotational Medicine-Ball Scoop Toss: 5/side",
+                      f"Minute 4 — {cyc}: 25 s hard / 35 s easy"]
+            name="Racket Sport Repeat-COD Development EMOM"
+            reason="Increase COD density, braking and rotational repeatability"
+        else:
+            stations=["Minute 1 — Reactive Split Step → Direction Call → Sprint: 15 s",
+                      "Minute 2 — Rotational Medicine-Ball Scoop Toss: 5/side",
+                      "Minute 3 — Crossover → Lateral Recovery → Sprint: 2 reps",
+                      f"Minute 4 — {cyc}: 20 s hard / 40 s easy"]
+            name="Racket Sport Specific Power-Endurance EMOM"
+            reason="Transfer repeat-effort, reactive COD and rotational power to racket-sport demands"
+        if target=="aerobic" and month==2:
+            stations[3]=f"Minute 4 — {cyc}: 45 s @ RPE 7"
+        return {"system":"Agility / COD" if month>=2 else "Aerobic","name":name,
+                "stations":stations,"work":f"EMOM {rounds*4} min — {rounds} rounds • {density}","rest":"Remaining minute",
+                "intensity":work_rpe,"reason":f"{reason} • {phase}"}
+
+    if combat:
+        if month==1:
+            stations=["Minute 1 — Technical Sprawl → Stand: 5 reps",
+                      "Minute 2 — Medicine-Ball Rotational Scoop Toss: 4/side",
+                      "Minute 3 — Battle-Rope Power Waves: 20 s",
+                      f"Minute 4 — {cyc}: 35 s @ RPE 7"]
+            name="Combat Aerobic-Power Base EMOM"
+        elif month==2:
+            stations=["Minute 1 — Sprawl → Stand: 6 reps",
+                      "Minute 2 — Medicine-Ball Ground Slam: 8 reps",
+                      "Minute 3 — Battle-Rope Power Waves: 25 s",
+                      f"Minute 4 — {cyc}: 20 s hard"]
+            name="Combat Repeat-Effort Development EMOM"
+        else:
+            stations=["Minute 1 — Sprawl → Stand → Lateral Exit: 4 reps",
+                      "Minute 2 — Rotational Medicine-Ball Throw: 5/side",
+                      "Minute 3 — Battle-Rope Power Waves: 30 s",
+                      f"Minute 4 — {cyc}: 15–20 s hard"]
+            name="Combat Specific Repeat-Power EMOM"
+        return {"system":"Anaerobic / Repeated Sprint","name":name,"stations":stations,
+                "work":f"EMOM {rounds*4} min — {rounds} rounds • {density}","rest":"Remaining minute",
+                "intensity":work_rpe,"reason":f"Combat repeated-effort demand • {phase}"}
+
+    if collision:
+        if month==1:
+            stations=[f"Minute 1 — {sled}: 15 m @ RPE 7","Minute 2 — Medicine-Ball Ground Slam: 8 reps","Minute 3 — 10 m Acceleration: 2 reps",f"Minute 4 — {cyc}: 30 s @ RPE 7"]
+            name="Collision Sport Force-Capacity EMOM"
+        elif month==2:
+            stations=[f"Minute 1 — {sled}: 20 m heavy","Minute 2 — Bear-Hug Carry / March: 30 s","Minute 3 — 10 m Acceleration Shuttle: 2 reps",f"Minute 4 — {cyc}: 20 s hard"]
+            name="Collision Sport Force-Repeatability EMOM"
+        else:
+            stations=[f"Minute 1 — {sled}: 15 m fast","Minute 2 — Medicine-Ball Scoop Toss: 5/side","Minute 3 — 10 m Acceleration → 10 m Decel: 2 reps",f"Minute 4 — {cyc}: 15–20 s hard"]
+            name="Collision Sport Specific Power-Endurance EMOM"
+        return {"system":"Anaerobic / Repeated Sprint","name":name,"stations":stations,
+                "work":f"EMOM {rounds*4} min — {rounds} rounds • {density}","rest":"Remaining minute",
+                "intensity":work_rpe,"reason":f"Force, acceleration and repeat-effort demand • {phase}"}
+
+    if sprint:
+        if month==1:
+            stations=["Minute 1 — Sled Acceleration: 15 m @ controlled load","Minute 2 — Pogos: 12 contacts","Minute 3 — Medicine-Ball Chest Pass: 5 reps",f"Minute 4 — {cyc}: 30 s easy/moderate"]
+            name="Sprint/Jumps Capacity + Elasticity EMOM"
+        elif month==2:
+            stations=["Minute 1 — Sled Acceleration: 15 m fast","Minute 2 — Broad Jump: 3 reps","Minute 3 — Medicine-Ball Chest Pass: 5 reps",f"Minute 4 — {cyc}: 15 s hard / 45 s easy"]
+            name="Sprint/Jumps Speed-Power Repeatability EMOM"
+        else:
+            stations=["Minute 1 — Acceleration: 10–20 m, 2 reps","Minute 2 — Broad Jump: 2–3 quality reps","Minute 3 — Medicine-Ball Throw: 4 reps",f"Minute 4 — {cyc}: 15 s hard / 45 s easy"]
+            name="Sprint/Jumps Specific Power-Endurance EMOM"
+        return {"system":"Acceleration / Speed","name":name,"stations":stations,
+                "work":f"EMOM {rounds*4} min — {rounds} rounds • {density}","rest":"Remaining minute",
+                "intensity":"Preserve speed; stop if velocity/quality falls","reason":f"Sprint/jump-specific conditioning • {phase}"}
+
+    if court:
+        if month==1:
+            stations=["Minute 1 — Lateral Shuffle → 5 m Sprint: 2 reps","Minute 2 — Wall Ball / Medicine-Ball Squat Throw: 8 reps","Minute 3 — Tempo Shuttle: 30 s",f"Minute 4 — {cyc}: 30 s @ RPE 7"]
+            name="Court/Field Aerobic-COD Base EMOM"
+        elif month==2:
+            stations=["Minute 1 — Reactive Cone COD: 15 s","Minute 2 — Lateral Bound → Stick: 4/side","Minute 3 — 10 m Shuttle: 3 reps",f"Minute 4 — {cyc}: 20 s hard / 40 s easy"]
+            name="Court/Field COD + Repeat-Sprint Development EMOM"
+        else:
+            stations=["Minute 1 — Reactive Shuffle → Sprint: 15 s","Minute 2 — Lateral Bound → Sprint: 2/side","Minute 3 — 10–15 m Repeat Sprint: 2 reps",f"Minute 4 — {cyc}: 15–20 s hard"]
+            name="Court/Field Specific Repeat-Power EMOM"
+        if a.sport=="Volleyball":
+            stations[1]="Minute 2 — Approach Jump / Block Jump: 3 quality reps"
+        elif a.sport=="Basketball":
+            stations[1]="Minute 2 — Low Box Jump → Stick Landing: 3 reps"
+        elif a.sport=="Soccer":
+            stations[1]="Minute 2 — Lateral Bound → 5 m Sprint: 2/side"
+        elif a.sport=="Handball":
+            stations[1]="Minute 2 — Medicine-Ball Overhead Throw: 5 reps"
+        return {"system":"Agility / COD" if month>=2 else "Aerobic","name":name,"stations":stations,
+                "work":f"EMOM {rounds*4} min — {rounds} rounds • {density}","rest":"Remaining minute",
+                "intensity":work_rpe,"reason":f"{a.sport} court/field movement demand • {phase}"}
+
+    # General / mixed-athlete fallback still changes across months.
+    if month==1:
+        stations=[f"Minute 1 — {cyc}: 40 s @ RPE 7",f"Minute 2 — {med} Squat Throw: 10 reps","Minute 3 — Tempo Shuttle: 30 s","Minute 4 — Dead Bug + breathing reset: 30 s"]
+        name="Whole-Athlete Aerobic Base EMOM"
+    elif month==2:
+        stations=[f"Minute 1 — {cyc}: 30 s @ RPE 8",f"Minute 2 — {load} Swing: 10 reps","Minute 3 — Lateral Shuffle → Sprint: 15 s",f"Minute 4 — {load} Suitcase Carry: 30 s"]
+        name="Whole-Athlete Mixed Energy-System EMOM"
+    else:
+        stations=[f"Minute 1 — {cyc}: 20 s hard / 40 s easy",f"Minute 2 — {load} Thruster: 8 reps","Minute 3 — Reactive Cone Drill: 15 s",f"Minute 4 — {load} Carry: 30 s"]
+        name="Whole-Athlete Specific Work-Capacity EMOM"
+    return {"system":"Anaerobic / Repeated Sprint" if month>=2 else "Aerobic","name":name,
+            "stations":stations,"work":f"EMOM {rounds*4} min — {rounds} rounds • {density}","rest":"Remaining minute",
+            "intensity":work_rpe,"reason":f"Whole-athlete work-capacity balance • {phase}"}
 
 def session_template(a,day,system_scores,constraints):
     # The template is not fixed: the highest priorities determine the slots.
@@ -780,6 +1030,8 @@ def choose_complex(a,p,systems,constraints,month):
         if "Power" in p: s+=p.get("Power",0)*0.10
         if "COD" in p and c.primary_quality=="Agility": s+=p.get("COD",0)*0.12
         if a.sport in ["Tennis","Racket Sports (Squash/Padel)"] and "Rotational" in c.name: s+=20
+        if a.sport=="Boxing" and c.id=="cx10": s+=35
+        if a.sport=="Swimming" and c.id=="cx11": s+=45
         s-=c.fatigue*2
         return s
     return max(candidates,key=score)
@@ -805,12 +1057,13 @@ def build_session(a,week,day,month,rotation,p,system_scores,constraints):
             if not selected: continue
             x=selected[0]
         used.append(x.id); exercises.append(x)
-    cond=conditioning_decision(a,p,constraints,week)
+    cond=conditioning_decision(a,p,constraints,week,month,day)
     complex_block=None
     # Place a complex only when power/agility demand and readiness justify advanced methods.
-    if day==1 and (p.get("Power",0)+p.get("COD",0)+p.get("Acceleration",0)+p.get("Rotational Power",0))>22:
+    sport_complex_eligible = a.sport in ["Boxing","Swimming"]
+    if day==1 and (sport_complex_eligible or (p.get("Power",0)+p.get("COD",0)+p.get("Acceleration",0)+p.get("Rotational Power",0))>22):
         complex_block=choose_complex(a,p,systems,constraints,month)
-    return {"day":day,"week":week,"month":month,"phase":phase_for(a,week),"systems":systems,"exercises":exercises,"conditioning":cond,"complex":complex_block,"readiness":constraints["readiness"]}
+    return {"day":day,"week":week,"month":month,"phase":phase_for(a,week),"mesocycle_phase":mesocycle_phase(a,month),"systems":systems,"exercises":exercises,"conditioning":cond,"complex":complex_block,"readiness":constraints["readiness"]}
 
 def build_program(a,months):
     constraints=constraint_engine(a); p=priorities(a); systems=system_allocation(a,p,constraints)
@@ -851,12 +1104,12 @@ def decision_trace(a,months):
     trace.append(("07 System allocation"," • ".join([f"{k} {v:.1f}" for k,v in list(systems.items())[:6]])))
     trace.append(("08 Exercise selection","Equipment + level + injury gates + screening + sport relevance + fatigue + monthly novelty."))
     trace.append(("09 Dose","Sets/reps/intensity change with training level, goal, week, season and readiness."))
-    trace.append(("10 Metabolic decision",program[1][1][0]["conditioning"]["name"]+" selected from the same upstream state."))
+    trace.append(("10 Metabolic decision",program[1][1][0]["conditioning"]["name"]+" selected from sport, gaps, secondary targets, readiness, month and day."))
     trace.append(("11 Progression","Progression is conditional on technical quality, RPE, readiness and pain—not calendar alone."))
     trace.append(("12 Advanced methods","Compound/contrast/complex training is gated by training age, readiness, impact tolerance, equipment and current priorities."))
     if program[1][1][0].get("complex"):
         trace.append(("13 Complex selection",program[1][1][0]["complex"].name+" selected as an advanced power/agility stimulus."))
-    trace.append(("14 Rotation","Monthly variants preserve the same system/movement objective while avoiding unnecessary repetition."))
+    trace.append(("14 Periodization","Monthly phases change the training stimulus: foundation → development → sport specificity, with week 4 deloading and readiness gates overriding when necessary."))
     return trace,engine
 
 # ============================================================
@@ -1096,11 +1349,11 @@ elif module=="6. Adaptive Program Generator":
     st.markdown(f'<div class="goal-card"><b>Whole-athlete architecture:</b> {a.primary_goal} + {", ".join(a.secondary_goals) if a.secondary_goals else "balanced secondary development"}. Every upstream change is propagated through safety, priorities, system allocation, exercise choice, dose and conditioning.</div>',unsafe_allow_html=True)
     c1,c2,c3,c4,c5=st.columns(5); c1.metric("Readiness",f"{c['readiness']:.0f}/100"); c2.metric("Top Priority",next(iter(p))); c3.metric("Top System",next(iter(systems))); c4.metric("Gym Days",a.gym_days_available); c5.metric("Months",plan_months)
     for m in range(1,plan_months+1):
-        with st.expander(f"MONTH {m} • Adaptive Rotation",expanded=(m==1)):
+        with st.expander(f"MONTH {m} • {mesocycle_phase(a,m)}",expanded=(m==1)):
             rot=[]
             for system,eid in engine["rotation"].get(m,{}).items(): rot.append(f"**{system}:** {EXERCISES[eid].name}")
             st.markdown(" • ".join(rot) if rot else "No compatible exercise found for this system/equipment profile.")
-            st.caption("Rotation preserves the training objective while changing suitable exercise variants; it is constrained by screening, injuries, equipment, level and fatigue.")
+            st.caption("Monthly rotation preserves the training objective while changing suitable exercise variants. Metabolic/ESD is also periodized by month, week and day rather than repeated as one fixed template.")
             tabs=st.tabs([f"Week {w}" for w in range(1,5)])
             for w,tab in enumerate(tabs,1):
                 with tab:
@@ -1159,4 +1412,4 @@ elif module=="8. Data / Profiles":
     st.download_button("⬇️ Export Current Athlete JSON",payload,"athlete_iq_profile.json","application/json")
 
 st.markdown("---")
-st.caption("Athlete-IQ v5 • Rule-based coaching software. Screening thresholds and performance classifications are heuristics unless explicitly validated. The engine is designed so upstream changes propagate downstream; it does not diagnose or prescribe medical treatment.")
+st.caption("Athlete-IQ v5.3 • Rule-based coaching software. Screening thresholds and performance classifications are heuristics unless explicitly validated. The engine is designed so upstream changes propagate downstream; it does not diagnose or prescribe medical treatment.")
