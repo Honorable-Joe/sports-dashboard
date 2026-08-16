@@ -298,7 +298,7 @@ E = [
     ex("p1","Countermovement Jump","Plyometrics","Vertical Jump",["Power","Plyometric Ability"],["Bodyweight"],"Beginner",impact="Moderate",fatigue=2),
     ex("p2","Standing Broad Jump","Plyometrics","Horizontal Jump",["Power","Plyometric Ability","Acceleration"],["Bodyweight"],"Beginner",impact="Moderate",fatigue=2),
     ex("p3","Lateral Bound","Plyometrics","Lateral Jump",["Power","Plyometric Ability","COD"],["Bodyweight"],"Intermediate",plane="Frontal",impact="High",fatigue=2,unilateral=True,avoid_if=["knee","ankle"]),
-        ex("p4","Medicine-Ball Chest Pass","Plyometrics","Upper-Body Ballistic",["Power"],["Medicine & Slam Balls"],"Beginner",impact="Low",fatigue=2),
+    ex("p4","Medicine-Ball Chest Pass","Plyometrics","Upper-Body Ballistic",["Power"],["Medicine & Slam Balls"],"Beginner",impact="Low",fatigue=2),
     ex("p5","Rotational Medicine-Ball Scoop Toss","Plyometrics","Rotational Throw",["Power","Rotational Power"],["Medicine & Slam Balls"],"Intermediate",plane="Transverse",impact="Low",fatigue=2,sport_tags=["Tennis","Racket Sports (Squash/Padel)","Combat Sports (MMA/Boxing)"],avoid_if=["low back"]),
     ex("p6","Medicine-Ball Overhead Throw","Plyometrics","Overhead Throw",["Power"],["Medicine & Slam Balls"],"Intermediate",impact="Low",fatigue=2),
     ex("r13","Landmine Rotation","Resistance","Rotation",["Strength","Power","Core / Trunk"],["Barbells & Plates"],"Intermediate",plane="Transverse",fatigue=3,sport_tags=["Tennis","Racket Sports (Squash/Padel)","Combat Sports (MMA/Boxing)"],avoid_if=["back"]),
@@ -623,6 +623,17 @@ def system_allocation(a, p, constraints):
     }
     scores={}
     for system,qualities in mapping.items(): scores[system]=max([p.get(q,0) for q in qualities]+[0])
+    goal_bonus={
+        "Max Strength":{"Resistance":30},"Strength":{"Resistance":24},"Hypertrophy":{"Resistance":28},
+        "Power":{"Plyometrics":24,"Resistance":10,"Acceleration / Speed":8},
+        "Speed":{"Acceleration / Speed":30,"Plyometrics":12},"Agility":{"Agility / COD":30,"Plyometrics":10},
+        "Endurance":{"Aerobic":30,"Anaerobic / Repeated Sprint":8},
+        "Sport Performance":{"Plyometrics":18,"Acceleration / Speed":16,"Agility / COD":16},
+        "Fat Loss":{"Aerobic":22,"Anaerobic / Repeated Sprint":18,"Resistance":10},
+        "General Fitness":{"Resistance":12,"Aerobic":10,"Agility / COD":8},
+        "Overall Development":{"Resistance":8,"Plyometrics":8,"Agility / COD":8,"Aerobic":8},
+    }
+    for system,bonus in goal_bonus.get(a.primary_goal,{}).items(): scores[system]=scores.get(system,0)+bonus
     # Screening and readiness gates are allowed to override normal priority.
     if screening_flags(a): scores["Corrective / Activation"]+=8; scores["Mobility"]+=5
     if constraints["low_impact"]:
@@ -636,8 +647,29 @@ def system_allocation(a, p, constraints):
 # ============================================================
 # STAGE 4 — EXERCISE SAFETY / MATCHING
 # ============================================================
+SPORT_COMPATIBILITY = {
+    "Boxing":{"Boxing","Combat Sports (MMA/Boxing)"},
+    "MMA":{"MMA","Combat Sports (MMA/Boxing)"},
+    "Tennis":{"Tennis"},
+    "Racket Sports (Squash/Padel)":{"Racket Sports (Squash/Padel)"},
+}
+
+def sport_tag_matches(tag,sport):
+    if not tag or tag=="General Fitness": return True
+    if tag==sport: return True
+    if sport in SPORT_COMPATIBILITY and tag in SPORT_COMPATIBILITY[sport]: return True
+    # Keep explicit combined tags compatible with their named member sports.
+    if sport in tag and ("Combat Sports" in tag or "Racket Sports" in tag): return True
+    return False
+
+def exercise_sport_compatible(x,a):
+    # Untagged exercises are transferable/general. Tagged exercises are locked to the tagged sport(s).
+    if not x.sport_tags or "General Fitness" in x.sport_tags: return True
+    return any(sport_tag_matches(tag,a.sport) for tag in x.sport_tags)
+
 def exercise_allowed(x,a,constraints):
     if not any(eq in a.equipment for eq in x.equipment): return False
+    if not exercise_sport_compatible(x,a): return False
     order={"Beginner":0,"Intermediate":1,"Advanced":2,"Elite":3}
     if order[training_level(a.training_years)]+1<order[x.level]: return False
     if "ankle" in x.prerequisites and a.rom_ankle<25: return False
@@ -671,25 +703,38 @@ def position_match_score(x,a):
     labels=athlete_position_labels(a)
     if not labels or labels==["General"]: return 0
     text=(x.name+" "+" ".join(x.tags)+" "+" ".join(x.quality)).lower()
-    score=0
+    score=0.0
     sport_map=POSITION_KEYWORDS.get(a.sport,{})
     for label in labels:
         for kw in sport_map.get(label,[]):
-            if kw.lower() in text: score += 3 if label==a.position else 1.5
+            if kw.lower() in text:
+                score += 8.0 if label==a.position else 3.0
     return score
+
+PRIMARY_GOAL_SYSTEM_BONUS = {
+    "Max Strength":{"Resistance":30},"Strength":{"Resistance":24},"Hypertrophy":{"Resistance":28},
+    "Power":{"Plyometrics":24,"Resistance":10,"Acceleration / Speed":8},
+    "Speed":{"Acceleration / Speed":30,"Plyometrics":12},
+    "Agility":{"Agility / COD":30,"Plyometrics":10},
+    "Endurance":{"Aerobic":30,"Anaerobic / Repeated Sprint":8},
+    "Sport Performance":{"Plyometrics":18,"Acceleration / Speed":16,"Agility / COD":16},
+    "Fat Loss":{"Aerobic":22,"Anaerobic / Repeated Sprint":18,"Resistance":10},
+    "General Fitness":{"Resistance":12,"Aerobic":10,"Agility / COD":8},
+    "Overall Development":{"Resistance":8,"Plyometrics":8,"Agility / COD":8,"Aerobic":8},
+}
 
 def exercise_score(x,a,p,system_scores,month,used_ids):
     score=0.0
-    if a.sport in x.sport_tags: score+=28
+    if exercise_sport_compatible(x,a) and a.sport in x.sport_tags: score+=24
     score += position_match_score(x,a)
-    if "General Fitness" in x.sport_tags: score+=3
+    if "General Fitness" in x.sport_tags: score+=2
     score+=max([p.get(q,0) for q in x.quality]+[0])*.18
-    score+=system_scores.get(x.system,0)*.08
+    score+=system_scores.get(x.system,0)*.10
+    score+=PRIMARY_GOAL_SYSTEM_BONUS.get(a.primary_goal,{}).get(x.system,0)
     if x.unilateral and asymmetry(a.left_jump,a.right_jump)>=6: score+=10
     if x.id in used_ids: score-=30
     score-=x.fatigue*max(0,70-readiness_score(a))/100*8
     if a.season in ["In-Season / Competition","Taper / Peak"] and x.fatigue>=4: score-=10
-    # Rotation deliberately prefers a close variant instead of random novelty.
     score += max(0,month-1)*0.4 if x.id not in used_ids else 0
     return score
 
@@ -807,7 +852,6 @@ def conditioning_decision(a,p,constraints,week,month=1,day=1):
     collision = sport=="Rugby/American Football"
     sprint = sport=="Track & Field (Sprints/Jumps)"
     cyc=_tool(a,"cyclical"); med=_tool(a,"medball"); sled=_tool(a,"sled")
-
     # Month controls the dominant conditioning stimulus.
     # Week controls density/volume; day rotates the station menu.
     if week==4:
@@ -898,7 +942,6 @@ def conditioning_decision(a,p,constraints,week,month=1,day=1):
         if month==1:
             stations=["Minute 1 — Split Step + Lateral Shuffle: 20 s",
                       "Minute 2 — Rotational Medicine-Ball Scoop Toss: 4/side",
-
                       f"Minute 3 — {cyc}: 35 s @ RPE 7",
                       "Minute 4 — Walk + T-spine reset: 30 s"]
             name="Racket Sport Aerobic-COD Base EMOM"
@@ -1056,6 +1099,7 @@ def progression_rule(a,week,exercise,slot,constraints):
 
 def complex_allowed(c,a,constraints):
     levels={"Beginner":0,"Intermediate":1,"Advanced":2,"Elite":3}
+    if c.sport_tags and not any(sport_tag_matches(tag,a.sport) or tag=="General Fitness" for tag in c.sport_tags): return False
     if levels[training_level(a.training_years)] < levels[c.min_level]: return False
     if not constraints["high_impact_allowed"] and c.impact=="High": return False
     if not constraints["high_fatigue_allowed"] and c.fatigue>=4: return False
@@ -1146,7 +1190,7 @@ def decision_trace(a,months):
     c=engine["constraints"]; p=engine["priorities"]; systems=engine["systems"]
     trace=[]
     trace.append(("01 Intake",f"{a.sport} / {a.position}" + (f" + {", ".join(a.secondary_positions)}" if getattr(a,"secondary_positions",[]) else "") + f" • {a.primary_goal} • {a.season}"))
-    trace.append(("02 Goal interaction",f"Primary goal + {len(a.secondary_goals)} secondary targets are combined rather than treated independently."))
+    trace.append(("02 Goal interaction",f"Primary goal controls session architecture and system weighting; {len(a.secondary_goals)} secondary targets shape substitutions, priorities and dose."))
     trace.append(("03 Readiness gate",f"{c['readiness']:.0f}/100 → {c['band']} • volume ×{c['volume_multiplier']:.2f} • intensity ×{c['intensity_multiplier']:.2f}"))
     if c["pain_gate"]: trace.append(("04 Safety gate","Pain threshold triggered: high-impact/high-fatigue systems are blocked from normal selection."))
     elif c["screen_flags"]: trace.append(("04 Screening gate",f"{len(c['screen_flags'])} screening flags increase corrective/mobility/stability priority."))
@@ -1155,7 +1199,7 @@ def decision_trace(a,months):
     trace.append(("05 Performance gaps",top))
     trace.append(("06 Sport demand",f"Sport demands are blended with individual gaps for {a.sport}."))
     trace.append(("07 System allocation"," • ".join([f"{k} {v:.1f}" for k,v in list(systems.items())[:6]])))
-    trace.append(("08 Exercise selection","Equipment + level + injury gates + screening + sport relevance + fatigue + monthly novelty."))
+    trace.append(("08 Exercise selection","Strict sport-lock + equipment gate + level + injury/screening gates + position relevance + primary-goal architecture + fatigue + monthly novelty."))
     trace.append(("09 Dose","Sets/reps/intensity change with training level, goal, week, season and readiness."))
     trace.append(("10 Metabolic decision",program[1][1][0]["conditioning"]["name"]+" selected from sport, gaps, secondary targets, readiness, month and day."))
     trace.append(("11 Progression","Progression is conditional on technical quality, RPE, readiness and pain—not calendar alone."))
@@ -1199,7 +1243,6 @@ def render_exercise(a,x,week,constraints,slot):
     elif x.system in ["Stability / Core","Corrective / Activation"]: pres="2–3 Sets × 8–12 reps or 20–40 s"; intensity="RPE 5–7"; tempo="Controlled"
     elif x.system=="Anaerobic / Repeated Sprint": pres="2–3 Sets × 4–6 reps"; intensity="RPE 8–9"; tempo="Full quality recovery"
     else: pres="2–3 Sets × 8–12"; intensity="RPE 6–7"; tempo="2-1-2-0"
-
     render_card(x.system,x.name,pres,intensity,tempo,x.plane,x.tier,ACCENTS.get(x.system,"#38bdf8"))
     if x.regression or x.progression:
         st.caption(f"Regression: {x.regression or '—'} • Progression: {x.progression or '—'}")
@@ -1436,6 +1479,40 @@ def _sport_stations(a,month,week,day):
         return [_station("Shadow MMA Flow", "30 s"),_station("Sprawl → Stand", "5 reps"),_station("Med-Ball Slam", "8 reps"),_station("Bike/Rower", "30 s")]
     return [_station("Bike/Rower", "30–40 s"),_station("Wall Ball", "10 reps"),_station("Tempo Shuttle", "20–30 s"),_station("Dead Bug", "30 s")]
 
+def _metcon_sanitize_station(a,station):
+    """Hard equipment gate for every conditioning station, including sport-specific templates."""
+    s=station
+    has_erg=_has(a,"Ergometers (AirBike/Rower/SkiErg)")
+    has_med=_has(a,"Medicine & Slam Balls")
+    has_sled=_has(a,"Sleds & Prowler")
+    has_cable=_has(a,"Cable Systems & Selectorized")
+    has_bar=_has(a,"Barbells & Plates")
+    has_kb=_has(a,"Kettlebells")
+    has_band=_has(a,"Bands")
+    has_rope=_has(a,"Battle Rope") or _has(a,"Battle Ropes")
+    has_db=_has(a,"Dumbbells")
+    has_cone=_has(a,"Cones / Timing Gates")
+    if not has_sled and any(k in s.lower() for k in ["sled push","sled acceleration","sled work"]):
+        s=s.replace("Sled Push","DB Farmer Carry / March" if has_db else "Tempo Acceleration").replace("Sled Acceleration","DB Farmer Carry / March" if has_db else "Tempo Acceleration").replace("Sled Work","DB Farmer Carry / March" if has_db else "Tempo Acceleration")
+    if not has_med and any(k in s.lower() for k in ["medicine-ball","medicine ball","med-ball","wall ball"]):
+        s="DB Thruster / Squat-to-Press — 8 reps" if has_db else "Squat Jump / Fast Squat — 8 reps"
+    if not has_erg and any(k in s.lower() for k in ["bike/rower","airbike","rower","skierg","ski erg","easy bike"]):
+        s="Tempo Shuttle / Fast Walk — 30 s" if _has(a,"Bodyweight") else "Low-Impact March — 30 s"
+    if not has_cable and "cable" in s.lower():
+        s="Band Straight-Arm Pull — 12 reps" if has_band else ("DB Pullover — 10 reps" if has_db else "Prone Y-T-W — 6/position")
+    if not has_bar and "barbell" in s.lower():
+        s="Dumbbell substitute — same rep target" if has_db else "Bodyweight squat — same rep target"
+    if not has_kb and "kettlebell" in s.lower():
+        s="Dumbbell Swing — same rep target" if has_db else "Hip Hinge — same rep target"
+    if not has_rope and "battle rope" in s.lower():
+        s="DB High-Pull / Fast Punches — 25 s" if has_db else "Fast Feet — 25 s"
+    if not has_cone and any(k in s.lower() for k in ["cone","timing gate"]):
+        s=s.replace("Reactive Cone Drill","Reactive Direction Change").replace("Cone COD","Reactive COD")
+    return s
+
+def sanitize_metcon_stations(a,stations):
+    return [_metcon_sanitize_station(a,x) for x in stations]
+
 def conditioning_decision(a,p,constraints,week,month=1,day=1):
     protocol=_pick_protocol(a,month,week,day,p,constraints)
     loadmod=adaptive_load_modifier(a)
@@ -1451,6 +1528,8 @@ def conditioning_decision(a,p,constraints,week,month=1,day=1):
     # Rotate station order by day/month while preserving the sport-specific pool.
     shift=(month+day-2)%len(stations)
     stations=stations[shift:]+stations[:shift]
+    # Final universal equipment gate: no MetCon station may survive with unavailable equipment.
+    stations=sanitize_metcon_stations(a,stations)
     if protocol=="EMOM":
         work=f"EMOM {rounds*4} min — {rounds} rounds"
         rest="Complete the station within the minute; recover with remaining time"
@@ -1500,7 +1579,6 @@ def exercise_recently_used(ex_id,days=12):
 def progression_rule(a,week,exercise,slot,constraints):
     f=st.session_state.get("last_feedback")
     if week==4: return "Deload: reduce volume; preserve movement quality and speed."
-
     if constraints["band"]=="RED": return "Autoregulate: no planned load increase; stop before technique changes."
     if f and f.get("session_rpe",0)>=9: return "Previous session was very hard: hold or regress the next exposure before progressing."
     if f and f.get("pain_after",0)>=5: return "Pain response detected: substitute/regress and seek appropriate clinical assessment when indicated."
@@ -1512,16 +1590,77 @@ def progression_rule(a,week,exercise,slot,constraints):
 # ---------------------------
 # More intelligent session sequencing ---------------------------
 def session_template(a,day,system_scores,constraints):
-    high=list(system_scores.keys())
+    # Primary goal now controls the session architecture, not just a scoring multiplier.
     if constraints["low_impact"]:
         return ["Corrective / Activation","Mobility","Stability / Core","Resistance","Aerobic"]
-    if day==1:
-        return ["Corrective / Activation","Plyometrics","Resistance","Agility / COD","Anaerobic / Repeated Sprint"]
-    if day==2:
-        return ["Corrective / Activation","Resistance","Acceleration / Speed","Stability / Core","Aerobic"]
-    if day==3:
-        return ["Corrective / Activation","Agility / COD","Resistance","Plyometrics","Anaerobic / Repeated Sprint"]
-    return ["Corrective / Activation","Mobility","Resistance","Acceleration / Speed","Aerobic"]
+    goal=a.primary_goal
+    goal_templates={
+        "Max Strength":[
+            ["Corrective / Activation","Resistance","Resistance","Stability / Core","Aerobic"],
+            ["Corrective / Activation","Resistance","Resistance","Mobility","Anaerobic / Repeated Sprint"],
+            ["Corrective / Activation","Resistance","Plyometrics","Resistance","Aerobic"],
+        ],
+        "Strength":[
+            ["Corrective / Activation","Resistance","Resistance","Stability / Core","Anaerobic / Repeated Sprint"],
+            ["Corrective / Activation","Resistance","Acceleration / Speed","Resistance","Aerobic"],
+            ["Corrective / Activation","Resistance","Plyometrics","Resistance","Anaerobic / Repeated Sprint"],
+        ],
+        "Hypertrophy":[
+            ["Corrective / Activation","Resistance","Resistance","Resistance","Aerobic"],
+            ["Corrective / Activation","Resistance","Resistance","Stability / Core","Aerobic"],
+            ["Corrective / Activation","Resistance","Resistance","Resistance","Anaerobic / Repeated Sprint"],
+        ],
+        "Power":[
+            ["Corrective / Activation","Plyometrics","Resistance","Acceleration / Speed","Anaerobic / Repeated Sprint"],
+            ["Corrective / Activation","Plyometrics","Resistance","Agility / COD","Aerobic"],
+            ["Corrective / Activation","Plyometrics","Resistance","Acceleration / Speed","Anaerobic / Repeated Sprint"],
+        ],
+        "Speed":[
+            ["Corrective / Activation","Acceleration / Speed","Plyometrics","Resistance","Aerobic"],
+            ["Corrective / Activation","Acceleration / Speed","Agility / COD","Resistance","Anaerobic / Repeated Sprint"],
+            ["Corrective / Activation","Acceleration / Speed","Plyometrics","Resistance","Aerobic"],
+        ],
+        "Agility":[
+            ["Corrective / Activation","Agility / COD","Plyometrics","Resistance","Anaerobic / Repeated Sprint"],
+            ["Corrective / Activation","Agility / COD","Acceleration / Speed","Resistance","Aerobic"],
+            ["Corrective / Activation","Agility / COD","Plyometrics","Resistance","Anaerobic / Repeated Sprint"],
+        ],
+        "Endurance":[
+            ["Corrective / Activation","Aerobic","Resistance","Aerobic","Stability / Core"],
+            ["Corrective / Activation","Aerobic","Anaerobic / Repeated Sprint","Resistance","Mobility"],
+            ["Corrective / Activation","Aerobic","Resistance","Anaerobic / Repeated Sprint","Stability / Core"],
+        ],
+        "Sport Performance":[
+            ["Corrective / Activation","Plyometrics","Acceleration / Speed","Resistance","Agility / COD"],
+            ["Corrective / Activation","Agility / COD","Resistance","Acceleration / Speed","Anaerobic / Repeated Sprint"],
+            ["Corrective / Activation","Plyometrics","Resistance","Agility / COD","Anaerobic / Repeated Sprint"],
+        ],
+        "Fat Loss":[
+            ["Corrective / Activation","Resistance","Aerobic","Anaerobic / Repeated Sprint","Stability / Core"],
+            ["Corrective / Activation","Resistance","Aerobic","Agility / COD","Anaerobic / Repeated Sprint"],
+            ["Corrective / Activation","Resistance","Anaerobic / Repeated Sprint","Aerobic","Mobility"],
+        ],
+        "General Fitness":[
+            ["Corrective / Activation","Resistance","Plyometrics","Agility / COD","Aerobic"],
+            ["Corrective / Activation","Resistance","Acceleration / Speed","Stability / Core","Aerobic"],
+            ["Corrective / Activation","Resistance","Agility / COD","Plyometrics","Anaerobic / Repeated Sprint"],
+        ],
+        "Overall Development":[
+            ["Corrective / Activation","Resistance","Plyometrics","Agility / COD","Aerobic"],
+            ["Corrective / Activation","Resistance","Acceleration / Speed","Stability / Core","Aerobic"],
+            ["Corrective / Activation","Plyometrics","Resistance","Agility / COD","Anaerobic / Repeated Sprint"],
+        ],
+    }
+    templates=goal_templates.get(goal,goal_templates["Overall Development"])
+    preferred=list(templates[(day-1)%len(templates)])
+    # If the decision engine identifies a very strong system priority, replace only the final
+    # conditioning slot so the goal architecture remains intact while athlete-specific gaps propagate.
+    ranked=list(system_scores.keys())
+    if ranked:
+        top=ranked[0]
+        if top in SYSTEMS and top not in preferred and system_scores.get(top,0)>=80:
+            preferred[-1]=top
+    return preferred
 
 # Rebuild sessions/program so conditioning and load feedback are truly downstream.
 def build_session(a,week,day,month,rotation,p,system_scores,constraints):
@@ -1850,6 +1989,11 @@ elif module=="8. Data / Profiles":
 
 st.markdown("---")
 st.caption("Athlete-IQ v6.0 • Rule-based coaching software. Screening thresholds and performance classifications are heuristics unless explicitly validated. The engine is designed so upstream changes propagate downstream; it does not diagnose or prescribe medical treatment.")
+
+
+
+
+
 
 
 
