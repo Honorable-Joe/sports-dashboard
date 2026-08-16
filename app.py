@@ -852,6 +852,7 @@ def conditioning_decision(a,p,constraints,week,month=1,day=1):
     collision = sport=="Rugby/American Football"
     sprint = sport=="Track & Field (Sprints/Jumps)"
     cyc=_tool(a,"cyclical"); med=_tool(a,"medball"); sled=_tool(a,"sled")
+
     # Month controls the dominant conditioning stimulus.
     # Week controls density/volume; day rotates the station menu.
     if week==4:
@@ -1694,18 +1695,18 @@ def build_program(a,months):
 def render_session(a,session,week,engine):
     c=engine["constraints"]
     warmups=" + ".join(SPORT_WARMUPS.get(a.sport,SPORT_WARMUPS["General Fitness"]))
-    render_card("1. Corrective / Sport Prep",f"{a.sport}: {warmups}","2 rounds × 5–10 reps/side","Controlled, symptom-free","2-1-2-0","Multi-planar","Activation",ACCENTS["Corrective / Activation"])
+    render_card("1. Corrective / Sport Prep",f"{a.sport}: {warmups}","2 rounds Ã 5â10 reps/side","Controlled, symptom-free","2-1-2-0","Multi-planar","Activation",ACCENTS["Corrective / Activation"])
     for i,x in enumerate(session["exercises"]):
         render_exercise(a,x,week,c,"primary" if i<2 else "secondary")
     if session.get("complex"):
         cx=session["complex"]; rounds,reps,between,round_rest=complex_dose(cx,a,week,c)
-        st.markdown("#### ⚡ Complex / Compound Athletic Power Block")
+        st.markdown("#### â¡ Complex / Compound Athletic Power Block")
         names=[EXERCISES[eid].name for eid in cx.exercises if eid in EXERCISES]
-        render_card(cx.method,cx.name,f"{rounds} rounds • {reps}",f"Rest {round_rest} between rounds",f"{between} between exercises","Multi-planar","Advanced / Athletic",ACCENTS.get("Plyometrics","#ec4899"))
-        st.caption(" → ".join(names))
+        render_card(cx.method,cx.name,f"{rounds} rounds â¢ {reps}",f"Rest {round_rest} between rounds",f"{between} between exercises","Multi-planar","Advanced / Athletic",ACCENTS.get("Plyometrics","#ec4899"))
+        st.caption(" â ".join(names))
     cond=session["conditioning"]
-    st.markdown("#### 🔥 Metabolic / ESD Protocol")
-    render_card("5. Dynamic MetCon / ESD",cond["name"],cond["work"]+" • Rest: "+cond["rest"],cond["intensity"],cond["protocol"],"Multi-planar","Energy System / Conditioning",ACCENTS["Aerobic"])
+    st.markdown("#### ð¥ Metabolic / ESD Protocol")
+    render_card("5. Dynamic MetCon / ESD",cond["name"],cond["work"]+" â¢ Rest: "+cond["rest"],cond["intensity"],cond["protocol"],"Multi-planar","Energy System / Conditioning",ACCENTS["Aerobic"])
     st.markdown("**Exact execution:**")
     for i,station in enumerate(cond["stations"],1): st.markdown(f"**{i}.** {station}")
     st.caption(cond["reason"])
@@ -1726,6 +1727,394 @@ def log_training_session(a,session_rpe,pain_after,performance_change,duration_mi
     rec={"timestamp":datetime.now().isoformat(timespec="seconds"),"athlete":a.name,"sport":a.sport,"session_rpe":float(session_rpe),"pain_after":int(pain_after),"performance_change":int(performance_change),"duration_min":int(duration_min),"exercise_ids":ids,"notes":notes}
     st.session_state.training_log.append(rec); st.session_state.last_feedback=rec
     return rec
+
+
+# ============================================================
+# ATHLETE-IQ v6.2 â STRENGTH + MOVEMENT + NEUROMUSCULAR INTELLIGENCE
+# ============================================================
+# This layer intentionally sits above the v6.1 engine.  It makes the
+# decision tree stricter without removing the existing UI and data model.
+
+# Expanded resistance library: common gym patterns that were underrepresented in v6.1.
+AIQ62_EXTRA_EXERCISES = [
+    Exercise("r21","Dumbbell Shoulder Press","Resistance","Vertical Push",["Strength","Hypertrophy"],["Dumbbells"],"Beginner",fatigue=3),
+    Exercise("r22","Machine Chest Press","Resistance","Horizontal Push",["Strength","Hypertrophy"],["Cable Systems & Selectorized"],"Beginner",tier="Machine",fatigue=3),
+    Exercise("r23","Machine Shoulder Press","Resistance","Vertical Push",["Strength","Hypertrophy"],["Cable Systems & Selectorized"],"Beginner",tier="Machine",fatigue=3),
+    Exercise("r24","Cable Chest Press","Resistance","Horizontal Push",["Strength","Hypertrophy","Stability"],["Cable Systems & Selectorized"],"Beginner",fatigue=2),
+    Exercise("r25","Seated Cable Row","Resistance","Pull",["Strength","Hypertrophy"],["Cable Systems & Selectorized"],"Beginner",fatigue=2),
+    Exercise("r26","Leg Press","Resistance","Squat",["Strength","Hypertrophy"],["Cable Systems & Selectorized"],"Beginner",tier="Machine",fatigue=3),
+    Exercise("r27","Seated Leg Curl","Resistance","Accessory",["Strength","Hypertrophy","Hamstring"],["Cable Systems & Selectorized"],"Beginner",tier="Machine",fatigue=2),
+    Exercise("r28","Dumbbell Step-Up","Resistance","Unilateral Squat",["Strength","Stability"],["Dumbbells"],"Beginner",unilateral=True,fatigue=2),
+    Exercise("r29","Single-Arm Dumbbell Row","Resistance","Pull",["Strength","Hypertrophy","Stability"],["Dumbbells"],"Beginner",unilateral=True,fatigue=2),
+]
+for _x in AIQ62_EXTRA_EXERCISES:
+    EXERCISES[_x.id]=_x
+
+AIQ62_SYSTEMS = [
+    "Corrective / Activation", "Mobility", "Stability / Core",
+    "Resistance", "Plyometrics", "Acceleration / Speed", "Agility / COD",
+    "Neuromuscular Coordination", "Aerobic", "Anaerobic / Repeated Sprint"
+]
+
+AIQ62_GOAL_SYSTEMS = {
+    "Max Strength": {"Resistance": 34, "Neuromuscular Coordination": 3, "Stability / Core": 5},
+    "Strength": {"Resistance": 30, "Neuromuscular Coordination": 4, "Stability / Core": 6},
+    "Hypertrophy": {"Resistance": 34, "Stability / Core": 5},
+    "Power": {"Plyometrics": 28, "Resistance": 18, "Neuromuscular Coordination": 12, "Acceleration / Speed": 10},
+    "Speed": {"Acceleration / Speed": 32, "Plyometrics": 18, "Neuromuscular Coordination": 12, "Resistance": 8},
+    "Agility": {"Agility / COD": 30, "Neuromuscular Coordination": 22, "Plyometrics": 12, "Resistance": 8},
+    "Endurance": {"Aerobic": 32, "Anaerobic / Repeated Sprint": 14, "Resistance": 12, "Neuromuscular Coordination": 5},
+    "Sport Performance": {"Plyometrics": 20, "Acceleration / Speed": 18, "Agility / COD": 18, "Neuromuscular Coordination": 18, "Resistance": 16},
+    "Fat Loss": {"Resistance": 20, "Aerobic": 22, "Anaerobic / Repeated Sprint": 18, "Neuromuscular Coordination": 5},
+    "General Fitness": {"Resistance": 22, "Aerobic": 14, "Neuromuscular Coordination": 8, "Agility / COD": 7},
+    "Overall Development": {"Resistance": 18, "Neuromuscular Coordination": 12, "Plyometrics": 10, "Agility / COD": 10, "Aerobic": 10},
+}
+
+AIQ62_SECONDARY_TO_SYSTEM = {
+    "Strength":"Resistance", "Max Strength":"Resistance", "Hypertrophy":"Resistance",
+    "Power":"Plyometrics", "Speed":"Acceleration / Speed", "Agility":"Agility / COD",
+    "Aerobic Capacity":"Aerobic", "Anaerobic Capacity":"Anaerobic / Repeated Sprint",
+    "Mobility":"Mobility", "Stability":"Stability / Core", "Plyometric Ability":"Plyometrics",
+    "Movement Quality":"Neuromuscular Coordination", "Core / Trunk":"Stability / Core",
+    "Recovery / Work Capacity":"Aerobic", "Body Composition":"Resistance"
+}
+
+# Movement relationships are deliberately explicit.  The engine uses them for
+# weekly coverage, not merely for display labels.
+def aiq62_movement_meta(x):
+    n=x.name.lower(); pat=x.pattern.lower(); tags=' '.join(x.tags).lower(); q=' '.join(x.quality).lower()
+    unilateral = bool(x.unilateral or any(k in n for k in ["single-leg","single leg","split squat","lunge","step-up","rear-foot","half-kneeling","single-arm","one-arm","suitcase"]))
+    bilateral = not unilateral and any(k in pat+n for k in ["squat","deadlift","bench","press","push-up","pull-up","pulldown","row","hip thrust"])
+    contralateral = any(k in n+pat+tags for k in ["contralateral","bird dog","dead bug","bear crawl","cross-body","opposite","single-leg rdl"])
+    ipsilateral = any(k in n+pat+tags for k in ["ipsilateral","same-side","suitcase","single-arm"])
+    if "single-leg rdl" in n: contralateral=True
+    plane = x.plane
+    if "rotation" in n or "rotational" in tags or "anti-rotation" in pat: plane="Transverse"
+    if any(k in n for k in ["lateral","side","shuffle","crossover"]): plane="Frontal" if plane=="Sagittal" else plane
+    coordination = []
+    if unilateral: coordination.append("Unilateral")
+    if bilateral: coordination.append("Bilateral")
+    if contralateral: coordination.append("Contralateral")
+    if ipsilateral: coordination.append("Ipsilateral")
+    if not coordination: coordination.append("General")
+    neuromuscular = any(k in n+tags+q for k in ["reaction","reactive","coordination","rhythm","mirror","split step","decision","balance","stabil","crawl","pogo","bound","hop"])
+    return {"unilateral":unilateral,"bilateral":bilateral,"contralateral":contralateral,"ipsilateral":ipsilateral,"plane":plane,"coordination":coordination,"neuromuscular":neuromuscular}
+
+AIQ62_META={eid:aiq62_movement_meta(x) for eid,x in EXERCISES.items()}
+
+# Sport-locked drills are intentionally narrow.  Resistance exercises are
+# treated as transferable unless their names are clearly sport drills.
+AIQ62_LOCKED_TERMS = [
+    "shadow boxing", "boxing reaction", "shadow kumite", "punch throw", "punch â",
+    "shadow mma", "sprawl â stand", "swim-pull", "swimmer hollow", "streamline",
+    "split step", "tennis", "racket", "soccer ball", "dribble", "volleyball approach",
+    "block hop", "handball throw", "rugby sled"
+]
+
+def aiq62_is_locked(x):
+    n=x.name.lower()
+    return any(t in n for t in AIQ62_LOCKED_TERMS) or (x.sport_tags and x.system not in ["Resistance","Mobility","Stability / Core"] and not any(t in n for t in ["jump","hop","bound","sprint","shuffle","shuttle","run"]))
+
+def aiq62_sport_ok(x,a):
+    if not aiq62_is_locked(x): return True
+    return exercise_sport_compatible(x,a)
+
+def aiq62_equipment_ok(x,a):
+    return any(eq in a.equipment for eq in x.equipment)
+
+def aiq62_level_ok(x,a):
+    lvl=training_level(a.training_years)
+    order={"Beginner":0,"Intermediate":1,"Advanced":2}
+    return order.get(x.level,0) <= order.get(lvl,1)+1
+
+def aiq62_system_ok(x,system):
+    if system=="Neuromuscular Coordination":
+        return AIQ62_META.get(x.id,{}).get("neuromuscular",False) or any(k in ' '.join(x.quality).lower()+x.name.lower() for k in ["coordination","reaction","balance","stability","rhythm"])
+    return x.system==system
+
+def aiq62_goal_bonus(a,x):
+    g=a.primary_goal; n=x.name.lower(); q=' '.join(x.quality).lower(); pat=x.pattern.lower(); score=0
+    if g in ["Max Strength","Strength"]:
+        if x.system=="Resistance": score+=28
+        if x.fatigue>=3: score+=4
+    elif g=="Hypertrophy":
+        if x.system=="Resistance": score+=30
+        if "hypertrophy" in q: score+=8
+    elif g=="Power":
+        if x.system in ["Plyometrics","Acceleration / Speed"]: score+=28
+        if "power" in q or x.tempo_power.startswith("X"): score+=8
+    elif g=="Speed":
+        if x.system=="Acceleration / Speed": score+=34
+        if x.system=="Plyometrics": score+=12
+    elif g=="Agility":
+        if x.system=="Agility / COD" or AIQ62_META.get(x.id,{}).get("neuromuscular"): score+=30
+    elif g=="Endurance":
+        if x.system in ["Aerobic","Anaerobic / Repeated Sprint"]: score+=25
+        if "endurance" in q: score+=8
+    elif g=="Sport Performance":
+        if x.system in ["Plyometrics","Acceleration / Speed","Agility / COD","Neuromuscular Coordination"]: score+=22
+        if x.sport_tags and aiq62_sport_ok(x,a): score+=7
+    elif g=="Fat Loss":
+        if x.system in ["Resistance","Aerobic","Anaerobic / Repeated Sprint"]: score+=18
+    elif g in ["General Fitness","Overall Development"]:
+        if x.system=="Resistance": score+=18
+    return score
+
+def aiq62_position_bonus(x,a):
+    pos=(a.position or "").lower(); n=x.name.lower(); score=0
+    mapping={
+        "goalkeeper":["lateral","reactive","jump","bound","deceleration","acceleration","balance"],
+        "winger":["acceleration","sprint","shuttle","crossover","lateral","bound","unilateral"],
+        "striker":["acceleration","sprint","unilateral","jump","rotational","hinge"],
+        "midfielder":["shuttle","aerobic","acceleration","lateral","single-leg","split squat"],
+        "defender":["squat","hinge","lateral","deceleration","jump","acceleration"],
+        "freestyle":["swimmer","pull","streamline","shoulder"],
+        "butterfly":["swimmer","pull","shoulder","core","streamline"],
+        "backstroke":["swimmer","pull","shoulder","core"],
+        "breaststroke":["adductor","hip","squat","swimmer","core"],
+    }
+    for k,terms in mapping.items():
+        if k in pos: score += sum(2 for t in terms if t in n)
+    return score
+
+def aiq62_exercise_allowed(x,a,constraints):
+    if not aiq62_equipment_ok(x,a): return False
+    if not aiq62_sport_ok(x,a): return False
+    if not aiq62_level_ok(x,a): return False
+    # For general resistance, sport tags are preference tags rather than hard locks.
+    # Truly sport-locked drills are handled by aiq62_sport_ok.
+    if constraints.get("pain_gate") and x.system in ["Plyometrics","Agility / COD","Acceleration / Speed","Anaerobic / Repeated Sprint"]: return False
+    if constraints.get("low_impact") and x.impact=="High": return False
+    for k in constraints.get("injury_keys",[]):
+        if k in x.avoid_if: return False
+    return True
+
+def aiq62_select_exercises(a,p,system_scores,system,n,month,used_ids,constraints,coverage=None):
+    coverage=coverage or set(); candidates=[]
+    for x in EXERCISES.values():
+        if x.id in used_ids: continue
+        if not aiq62_system_ok(x,system): continue
+        if not aiq62_equipment_ok(x,a): continue
+        if not aiq62_sport_ok(x,a): continue
+        if not aiq62_level_ok(x,a): continue
+        if not aiq62_exercise_allowed(x,a,constraints): continue
+        meta=AIQ62_META.get(x.id,{})
+        score=aiq62_goal_bonus(a,x)+aiq62_position_bonus(x,a)
+        score += system_scores.get(system,0)*0.12
+        # Whole-athlete coverage: strongly reward missing movement families.
+        family= x.pattern.lower()
+        family_bonus=0
+        if system=="Resistance":
+            if any(k in family for k in ["squat","unilateral squat","lunge"]) and "knee" not in coverage: family_bonus+=24
+            if "hinge" in family and "hinge" not in coverage: family_bonus+=24
+            if "horizontal push" in family and "h_push" not in coverage: family_bonus+=24
+            if "vertical push" in family and "v_push" not in coverage: family_bonus+=24
+            if "pull" in family and "pull" not in coverage: family_bonus+=24
+            if meta.get("unilateral") and "unilateral" not in coverage: family_bonus+=16
+            if meta.get("bilateral") and "bilateral" not in coverage: family_bonus+=10
+            if meta.get("contralateral") and "contralateral" not in coverage: family_bonus+=12
+            if meta.get("ipsilateral") and "ipsilateral" not in coverage: family_bonus+=10
+        if system=="Neuromuscular Coordination":
+            if meta.get("contralateral") and "contralateral" not in coverage: family_bonus+=25
+            if meta.get("ipsilateral") and "ipsilateral" not in coverage: family_bonus+=22
+            if meta.get("unilateral") and "unilateral" not in coverage: family_bonus+=15
+        if meta.get("plane") not in coverage: family_bonus+=5
+        # Monthly diversity: don't just rotate order; prefer a different family/variant.
+        if month>1 and exercise_recently_used(x.id,days=30): score-=12
+        score+=family_bonus
+        candidates.append((score,x))
+    candidates.sort(key=lambda z:(z[0],z[1].fatigue),reverse=True)
+    return [x for _,x in candidates[:max(n,1)]]
+
+# Replace priorities so primary goal, secondary goals, screening, sport and position all propagate.
+def priorities(a):
+    base={k:8.0 for k in ["Strength","Hypertrophy","Power","Acceleration","COD","Aerobic","Anaerobic","Mobility","Stability","Rotational Power","Neuromuscular Coordination"]}
+    demands=SPORT_DEMANDS.get(a.sport,SPORT_DEMANDS.get("General Fitness",{}))
+    for k,v in demands.items():
+        if k in base: base[k]+=float(v)*25
+    scores=performance_scores(a)
+    gapmap={"Strength":"Strength","Power":"Power","Acceleration":"Acceleration","COD":"COD","Aerobic":"Aerobic","Stability":"Stability","Mobility":"Mobility","Rotational Power":"Rotational Power"}
+    for q,src in gapmap.items():
+        if q in base: base[q]+=max(0,100-float(scores.get(src,50)))*0.22
+    goal_quality={"Max Strength":"Strength","Strength":"Strength","Hypertrophy":"Hypertrophy","Power":"Power","Speed":"Acceleration","Agility":"COD","Endurance":"Aerobic","Fat Loss":"Aerobic"}
+    if a.primary_goal in goal_quality: base[goal_quality[a.primary_goal]]+=45
+    elif a.primary_goal=="Sport Performance":
+        for q in ["Power","Acceleration","COD","Neuromuscular Coordination","Strength"]: base[q]+=22
+    elif a.primary_goal in ["Overall Development","General Fitness"]:
+        for q in ["Strength","Power","Acceleration","COD","Aerobic","Mobility","Stability","Neuromuscular Coordination"]: base[q]+=14
+    for g in a.secondary_goals:
+        key={"Strength":"Strength","Max Strength":"Strength","Hypertrophy":"Hypertrophy","Power":"Power","Speed":"Acceleration","Agility":"COD","Aerobic Capacity":"Aerobic","Anaerobic Capacity":"Anaerobic","Mobility":"Mobility","Stability":"Stability","Plyometric Ability":"Power","Movement Quality":"Neuromuscular Coordination","Core / Trunk":"Stability","Recovery / Work Capacity":"Aerobic","Body Composition":"Strength"}.get(g)
+        if key: base[key]+=16
+    if a.sport in ["Tennis","Racket Sports (Squash/Padel)"]: base["Rotational Power"]+=18
+    flags=screening_flags(a)
+    if flags:
+        base["Mobility"]+=12; base["Stability"]+=14; base["Neuromuscular Coordination"]+=8
+    if asymmetry(a.left_jump,a.right_jump)>=8: base["Stability"]+=12; base["Neuromuscular Coordination"]+=10
+    if a.season=="In-Season / Competition":
+        base["Hypertrophy"]*=.55; base["Strength"]*=.82; base["Power"]*=1.05; base["Acceleration"]*=1.05
+    if a.season=="Taper / Peak":
+        base["Hypertrophy"]*=.35; base["Strength"]*=.60; base["Power"]*=1.20; base["Acceleration"]*=1.15; base["COD"]*=1.10
+    total=sum(max(v,0) for v in base.values()) or 1
+    return {k:round(max(v,0)/total*100,1) for k,v in sorted(base.items(),key=lambda z:z[1],reverse=True)}
+
+def system_allocation(a,p,constraints):
+    mapping={
+        "Corrective / Activation":["Mobility","Stability"],"Mobility":["Mobility"],"Stability / Core":["Stability"],
+        "Resistance":["Strength","Hypertrophy"],"Plyometrics":["Power"],"Acceleration / Speed":["Acceleration"],
+        "Agility / COD":["COD"],"Neuromuscular Coordination":["Neuromuscular Coordination"],"Aerobic":["Aerobic"],"Anaerobic / Repeated Sprint":["Anaerobic"]
+    }
+    out={s:max([p.get(q,0) for q in qs]+[0]) for s,qs in mapping.items()}
+    for s,b in AIQ62_GOAL_SYSTEMS.get(a.primary_goal,AIQ62_GOAL_SYSTEMS["Overall Development"]).items(): out[s]=out.get(s,0)+b
+    for g in a.secondary_goals:
+        s=AIQ62_SECONDARY_TO_SYSTEM.get(g)
+        if s: out[s]=out.get(s,0)+8
+    if constraints.get("low_impact"):
+        for s in ["Plyometrics","Agility / COD","Acceleration / Speed","Anaerobic / Repeated Sprint"]: out[s]*=.45
+        out["Neuromuscular Coordination"]*=1.10
+    if not constraints.get("high_fatigue_allowed",True): out["Anaerobic / Repeated Sprint"]*=.65
+    return {k:round(v,2) for k,v in sorted(out.items(),key=lambda z:z[1],reverse=True)}
+
+# Goal-specific session architecture with mandatory whole-body resistance coverage.
+def session_template(a,day,system_scores,constraints):
+    g=a.primary_goal
+    if constraints.get("low_impact"):
+        return ["Corrective / Activation","Mobility","Resistance","Neuromuscular Coordination","Aerobic"]
+    templates={
+        "Max Strength":["Corrective / Activation","Resistance","Resistance","Resistance","Neuromuscular Coordination"],
+        "Strength":["Corrective / Activation","Resistance","Resistance","Neuromuscular Coordination","Anaerobic / Repeated Sprint"],
+        "Hypertrophy":["Corrective / Activation","Resistance","Resistance","Resistance","Aerobic"],
+        "Power":["Corrective / Activation","Plyometrics","Resistance","Neuromuscular Coordination","Acceleration / Speed"],
+        "Speed":["Corrective / Activation","Acceleration / Speed","Plyometrics","Resistance","Neuromuscular Coordination"],
+        "Agility":["Corrective / Activation","Agility / COD","Neuromuscular Coordination","Resistance","Anaerobic / Repeated Sprint"],
+        "Endurance":["Corrective / Activation","Aerobic","Resistance","Neuromuscular Coordination","Anaerobic / Repeated Sprint"],
+        "Sport Performance":["Corrective / Activation","Plyometrics","Resistance","Neuromuscular Coordination","Agility / COD"],
+        "Fat Loss":["Corrective / Activation","Resistance","Aerobic","Neuromuscular Coordination","Anaerobic / Repeated Sprint"],
+        "General Fitness":["Corrective / Activation","Resistance","Neuromuscular Coordination","Resistance","Aerobic"],
+        "Overall Development":["Corrective / Activation","Resistance","Neuromuscular Coordination","Plyometrics","Aerobic"],
+    }
+    base=templates.get(g,templates["Overall Development"])
+    # Day variation changes the secondary systems, but never removes whole-body strength exposure.
+    if day%3==2 and g in ["Power","Speed","Agility","Sport Performance"]:
+        base=["Corrective / Activation",base[1],"Resistance",base[3],base[4]]
+    if day%3==0 and g in ["Strength","Max Strength","Hypertrophy"]:
+        base=["Corrective / Activation","Resistance","Neuromuscular Coordination",base[2],base[4]]
+    return base
+
+def build_rotation(a,months,p,system_scores,constraints):
+    rotation={}
+    used_global=set()
+    for m in range(1,months+1):
+        rotation[m]={}
+        for system in AIQ62_SYSTEMS:
+            if system=="Corrective / Activation" and system not in system_scores: continue
+            picks=aiq62_select_exercises(a,p,system_scores,system,5,m,list(used_global),constraints,set())
+            if picks:
+                # Month rotation chooses a genuinely different variant/family when possible.
+                x=picks[(m-1)%len(picks)]
+                rotation[m][system]=x.id; used_global.add(x.id)
+    return rotation
+
+def _aiq62_coverage_add(coverage,x):
+    m=AIQ62_META.get(x.id,{})
+    p=x.pattern.lower()
+    if any(k in p for k in ["squat","unilateral squat","lunge"]): coverage.add("knee")
+    if "hinge" in p: coverage.add("hinge")
+    if "horizontal push" in p: coverage.add("h_push")
+    if "vertical push" in p: coverage.add("v_push")
+    if "pull" in p: coverage.add("pull")
+    for k in ["unilateral","bilateral","contralateral","ipsilateral"]:
+        if m.get(k): coverage.add(k)
+    coverage.add(m.get("plane","General"))
+
+def build_session(a,week,day,month,rotation,p,system_scores,constraints):
+    systems=session_template(a,day,system_scores,constraints)
+    used=[]; exercises=[]; coverage=set()
+    # Two resistance slots deliberately use coverage-aware selection so pressing and pulling
+    # are not crowded out by sport drills.
+    for system in systems:
+        selected=[]
+        if system=="Corrective / Activation":
+            selected=aiq62_select_exercises(a,p,system_scores,system,1,month,used,constraints,coverage)
+        else:
+            selected=aiq62_select_exercises(a,p,system_scores,system,2 if system=="Resistance" else 1,month,used,constraints,coverage)
+        for x in selected:
+            if x.id not in used:
+                used.append(x.id); exercises.append(x); _aiq62_coverage_add(coverage,x)
+                if system!="Resistance": break
+    cond=conditioning_decision(a,p,constraints,week,month,day)
+    complex_block=None
+    if day==1 and constraints.get("high_impact_allowed") and constraints.get("high_fatigue_allowed"):
+        complex_block=choose_complex(a,p,systems,constraints,month)
+    return {"day":day,"week":week,"month":month,"phase":phase_for(a,week),"mesocycle_phase":mesocycle_phase(a,month),"systems":systems,"exercises":exercises,"conditioning":cond,"complex":complex_block,"readiness":constraints["readiness"],"movement_coverage":sorted(coverage)}
+
+def aiq62_position_stations(a,month,week,day):
+    s=a.sport.lower(); p=(a.position or "").lower()
+    if "soccer" in s:
+        if "goalkeeper" in p: pools=[
+            ["Lateral Reaction Shuffle — 15 s","Low Box Jump / Vertical Jump — 4 reps","Reactive Direction Change — 15 s","10 m Acceleration — 2 reps"],
+            ["Lateral Bound → Stick — 4/side","Short Acceleration — 5–10 m","Visual Reaction Direction Change — 15 s","DB Farmer Carry / March — 20 m"],
+            ["Deceleration → Re-acceleration — 3/side","Single-Leg Hop → Stick — 4/side","Reactive Shuffle — 15 s","DB Split Squat — 8/side"]]
+        elif "winger" in p: pools=[
+            ["5–10 m Acceleration — 3 reps","Crossover → Acceleration — 2/side","Reactive Lateral Shuffle — 15 s","DB Reverse Lunge — 8/side"],
+            ["Curved Acceleration — 2 reps/side","Lateral Bound — 4/side","Repeated Sprint — 15 s","DB RDL — 8 reps"],
+            ["Deceleration → Re-acceleration — 3 reps","Open-Step COD — 3/side","Tempo Shuttle — 20 s","DB Split Squat — 8/side"]]
+        else: pools=[
+            ["5–10 m Acceleration — 3 reps","Unilateral Jump → Stick — 3/side","Reactive Direction Change — 15 s","DB Split Squat — 8/side"],
+            ["Acceleration Start — 3 reps","Lateral Bound — 4/side","Short Shuttle Sprint — 20 s","DB RDL — 8 reps"],
+            ["Deceleration → Re-acceleration — 3 reps","Crossover → Sprint — 2/side","Repeated Sprint — 15 s","DB Reverse Lunge — 8/side"]]
+        return pools[(month-1)%len(pools)]
+    if "swimming" in s:
+        pools=[
+            ["DB Pullover — 10 reps","Swimmer Hollow-Body Hold — 30 s","Prone Y-T-W — 6/position","DB Romanian Deadlift — 8 reps"],
+            ["DB Bench Press — 8 reps","Dead Bug — 30 s","DB Single-Arm Row — 8/side","Tempo Shuttle — 20 s"],
+            ["DB Overhead Press — 8 reps","Bird Dog — 8/side","DB Reverse Lunge — 8/side","Fast March — 30 s"]]
+        return pools[(month-1)%3]
+    if "boxing" in s or "mma" in s:
+        pools=[
+            ["Shadow Boxing — 30 s","Reactive Footwork — 20 s","DB Push Press — 6 reps","DB Reverse Lunge — 8/side"],
+            ["Visual Reaction Boxing — 20 s","Split-Stance Footwork — 20 s","DB Bench Press — 8 reps","Suitcase Carry — 20 m"],
+            ["Shadow Boxing — 30 s","Reaction Callout — 20 s","DB Romanian Deadlift — 8 reps","Push-Up — 10 reps"]]
+        return pools[(month-1)%3]
+    if "tennis" in s or "racket" in s:
+        pools=[
+            ["Split Step → Reactive Lateral Shuffle — 15 s","Rotational DB Press — 6/side","Crossover → 5 m Acceleration — 2/side","DB Split Squat — 8/side"],
+            ["Visual Reaction COD — 15 s","DB Rotational Press — 6/side","Lateral Bound → Stick — 4/side","DB RDL — 8 reps"],
+            ["Open-Stance COD — 3/side","DB Single-Arm Row — 8/side","Reactive Shuffle — 15 s","Suitcase Carry — 20 m"]]
+        return pools[(month-1)%3]
+    # General fallback is deliberately equipment-neutral and not sport-locked.
+    return [["Fast March / Low-Impact Run — 30 s","DB Goblet Squat — 8 reps","DB Row — 8/side","Reactive Direction Change — 15 s"],
+            ["DB Reverse Lunge — 8/side","Push-Up — 10 reps","Single-Leg Balance Reach — 6/side","Tempo Shuttle — 20 s"],
+            ["DB RDL — 8 reps","DB Bench Press — 8 reps","Lateral Shuffle — 15 s","Dead Bug — 30 s"]][(month-1)%3]
+
+def conditioning_decision(a,p,constraints,week,month=1,day=1):
+    protocol=_pick_protocol(a,month,week,day,p,constraints)
+    # Goal changes the protocol too; this prevents the same method from surviving every goal change.
+    if a.primary_goal in ["Max Strength","Strength"] and month==1: protocol="Intervals"
+    if a.primary_goal=="Power": protocol=["Intervals","Every 90s","Circuit"][min(month-1,2)]
+    if a.primary_goal=="Agility": protocol=["Intervals","EMOM","AMRAP"][min(month-1,2)]
+    if a.primary_goal=="Endurance": protocol=["Intervals","AMRAP","Ladder"][min(month-1,2)]
+    if constraints.get("low_impact") or week==4: protocol="Intervals"
+    loadmod=adaptive_load_modifier(a); base={1:3,2:4,3:4,4:2}[week]; rounds=max(2,int(round(base*loadmod)))
+    if constraints["band"]=="YELLOW": target=7.0
+    elif constraints["band"]=="RED": target=5.5
+    else: target=6.5 if month==1 else 7.5 if month==2 else 8.0
+    stations=aiq62_position_stations(a,month,week,day)
+    stations=sanitize_metcon_stations(a,stations)
+    # Diversity by month: the pool itself changes, not just its order.
+    if protocol=="EMOM": work=f"EMOM {rounds*len(stations)} min — 1 station per minute"; rest="Remaining time in each minute"
+    elif protocol=="AMRAP": work=f"AMRAP {max(6,int({1:8,2:10,3:12,4:6}[week]*loadmod))} min — repeat all stations"; rest="Self-regulated transitions"
+    elif protocol=="Tabata": work=f"Tabata {rounds} blocks — 20 s work / 10 s transition"; rest="60–90 s between blocks"
+    elif protocol=="Every 90s": work=f"Every 90 s × {rounds*len(stations)} station exposures"; rest="Remaining time in each 90-s window"
+    elif protocol=="Ladder": work=f"Ladder {rounds} rounds — 20/30/40 s work progression"; rest="45–75 s between rounds"
+    elif protocol=="Circuit": work=f"Circuit {rounds} rounds — 30–40 s work / 20 s transition"; rest="90 s between rounds"
+    else: work=f"Intervals {rounds} rounds — 30 s work / 30 s recovery"; rest="60–90 s between rounds"
+    return {"system":"Anaerobic / Repeated Sprint" if protocol in ["Tabata","EMOM","AMRAP","Circuit"] else "Aerobic","name":f"{a.sport} • {a.position} • {protocol} • Month {month}","protocol":protocol,"stations":stations,"work":work,"rest":rest,"intensity":f"Target RPE {target:.1f} • Load modifier ×{loadmod:.2f}","reason":f"Sport + position + primary goal + season + readiness + equipment + monthly stimulus selection."}
+
+def build_program(a,months):
+    constraints=constraint_engine(a); p=priorities(a); systems=system_allocation(a,p,constraints); rotation=build_rotation(a,months,p,systems,constraints)
+    days=max(1,min(a.gym_days_available,4))
+    program={m:{w:[build_session(a,w,d,m,rotation,p,systems,constraints) for d in range(1,days+1)] for w in range(1,5)} for m in range(1,months+1)}
+    return program,{"constraints":constraints,"priorities":p,"systems":systems,"rotation":rotation,"load_status":constraints.get("load_status"),"movement_engine":"v6.2","coverage":"whole-body resistance + unilateral/bilateral/ipsilateral/contralateral + neuromuscular coordination"}
 
 # ============================================================
 # SIDEBAR
