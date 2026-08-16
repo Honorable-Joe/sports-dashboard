@@ -598,7 +598,7 @@ def priorities(a):
         raw["Stability"]+=max(0,100-scores["Stability"])*.12
     elif a.primary_goal in goal_map:
         raw[goal_map[a.primary_goal]]*=1.45
-            for g in a.secondary_goals:
+    for g in a.secondary_goals:
         key={
             "Strength":"Strength","Max Strength":"Strength","Hypertrophy":"Hypertrophy","Power":"Power","Speed":"Acceleration",
             "Agility":"COD","Aerobic Capacity":"Aerobic","Anaerobic Capacity":"Anaerobic","Mobility":"Mobility",
