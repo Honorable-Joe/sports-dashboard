@@ -92,6 +92,7 @@ SPORT_DEMANDS = {
     "Track & Field (Sprints/Jumps)": {"Strength":.18,"Hypertrophy":.02,"Power":.22,"Acceleration":.22,"COD":.04,"Aerobic":.05,"Anaerobic":.08,"Stability":.10,"Mobility":.09},
     "Rugby/American Football": {"Strength":.22,"Hypertrophy":.06,"Power":.18,"Acceleration":.14,"COD":.09,"Aerobic":.08,"Anaerobic":.10,"Stability":.08,"Mobility":.05},
     "Swimming": {"Strength":.14,"Hypertrophy":.04,"Power":.12,"Acceleration":.04,"COD":.01,"Aerobic":.28,"Anaerobic":.13,"Stability":.13,"Mobility":.11},
+    "Karate": {"Strength":.12,"Hypertrophy":.02,"Power":.22,"Acceleration":.15,"COD":.16,"Aerobic":.10,"Anaerobic":.17,"Stability":.09,"Mobility":.09},
 }
 SPORT_POSITIONS = {
     "General Fitness":["General"],
@@ -106,6 +107,7 @@ SPORT_POSITIONS = {
     "Track & Field (Sprints/Jumps)":["100m/200m","400m","Long Jump","High Jump"],
     "Rugby/American Football":["Forward/Front Seven","Back/Skill Position","Hybrid"],
     "Swimming":["Freestyle","Backstroke","Breaststroke","Butterfly","Individual Medley"],
+    "Karate":["Kumite","Kata","Kumite + Kata"],
 }
 EQUIPMENT = [
     "Barbells & Plates","Dumbbells","Kettlebells","Rigs & Suspension (TRX/Wood Rings)",
@@ -168,6 +170,7 @@ class AthleteProfile:
     weight_kg: float
     sport: str
     position: str
+    secondary_positions: List[str]
     primary_goal: str
     secondary_goals: List[str]
     season: str
@@ -295,7 +298,7 @@ E = [
     ex("p1","Countermovement Jump","Plyometrics","Vertical Jump",["Power","Plyometric Ability"],["Bodyweight"],"Beginner",impact="Moderate",fatigue=2),
     ex("p2","Standing Broad Jump","Plyometrics","Horizontal Jump",["Power","Plyometric Ability","Acceleration"],["Bodyweight"],"Beginner",impact="Moderate",fatigue=2),
     ex("p3","Lateral Bound","Plyometrics","Lateral Jump",["Power","Plyometric Ability","COD"],["Bodyweight"],"Intermediate",plane="Frontal",impact="High",fatigue=2,unilateral=True,avoid_if=["knee","ankle"]),
-    ex("p4","Medicine-Ball Chest Pass","Plyometrics","Upper-Body Ballistic",["Power"],["Medicine & Slam Balls"],"Beginner",impact="Low",fatigue=2),
+        ex("p4","Medicine-Ball Chest Pass","Plyometrics","Upper-Body Ballistic",["Power"],["Medicine & Slam Balls"],"Beginner",impact="Low",fatigue=2),
     ex("p5","Rotational Medicine-Ball Scoop Toss","Plyometrics","Rotational Throw",["Power","Rotational Power"],["Medicine & Slam Balls"],"Intermediate",plane="Transverse",impact="Low",fatigue=2,sport_tags=["Tennis","Racket Sports (Squash/Padel)","Combat Sports (MMA/Boxing)"],avoid_if=["low back"]),
     ex("p6","Medicine-Ball Overhead Throw","Plyometrics","Overhead Throw",["Power"],["Medicine & Slam Balls"],"Intermediate",impact="Low",fatigue=2),
     ex("r13","Landmine Rotation","Resistance","Rotation",["Strength","Power","Core / Trunk"],["Barbells & Plates"],"Intermediate",plane="Transverse",fatigue=3,sport_tags=["Tennis","Racket Sports (Squash/Padel)","Combat Sports (MMA/Boxing)"],avoid_if=["back"]),
@@ -306,6 +309,11 @@ E = [
     ex("bx3","Boxing Reaction Callout Drill","Agility / COD","Reactive Striking",["Reaction","Agility","Coordination"],["Bodyweight"],"Intermediate",plane="Multi-planar",fatigue=3,sport_tags=["Boxing"],tags=["Boxing","Reaction"]),
     ex("bx4","Slip → Roll → Counter Shadow Sequence","Agility / COD","Defensive Footwork",["Agility","Reaction","COD"],["Bodyweight"],"Intermediate",plane="Multi-planar",fatigue=3,sport_tags=["Boxing"],tags=["Boxing","Footwork"]),
     ex("bx5","Medicine-Ball Punch Throw","Plyometrics","Upper-Body Rotation",["Power","Rotation","Speed"],["Medicine & Slam Balls"],"Intermediate",plane="Transverse",fatigue=2,sport_tags=["Boxing"],tags=["Boxing","Punch Power"]),
+    ex("kz1","Karate Shadow Kumite — Technical Flow","Agility / COD","Sport Skill",["Reaction","Coordination","Agility"],["Bodyweight"],"Beginner",plane="Multi-planar",fatigue=2,sport_tags=["Karate"],tags=["Karate","Kumite","Shadow"]),
+    ex("kz2","Karate Reaction Callout — Strike / Check / Exit","Agility / COD","Reactive Striking",["Reaction","Agility","COD"],["Bodyweight","Cones / Timing Gates"],"Intermediate",plane="Multi-planar",fatigue=3,sport_tags=["Karate"],tags=["Karate","Kumite","Reaction"]),
+    ex("kz3","Medicine-Ball Rotational Punch Throw","Plyometrics","Rotational Throw",["Power","Rotation","Speed"],["Medicine & Slam Balls"],"Intermediate",plane="Transverse",fatigue=2,sport_tags=["Karate"],tags=["Karate","Power","Kumite"]),
+    ex("kz4","Split-Stance Punch → Lateral Exit","Agility / COD","Acceleration / COD",["Acceleration","COD","Agility"],["Bodyweight","Cones / Timing Gates"],"Intermediate",plane="Multi-planar",fatigue=3,sport_tags=["Karate"],tags=["Karate","Footwork"]),
+    ex("kz5","Band-Resisted Straight Punch","Resistance","Sport-Specific Push",["Strength","Power","Speed"],["Bands"],"Beginner",plane="Transverse",fatigue=2,sport_tags=["Karate"],tags=["Karate","Punch"]),
     ex("sw1","SkiErg Swim-Pull Intervals","Aerobic","Swim-Specific Pull",["Aerobic","Work Capacity","Pulling"],["Ergometers (AirBike/Rower/SkiErg)"],"Beginner",fatigue=3,sport_tags=["Swimming"],tags=["Swimming","Pull"]),
     ex("sw2","Straight-Arm Cable Pulldown","Resistance","Swim Pull",["Strength","Strength Endurance"],["Cable Systems & Selectorized"],"Beginner",fatigue=2,sport_tags=["Swimming"],tags=["Swimming","Lat"]),
     ex("sw3","Band Straight-Arm Swim Pull","Resistance","Swim Pull",["Strength Endurance","Stability"],["Bands"],"Beginner",fatigue=1,sport_tags=["Swimming"],tags=["Swimming","Scapular"]),
@@ -329,6 +337,7 @@ COMPLEXES = [
     TrainingComplex("cx8","Lateral Bound → Stick → Reactive Cone Drill","Agility Complex","Agility",["Plyometric Ability","COD","Stability"],["a6","a2","a5"],sport_tags=["Tennis","Racket Sports (Squash/Padel)","Soccer","Basketball"],min_level="Intermediate",impact="High",fatigue=3,equipment=["Cones / Timing Gates"],rest_between="20–30 s",rest_rounds="2 min"),
     TrainingComplex("cx9","Kettlebell Swing → Sled Push → Shuttle","Power-Endurance Complex","Anaerobic",["Power","Work Capacity","Acceleration"],["r14","n4","n2"],sport_tags=["Soccer","Basketball","Rugby/American Football","General Fitness"],min_level="Intermediate",impact="Moderate",fatigue=5,equipment=["Kettlebells","Sleds & Prowler","Cones / Timing Gates"],rest_between="30–45 s",rest_rounds="2–3 min"),
 ]
+COMPLEXES.append(TrainingComplex("cx12","Karate Rotational Throw → Split-Stance Strike → Reactive Exit","Karate Sport Power Complex","Rotational Power",["Power","Acceleration","COD"],["kz3","kz4","kz2"],sport_tags=["Karate"],min_level="Intermediate",impact="Moderate",fatigue=4,equipment=["Medicine & Slam Balls","Cones / Timing Gates"],rest_between="20–30 s",rest_rounds="2–3 min"))
 COMPLEXES_BY_ID={c.id:c for c in COMPLEXES}
 
 # ============================================================
@@ -379,6 +388,7 @@ SPORT_WARMUPS = {
     "Track & Field (Sprints/Jumps)":["A-Skips / Ankling","Dynamic Hamstring Sweeps","Acceleration Wall Drills"],
     "Rugby/American Football":["Neck Prep","Groin/Adductor Mobility","Resisted Acceleration Starts"],
     "Swimming":["Shoulder CARs","Scapular Activation","T-Spine Rotation","Streamline Core Prep"],
+    "Karate":["Hip 90/90 Flow","Ankle + Calf Prep","T-Spine Rotation","Karate Footwork + Shadow Kumite"],
     "General Fitness":["World's Greatest Stretch","Band Pull-Aparts + Glute Bridges","Bodyweight Squats + Arm Circles"],
 }
 
@@ -387,7 +397,7 @@ SPORT_WARMUPS = {
 # ============================================================
 DEFAULTS = {
     "name":"New Athlete","age":25,"sex":"Male","height_cm":180.0,"weight_kg":80.0,
-    "sport":"General Fitness","position":"General","primary_goal":"Overall Development",
+    "sport":"General Fitness","position":"General","secondary_positions":[],"primary_goal":"Overall Development",
     "secondary_goals":["Strength","Mobility","Stability"],"season":"General / No Competition",
     "competition_days":0,"team_days":0,"team_minutes":0,"gym_days_available":3,"session_minutes":60,
     "training_years":2.0,"equipment":EQUIPMENT.copy(),"injuries":[],"pain_present":False,"pain_score":0,
@@ -588,7 +598,7 @@ def priorities(a):
         raw["Stability"]+=max(0,100-scores["Stability"])*.12
     elif a.primary_goal in goal_map:
         raw[goal_map[a.primary_goal]]*=1.45
-    for g in a.secondary_goals:
+            for g in a.secondary_goals:
         key={
             "Strength":"Strength","Max Strength":"Strength","Hypertrophy":"Hypertrophy","Power":"Power","Speed":"Acceleration",
             "Agility":"COD","Aerobic Capacity":"Aerobic","Anaerobic Capacity":"Anaerobic","Mobility":"Mobility",
@@ -640,9 +650,38 @@ def exercise_allowed(x,a,constraints):
     if constraints["low_impact"] and x.impact=="High": return False
     return True
 
+def athlete_position_labels(a):
+    return [a.position] + [x for x in getattr(a,"secondary_positions",[]) if x and x != a.position]
+
+POSITION_KEYWORDS = {
+    "Soccer": {
+        "Goalkeeper":["reaction","lateral","stability","power"], "Center Back":["strength","acceleration","stability"],
+        "Full Back":["acceleration","cod","aerobic"], "Midfielder":["aerobic","cod","work capacity"],
+        "Winger":["acceleration","speed","cod"], "Striker":["power","acceleration","speed"]},
+    "Basketball": {"Guard":["acceleration","cod","reaction"], "Wing":["power","speed","cod"], "Forward":["power","strength"], "Center":["strength","stability"]},
+    "Volleyball": {"Setter":["reaction","stability","power"], "Outside Hitter":["power","jump","shoulder"], "Opposite":["power","jump","strength"], "Middle Blocker":["jump","power","lateral"], "Libero":["reaction","cod","stability"]},
+    "Handball": {"Wing":["speed","cod","aerobic"], "Backcourt":["power","throw","cod"], "Pivot":["strength","power"], "Goalkeeper":["reaction","lateral","stability"]},
+    "Tennis": {"Singles":["cod","aerobic","reaction"], "Doubles":["reaction","cod","acceleration"]},
+    "Racket Sports (Squash/Padel)": {"Singles":["cod","aerobic","reaction"], "Doubles":["reaction","cod","acceleration"]},
+    "Swimming": {"Freestyle":["pull","aerobic","streamline"], "Backstroke":["pull","shoulder","aerobic"], "Breaststroke":["hip","adductor","mobility"], "Butterfly":["power","shoulder","core"], "Individual Medley":["aerobic","mobility","whole-body"]},
+    "Karate": {"Kumite":["reaction","cod","acceleration","rotation"], "Kata":["mobility","stability","control"], "Kumite + Kata":["reaction","cod","mobility"]},
+}
+
+def position_match_score(x,a):
+    labels=athlete_position_labels(a)
+    if not labels or labels==["General"]: return 0
+    text=(x.name+" "+" ".join(x.tags)+" "+" ".join(x.quality)).lower()
+    score=0
+    sport_map=POSITION_KEYWORDS.get(a.sport,{})
+    for label in labels:
+        for kw in sport_map.get(label,[]):
+            if kw.lower() in text: score += 3 if label==a.position else 1.5
+    return score
+
 def exercise_score(x,a,p,system_scores,month,used_ids):
     score=0.0
     if a.sport in x.sport_tags: score+=28
+    score += position_match_score(x,a)
     if "General Fitness" in x.sport_tags: score+=3
     score+=max([p.get(q,0) for q in x.quality]+[0])*.18
     score+=system_scores.get(x.system,0)*.08
@@ -791,6 +830,18 @@ def conditioning_decision(a,p,constraints,week,month=1,day=1):
     else:
         target="mixed"
 
+    if sport=="Karate":
+        phase = "Base" if month==1 else "Development" if month==2 else "Specific / Peak"
+        rounds={1:4,2:4,3:5,4:3}[week]
+        patterns=[
+            ["Minute 1 — Karate Shadow Kumite: 40 s technical flow","Minute 2 — Footwork: forward/back + lateral exit: 30 s","Minute 3 — Medicine-Ball Rotational Punch Throw: 4/side",f"Minute 4 — {cyc}: 30 s @ RPE 6–7"],
+            ["Minute 1 — Karate Reaction Callout: 25 s","Minute 2 — Split-Stance Punch → Lateral Exit: 20 s","Minute 3 — Medicine-Ball Rotational Punch Throw: 5/side",f"Minute 4 — {cyc}: 25 s hard / 35 s easy"],
+            ["Minute 1 — Shadow Kumite: 15 s flurry / 15 s reset × 2","Minute 2 — Reactive Strike + Exit Callout: 20 s","Minute 3 — Band-Resisted Straight Punch: 8/side",f"Minute 4 — {cyc}: 15–20 s hard"],
+        ]
+        stations=patterns[(day+month-2)%len(patterns)]
+        name=f"Karate {phase} Mixed ESD EMOM"
+        return {"system":"Anaerobic / Repeated Sprint" if month>=2 else "Aerobic","name":name,"stations":stations,"work":f"EMOM {rounds*4} min — {rounds} rounds • sport-specific striking / footwork density","rest":"Remaining minute","intensity":work_rpe,"reason":f"Karate-specific reaction, striking, footwork, rotational power and repeat-effort conditioning • {phase}"}
+
     if boxing:
         day_variant = (day-1 + week-1) % 3
         if month==1:
@@ -847,6 +898,7 @@ def conditioning_decision(a,p,constraints,week,month=1,day=1):
         if month==1:
             stations=["Minute 1 — Split Step + Lateral Shuffle: 20 s",
                       "Minute 2 — Rotational Medicine-Ball Scoop Toss: 4/side",
+
                       f"Minute 3 — {cyc}: 35 s @ RPE 7",
                       "Minute 4 — Walk + T-spine reset: 30 s"]
             name="Racket Sport Aerobic-COD Base EMOM"
@@ -1032,6 +1084,7 @@ def choose_complex(a,p,systems,constraints,month):
         if a.sport in ["Tennis","Racket Sports (Squash/Padel)"] and "Rotational" in c.name: s+=20
         if a.sport=="Boxing" and c.id=="cx10": s+=35
         if a.sport=="Swimming" and c.id=="cx11": s+=45
+        if a.sport=="Karate" and c.id=="cx12": s+=45
         s-=c.fatigue*2
         return s
     return max(candidates,key=score)
@@ -1060,7 +1113,7 @@ def build_session(a,week,day,month,rotation,p,system_scores,constraints):
     cond=conditioning_decision(a,p,constraints,week,month,day)
     complex_block=None
     # Place a complex only when power/agility demand and readiness justify advanced methods.
-    sport_complex_eligible = a.sport in ["Boxing","Swimming"]
+    sport_complex_eligible = a.sport in ["Boxing","Swimming","Karate"]
     if day==1 and (sport_complex_eligible or (p.get("Power",0)+p.get("COD",0)+p.get("Acceleration",0)+p.get("Rotational Power",0))>22):
         complex_block=choose_complex(a,p,systems,constraints,month)
     return {"day":day,"week":week,"month":month,"phase":phase_for(a,week),"mesocycle_phase":mesocycle_phase(a,month),"systems":systems,"exercises":exercises,"conditioning":cond,"complex":complex_block,"readiness":constraints["readiness"]}
@@ -1092,7 +1145,7 @@ def decision_trace(a,months):
     program,engine=build_program(a,months)
     c=engine["constraints"]; p=engine["priorities"]; systems=engine["systems"]
     trace=[]
-    trace.append(("01 Intake",f"{a.sport} / {a.position} • {a.primary_goal} • {a.season}"))
+    trace.append(("01 Intake",f"{a.sport} / {a.position}" + (f" + {", ".join(a.secondary_positions)}" if getattr(a,"secondary_positions",[]) else "") + f" • {a.primary_goal} • {a.season}"))
     trace.append(("02 Goal interaction",f"Primary goal + {len(a.secondary_goals)} secondary targets are combined rather than treated independently."))
     trace.append(("03 Readiness gate",f"{c['readiness']:.0f}/100 → {c['band']} • volume ×{c['volume_multiplier']:.2f} • intensity ×{c['intensity_multiplier']:.2f}"))
     if c["pain_gate"]: trace.append(("04 Safety gate","Pain threshold triggered: high-impact/high-fatigue systems are blocked from normal selection."))
@@ -1146,6 +1199,7 @@ def render_exercise(a,x,week,constraints,slot):
     elif x.system in ["Stability / Core","Corrective / Activation"]: pres="2–3 Sets × 8–12 reps or 20–40 s"; intensity="RPE 5–7"; tempo="Controlled"
     elif x.system=="Anaerobic / Repeated Sprint": pres="2–3 Sets × 4–6 reps"; intensity="RPE 8–9"; tempo="Full quality recovery"
     else: pres="2–3 Sets × 8–12"; intensity="RPE 6–7"; tempo="2-1-2-0"
+
     render_card(x.system,x.name,pres,intensity,tempo,x.plane,x.tier,ACCENTS.get(x.system,"#38bdf8"))
     if x.regression or x.progression:
         st.caption(f"Regression: {x.regression or '—'} • Progression: {x.progression or '—'}")
@@ -1173,6 +1227,366 @@ def render_session(a,session,week,engine):
     for station in cond["stations"]:
         st.markdown(f"- **{station}**")
     st.caption(cond["reason"])
+
+
+# ============================================================
+# ATHLETE-IQ v6 — CLOSED-LOOP ADAPTATION + MULTI-PROTOCOL ESD
+# ============================================================
+# v6 deliberately does NOT perform automatic photo/posture diagnosis.
+# Photos remain coach documentation; structured observations drive the engine.
+
+if "training_log" not in st.session_state:
+    st.session_state.training_log=[]
+if "test_history" not in st.session_state:
+    st.session_state.test_history=[]
+if "last_feedback" not in st.session_state:
+    st.session_state.last_feedback=None
+
+METCON_METHODS = ["EMOM","AMRAP","Tabata","Intervals","Circuit","Every 90s","Ladder"]
+
+SPORT_ESD_FOCUS = {
+    "Boxing":["Reaction","Shadow Boxing","Footwork","Rotational Power","Repeated Effort"],
+    "Karate":["Reaction","Shadow Kumite","Footwork","Rotational Power","Repeated Effort"],
+    "Swimming":["SkiErg","Swim Pull","Streamline Core","Aerobic Power","Shoulder Endurance"],
+    "Tennis":["Reactive COD","Lateral Shuffle","Rotation","Repeated Sprint"],
+    "Racket Sports (Squash/Padel)":["Reactive COD","Lateral Shuffle","Rotation","Repeated Sprint"],
+    "Soccer":["Acceleration","COD","Repeated Sprint","Aerobic Recovery"],
+    "Basketball":["Acceleration","COD","Jump Repeatability","Anaerobic Repeat"],
+    "Volleyball":["Jump Repeatability","Lateral COD","Acceleration","Power-Endurance"],
+    "Handball":["Acceleration","COD","Throw Power","Repeated Sprint"],
+    "Rugby/American Football":["Acceleration","Sled Work","Repeated Effort","Collision Conditioning"],
+    "Track & Field (Sprints/Jumps)":["Acceleration","Speed","Elastic Power","Low-Volume High-Quality"],
+    "MMA":["Mixed Skill Rounds","Reaction","Grappling-Conditioning","Repeated Effort"],
+}
+
+# Specific screening observations -> conservative training responses.
+SCREENING_RESPONSE_RULES = {
+    "anterior pelvic tilt": {"Mobility":4,"Stability":4},
+    "posterior pelvic tilt": {"Mobility":2,"Stability":3},
+    "scapular winging": {"Stability":6,"Mobility":2},
+    "scapular asymmetry": {"Stability":5},
+    "rounded shoulders": {"Mobility":3,"Stability":3},
+    "forward head": {"Mobility":3,"Stability":2},
+    "thoracic kyphosis": {"Mobility":4,"Stability":2},
+    "foot pronation": {"Stability":4,"Mobility":2},
+    "knee valgus": {"Stability":5},
+    "knee varus": {"Stability":3},
+    "pelvic hike": {"Stability":4,"Mobility":2},
+}
+
+def _recent_logs():
+    return st.session_state.get("training_log", [])[-12:]
+
+def recent_training_load():
+    logs=_recent_logs()
+    if not logs: return 0.0
+    return float(sum(float(x.get("session_rpe",0))*float(x.get("duration_min",60))/60 for x in logs))
+
+def weekly_external_load(a):
+    # Simple internal-load proxy: team/sport minutes x session RPE + competition load.
+    team_load=float(a.team_days*a.team_minutes*max(a.weekly_sport_rpe,1)/10)
+    comp_load=float(a.competition_days*90*max(a.weekly_sport_rpe,1)/10)
+    return team_load+comp_load
+
+def load_status(a):
+    recent=recent_training_load()
+    sport=weekly_external_load(a)
+    total=recent+sport
+    if total>=450: return "HIGH", total
+    if total>=300: return "MODERATE-HIGH", total
+    if total>=180: return "MODERATE", total
+    return "LOW", total
+
+def adaptive_load_modifier(a):
+    status,total=load_status(a)
+    mod=1.0
+    if status=="HIGH": mod=.72
+    elif status=="MODERATE-HIGH": mod=.86
+    if st.session_state.get("last_feedback"):
+        f=st.session_state.last_feedback
+        if f.get("session_rpe",0)>=9: mod*=.82
+        if f.get("pain_after",0)>=5: mod*=.75
+        if f.get("performance_change",0)>=1 and f.get("session_rpe",10)<=7: mod*=1.03
+    return float(np.clip(mod,.55,1.05))
+
+def _screening_response(a):
+    out={q:0.0 for q in ["Mobility","Stability","Strength","Power","Agility","Speed","Aerobic","Anaerobic"]}
+    severity_weight={"Mild":1.0,"Moderate":1.7,"Marked":2.4}
+    for d in [a.posture_anterior,a.posture_lateral,a.posture_posterior]:
+        for val in d.values():
+            if not isinstance(val,str) or " || " not in val: continue
+            finding,severity=val.split(" || ",1)
+            rule=SCREENING_RESPONSE_RULES.get(finding.lower())
+            if rule:
+                w=severity_weight.get(severity,0)
+                for q,v in rule.items(): out[q]+=v*w
+    return out
+
+# Override the old generic screening adjustment with finding-specific weighting.
+def screening_adjustments(a):
+    out={q:0.0 for q in ["Mobility","Stability","Strength","Power","Agility","Speed","Aerobic","Anaerobic"]}
+    base=screening_adjustments_base(a) if "screening_adjustments_base" in globals() else None
+    if base: out.update(base)
+    specific=_screening_response(a)
+    for q,v in specific.items(): out[q]+=v
+    flags=screening_flags(a)
+    for f in flags:
+        s=f.lower()
+        if "painful" in s: out["Power"]-=8; out["Agility"]-=8; out["Speed"]-=6
+        if "dysfunctional" in s: out["Power"]-=3; out["Agility"]-=3
+    if asymmetry(a.left_jump,a.right_jump)>=8:
+        out["Stability"]+=8
+    return out
+
+# Preserve the v5.4 version under a new name, then use the enhanced version above.
+# This is done once at import time.
+if "screening_adjustments_base" not in globals():
+    # The original function is still available only if this block runs before replacement;
+    # v6 re-implements the general flags below to avoid recursion.
+    def screening_adjustments_base(a):
+        out={q:0.0 for q in ["Mobility","Stability","Strength","Power","Agility","Speed","Aerobic","Anaerobic"]}
+        for f in screening_flags(a):
+            s=f.lower()
+            if any(k in s for k in ["ankle","hip","t-spine","shoulder","mobility","rotation","flexion","extension"]): out["Mobility"]+=3
+            if any(k in s for k in ["pelvic","knee alignment","scapular","stability","landing","rotary"]): out["Stability"]+=3
+        return out
+
+# Rebind now that the safe base exists.
+_old_screening_adjustments = screening_adjustments
+
+def screening_adjustments(a):
+    out=screening_adjustments_base(a)
+    for q,v in _screening_response(a).items(): out[q]+=v
+    flags=screening_flags(a)
+    for f in flags:
+        s=f.lower()
+        if "painful" in s: out["Power"]-=8; out["Agility"]-=8; out["Speed"]-=6
+        elif "dysfunctional" in s: out["Power"]-=3; out["Agility"]-=3
+    if asymmetry(a.left_jump,a.right_jump)>=8: out["Stability"]+=8
+    return out
+
+# ---------------------------
+# Multi-protocol conditioning
+# ---------------------------
+def _station(name,prescription): return f"{name} — {prescription}"
+
+def _pick_protocol(a,month,week,day,priorities,constraints):
+    # Protocol selection is deliberate, not random. Month controls the training emphasis;
+    # week controls progression/deload; sport and secondary targets influence method.
+    if constraints["low_impact"]: return "Intervals"
+    if week==4: return "Intervals"
+    if a.sport in ["Boxing","Karate"]:
+        return ["Intervals","Tabata","Circuit"][min(month-1,2)]
+    if a.sport=="Swimming":
+        return ["Intervals","AMRAP","Intervals"][min(month-1,2)]
+    if a.sport in ["Tennis","Racket Sports (Squash/Padel)"]:
+        return ["Intervals","Every 90s","Circuit"][min(month-1,2)]
+    if a.sport in ["Soccer","Basketball","Volleyball","Handball"]:
+        return ["Intervals","EMOM","AMRAP"][min(month-1,2)]
+    if a.sport=="Track & Field (Sprints/Jumps)": return ["Intervals","Every 90s","Ladder"][min(month-1,2)]
+    if a.sport=="Rugby/American Football": return ["Circuit","EMOM","AMRAP"][min(month-1,2)]
+    # Goal-driven generic selection
+    if priorities.get("Anaerobic",0)>priorities.get("Aerobic",0)+8: return "Tabata" if month>=2 else "EMOM"
+    if priorities.get("Aerobic",0)>priorities.get("Anaerobic",0)+8: return "Intervals"
+    return ["EMOM","Circuit","AMRAP"][min(month-1,2)]
+
+def _sport_stations(a,month,week,day):
+    s=a.sport
+    if s=="Boxing":
+        return [
+            _station("Shadow Boxing — technical combinations", "30 s work"),
+            _station("Boxing Reaction Callout Drill", "20 s high-quality reactions"),
+            _station("Medicine-Ball Punch Throw", "5/side"),
+            _station("Footwork: forward/back + lateral exits", "20 s"),
+        ]
+    if s=="Karate":
+        return [
+            _station("Shadow Kumite — combination flow", "30 s"),
+            _station("Reaction Callout — strike/check/exit", "20 s"),
+            _station("Rotational Medicine-Ball Punch Throw", "5/side"),
+            _station("Split-Stance Punch → Lateral Exit", "4/side"),
+        ]
+    if s=="Swimming":
+        return [
+            _station("SkiErg Swim-Pull Intervals", "30–40 s"),
+            _station("Straight-Arm Cable Pulldown", "10–12 reps"),
+            _station("Swimmer Hollow-Body Hold", "25–35 s"),
+            _station("Prone Y-T-W", "6 each position"),
+        ]
+    if s in ["Tennis","Racket Sports (Squash/Padel)"]:
+        return [
+            _station("Split Step → Reactive Lateral Shuffle", "15–20 s"),
+            _station("Rotational Medicine-Ball Scoop Toss", "5/side"),
+            _station("Crossover → 5 m Acceleration", "2 reps/side"),
+            _station("Bike/Rower", "20–30 s"),
+        ]
+    if s=="Soccer":
+        return [_station("10 m Acceleration", "2 reps"),_station("Lateral/Crossover Shuttle", "20 s"),_station("Sled Push", "15–20 m"),_station("Bike/Rower", "30 s")]
+    if s=="Basketball":
+        return [_station("Lateral Shuffle → Closeout", "20 s"),_station("Countermovement Jump", "4 reps"),_station("5–10–5 Shuttle", "1 rep"),_station("Bike/Rower", "30 s")]
+    if s=="Volleyball":
+        return [_station("Block Hop → Lateral Shuffle", "20 s"),_station("Approach Jump", "3 reps"),_station("Reactive Cone Drill", "15 s"),_station("Bike/Rower", "30 s")]
+    if s=="Handball":
+        return [_station("Crossover → Acceleration", "2 reps/side"),_station("Rotational Medicine-Ball Throw", "5/side"),_station("Shuttle Sprint", "20 s"),_station("Bike/Rower", "30 s")]
+    if s=="Rugby/American Football":
+        return [_station("Sled Push", "15–20 m"),_station("Acceleration Start", "2 reps"),_station("Battle Rope", "25 s"),_station("Shuttle Sprint", "20 s")]
+    if s=="Track & Field (Sprints/Jumps)":
+        return [_station("Acceleration Sprint", "10–20 m"),_station("Pogo / Elastic Hops", "10–15 s"),_station("Med-Ball Throw", "4 reps"),_station("Easy Bike", "30 s")]
+    if s=="MMA":
+        return [_station("Shadow MMA Flow", "30 s"),_station("Sprawl → Stand", "5 reps"),_station("Med-Ball Slam", "8 reps"),_station("Bike/Rower", "30 s")]
+    return [_station("Bike/Rower", "30–40 s"),_station("Wall Ball", "10 reps"),_station("Tempo Shuttle", "20–30 s"),_station("Dead Bug", "30 s")]
+
+def conditioning_decision(a,p,constraints,week,month=1,day=1):
+    protocol=_pick_protocol(a,month,week,day,p,constraints)
+    loadmod=adaptive_load_modifier(a)
+    base_rounds={1:3,2:4,3:4,4:2}[week]
+    rounds=max(2,int(round(base_rounds*loadmod)))
+    if week==4: rounds=max(2,rounds)
+    phase=mesocycle_phase(a,month)
+    work_rpe=6.5 if month==1 else 7.5 if month==2 else 8.0
+    if constraints["band"]=="YELLOW": work_rpe-=.5
+    if constraints["band"]=="RED": work_rpe=5.5
+    if a.season in ["In-Season / Competition","Taper / Peak"]: work_rpe=min(work_rpe,7.0)
+    stations=_sport_stations(a,month,week,day)
+    # Rotate station order by day/month while preserving the sport-specific pool.
+    shift=(month+day-2)%len(stations)
+    stations=stations[shift:]+stations[:shift]
+    if protocol=="EMOM":
+        work=f"EMOM {rounds*4} min — {rounds} rounds"
+        rest="Complete the station within the minute; recover with remaining time"
+    elif protocol=="AMRAP":
+        minutes={1:8,2:10,3:12,4:6}[week]
+        minutes=max(6,int(minutes*loadmod))
+        work=f"AMRAP {minutes} min — repeat all {len(stations)} stations with quality"
+        rest="Self-regulated transitions; stop if technique degrades"
+    elif protocol=="Tabata":
+        work=f"Tabata-style {rounds} rounds × 4 min — 20 s work / 10 s transition"
+        rest="60–90 s between 4-min blocks"
+    elif protocol=="Every 90s":
+        work=f"Every 90 s × {rounds*4} stations — {rounds} rounds"
+        rest="Remaining time in each 90-s window"
+    elif protocol=="Ladder":
+        work=f"Ladder {rounds} rounds — 20/30/40 s work progression, then reset"
+        rest="45–75 s between rounds"
+    elif protocol=="Circuit":
+        work=f"Circuit {rounds} rounds — 30–40 s work / 20 s transition"
+        rest="90 s between rounds"
+    else:
+        work=f"Intervals {rounds} rounds — 30 s work / 30 s recovery"
+        rest="60–90 s between rounds"
+    return {"system":"Anaerobic / Repeated Sprint" if month>=2 else "Aerobic","name":f"{a.sport} • {protocol} • {phase}","protocol":protocol,"stations":stations,"work":work,"rest":rest,"intensity":f"Target RPE {work_rpe:.1f} • Load modifier ×{loadmod:.2f}","reason":f"Protocol selected from sport demands, training phase, readiness, accumulated load and development priorities. {', '.join(SPORT_ESD_FOCUS.get(a.sport,[]))}."}
+
+# ---------------------------
+# Load-aware constraint engine ---------------------------
+_old_constraint_engine = constraint_engine
+def constraint_engine(a):
+    c=_old_constraint_engine(a)
+    status,total=load_status(a); lm=adaptive_load_modifier(a)
+    c["recent_internal_load"]=recent_training_load(); c["sport_load"]=weekly_external_load(a); c["load_status"]=status; c["load_modifier"]=lm
+    c["volume_multiplier"]*=lm
+    c["high_fatigue_allowed"] = c["high_fatigue_allowed"] and status not in ["HIGH"]
+    if status=="HIGH":
+        c["intensity_multiplier"]*=.95
+    return c
+
+# ---------------------------
+# Exercise history + progression ---------------------------
+def exercise_recently_used(ex_id,days=12):
+    ids=[]
+    for r in st.session_state.get("training_log",[])[-days:]:
+        ids.extend(r.get("exercise_ids",[]))
+    return ex_id in ids
+
+def progression_rule(a,week,exercise,slot,constraints):
+    f=st.session_state.get("last_feedback")
+    if week==4: return "Deload: reduce volume; preserve movement quality and speed."
+
+    if constraints["band"]=="RED": return "Autoregulate: no planned load increase; stop before technique changes."
+    if f and f.get("session_rpe",0)>=9: return "Previous session was very hard: hold or regress the next exposure before progressing."
+    if f and f.get("pain_after",0)>=5: return "Pain response detected: substitute/regress and seek appropriate clinical assessment when indicated."
+    if f and f.get("performance_change",0)>=1 and f.get("session_rpe",10)<=7: return "Positive response: progress one variable only (load, reps, density or complexity)."
+    if a.primary_goal in ["Power","Speed","Agility","Sport Performance"] or exercise.system in ["Plyometrics","Acceleration / Speed","Agility / COD"]:
+        return "Progress quality first: faster execution, cleaner mechanics, then slightly more exposure."
+    return "Progress load/reps conservatively when target RPE and technical quality are met."
+
+# ---------------------------
+# More intelligent session sequencing ---------------------------
+def session_template(a,day,system_scores,constraints):
+    high=list(system_scores.keys())
+    if constraints["low_impact"]:
+        return ["Corrective / Activation","Mobility","Stability / Core","Resistance","Aerobic"]
+    if day==1:
+        return ["Corrective / Activation","Plyometrics","Resistance","Agility / COD","Anaerobic / Repeated Sprint"]
+    if day==2:
+        return ["Corrective / Activation","Resistance","Acceleration / Speed","Stability / Core","Aerobic"]
+    if day==3:
+        return ["Corrective / Activation","Agility / COD","Resistance","Plyometrics","Anaerobic / Repeated Sprint"]
+    return ["Corrective / Activation","Mobility","Resistance","Acceleration / Speed","Aerobic"]
+
+# Rebuild sessions/program so conditioning and load feedback are truly downstream.
+def build_session(a,week,day,month,rotation,p,system_scores,constraints):
+    systems=session_template(a,day,system_scores,constraints)
+    used=[]; exercises=[]
+    for system in systems:
+        rid=rotation.get(month,{}).get(system)
+        candidate=EXERCISES.get(rid) if rid else None
+        if candidate and exercise_allowed(candidate,a,constraints) and candidate.id not in used:
+            x=candidate
+        else:
+            selected=select_exercises(a,p,system_scores,system,1,month,used,constraints)
+            if not selected: continue
+            # Prefer not to repeat an exercise that was actually logged recently.
+            fresh=[z for z in selected if not exercise_recently_used(z.id)]
+            x=(fresh or selected)[0]
+        used.append(x.id); exercises.append(x)
+    cond=conditioning_decision(a,p,constraints,week,month,day)
+    complex_block=None
+    if day==1 and constraints["high_impact_allowed"] and constraints["high_fatigue_allowed"]:
+        complex_block=choose_complex(a,p,systems,constraints,month)
+    return {"day":day,"week":week,"month":month,"phase":phase_for(a,week),"mesocycle_phase":mesocycle_phase(a,month),"systems":systems,"exercises":exercises,"conditioning":cond,"complex":complex_block,"readiness":constraints["readiness"]}
+
+def build_program(a,months):
+    constraints=constraint_engine(a); p=priorities(a); systems=system_allocation(a,p,constraints)
+    rotation=build_rotation(a,months,p,systems,constraints)
+    days=max(1,min(a.gym_days_available,4))
+    program={m:{w:[build_session(a,w,d,m,rotation,p,systems,constraints) for d in range(1,days+1)] for w in range(1,5)} for m in range(1,months+1)}
+    return program,{"constraints":constraints,"priorities":p,"systems":systems,"rotation":rotation,"load_status":constraints["load_status"]}
+
+def render_session(a,session,week,engine):
+    c=engine["constraints"]
+    warmups=" + ".join(SPORT_WARMUPS.get(a.sport,SPORT_WARMUPS["General Fitness"]))
+    render_card("1. Corrective / Sport Prep",f"{a.sport}: {warmups}","2 rounds × 5–10 reps/side","Controlled, symptom-free","2-1-2-0","Multi-planar","Activation",ACCENTS["Corrective / Activation"])
+    for i,x in enumerate(session["exercises"]):
+        render_exercise(a,x,week,c,"primary" if i<2 else "secondary")
+    if session.get("complex"):
+        cx=session["complex"]; rounds,reps,between,round_rest=complex_dose(cx,a,week,c)
+        st.markdown("#### ⚡ Complex / Compound Athletic Power Block")
+        names=[EXERCISES[eid].name for eid in cx.exercises if eid in EXERCISES]
+        render_card(cx.method,cx.name,f"{rounds} rounds • {reps}",f"Rest {round_rest} between rounds",f"{between} between exercises","Multi-planar","Advanced / Athletic",ACCENTS.get("Plyometrics","#ec4899"))
+        st.caption(" → ".join(names))
+    cond=session["conditioning"]
+    st.markdown("#### 🔥 Metabolic / ESD Protocol")
+    render_card("5. Dynamic MetCon / ESD",cond["name"],cond["work"]+" • Rest: "+cond["rest"],cond["intensity"],cond["protocol"],"Multi-planar","Energy System / Conditioning",ACCENTS["Aerobic"])
+    st.markdown("**Exact execution:**")
+    for i,station in enumerate(cond["stations"],1): st.markdown(f"**{i}.** {station}")
+    st.caption(cond["reason"])
+
+# ---------------------------
+# Testing trends ---------------------------
+def test_snapshot(a):
+    return {"timestamp":datetime.now().isoformat(timespec="seconds"),"cmj":a.cmj,"broad_jump":a.broad_jump,"sprint_5m":a.sprint_5m,"sprint_10m":a.sprint_10m,"cod":a.cod,"cooper_m":a.cooper_m,"left_jump":a.left_jump,"right_jump":a.right_jump,"squat_1rm":a.squat_1rm,"bench_1rm":a.bench_1rm,"forehand_throw_m":a.forehand_throw_m,"backhand_throw_m":a.backhand_throw_m,"rotational_throw_m":a.rotational_throw_m}
+
+def log_training_session(a,session_rpe,pain_after,performance_change,duration_min=60,notes=""):
+    ids=[]
+    if st.session_state.get("generated_plan"):
+        # Log the most recent displayed day if available.
+        try:
+            sess=st.session_state.generated_plan[1][1][0]
+            ids=[x.id for x in sess.get("exercises",[])]
+        except Exception: ids=[]
+    rec={"timestamp":datetime.now().isoformat(timespec="seconds"),"athlete":a.name,"sport":a.sport,"session_rpe":float(session_rpe),"pain_after":int(pain_after),"performance_change":int(performance_change),"duration_min":int(duration_min),"exercise_ids":ids,"notes":notes}
+    st.session_state.training_log.append(rec); st.session_state.last_feedback=rec
+    return rec
 
 # ============================================================
 # SIDEBAR
@@ -1203,7 +1617,10 @@ if module=="1. Athlete Profile":
         setv("height_cm",st.number_input("Height (cm)",120.0,230.0,float(st.session_state.height_cm),0.5)); setv("weight_kg",st.number_input("Weight (kg)",30.0,250.0,float(st.session_state.weight_kg),0.5))
     with c2:
         sports=list(SPORT_DEMANDS); sport=st.selectbox("Sport / Discipline",sports,index=sports.index(st.session_state.sport)); setv("sport",sport)
-        pos=SPORT_POSITIONS[sport]; setv("position",st.selectbox("Position / Event",pos,index=pos.index(st.session_state.position) if st.session_state.position in pos else 0))
+        pos=SPORT_POSITIONS[sport]
+        setv("position",st.selectbox("Primary Position / Event",pos,index=pos.index(st.session_state.position) if st.session_state.position in pos else 0))
+        secondary_options=[x for x in pos if x != st.session_state.position]
+        setv("secondary_positions",st.multiselect("Secondary Positions / Events (optional)",secondary_options,default=[x for x in st.session_state.secondary_positions if x in secondary_options]))
         setv("primary_goal",st.selectbox("Primary Goal",GOALS,index=GOALS.index(st.session_state.primary_goal)))
         setv("season",st.selectbox("Season / Calendar Phase",SEASONS,index=SEASONS.index(st.session_state.season)))
     with c3:
@@ -1258,7 +1675,9 @@ elif module=="3. Comprehensive Screening":
         with tab:
             key="posture_"+view.lower(); current=dict(st.session_state.get(key,{}))
             upload=st.file_uploader(f"Optional {view.lower()} photo",type=["png","jpg","jpeg"],key="upload_"+view.lower())
-            if upload: st.image(upload,caption=view,use_container_width=True)
+            if upload:
+                st.image(upload,caption=view,use_container_width=True)
+                st.caption("📷 Documentation only: the photo is not automatically interpreted or used to change the program. Record the coach-observed finding below if it should affect the decision tree.")
             cols=st.columns(2)
             for i,item in enumerate(POSTURE_FIELDS[view]):
                 with cols[i%2]:
@@ -1371,16 +1790,30 @@ elif module=="6. Adaptive Program Generator":
 elif module=="7. Feedback / Reassessment":
     st.markdown('<div class="banner-header">07 • Feedback Loop — Today Changes Tomorrow</div>',unsafe_allow_html=True)
     st.write("This module closes the loop: completed-session feedback becomes a new input to the same decision engine.")
+    st.markdown("### 📈 Training Load + Autoregulation")
+    a=athlete(); status,total=load_status(a); c1,c2,c3=st.columns(3); c1.metric("Current Load Status",status); c2.metric("Estimated Internal Load",f"{total:.0f}"); c3.metric("Load Modifier",f"×{adaptive_load_modifier(a):.2f}")
+    st.caption("Load is a coaching proxy based on recent logged session-RPE × duration plus weekly sport/competition exposure; it is not a validated injury-risk score.")
     c1,c2,c3=st.columns(3)
     with c1: session_rpe=st.slider("Last Session RPE",1.0,10.0,7.0,0.5)
     with c2: pain_after=st.slider("Pain During/After Session",0,10,0)
     with c3: performance_change=st.slider("Performance vs. Previous Exposure",-2,2,0)
+    notes=st.text_input("Session note (optional)")
+    duration=st.number_input("Actual session duration (min)",20,180,int(st.session_state.session_minutes),5)
     if st.button("🔄 APPLY FEEDBACK TO NEXT DECISION",type="primary"):
         st.session_state.feedback["session_rpe"].append(float(session_rpe)); st.session_state.feedback["pain"].append(int(pain_after)); st.session_state.feedback["performance"].append(int(performance_change))
-        a=athlete(); base=constraint_engine(a); adapted=apply_feedback(base,session_rpe,pain_after,performance_change); st.session_state.decision_state={"constraints":adapted,"feedback_applied":True}
-        st.success("Feedback applied. The next program generation will use the updated load gate.")
+        a=athlete(); log_training_session(a,session_rpe,pain_after,performance_change,duration,notes)
+        base=constraint_engine(a); adapted=apply_feedback(base,session_rpe,pain_after,performance_change); st.session_state.decision_state={"constraints":adapted,"feedback_applied":True}
+        st.success("Feedback logged and fed into the next load, exercise-rotation and conditioning decisions.")
     if st.session_state.feedback["session_rpe"]:
         st.dataframe(pd.DataFrame(st.session_state.feedback),use_container_width=True,hide_index=True)
+    st.markdown("### 🧪 Performance Trend")
+    if st.session_state.get("test_history"):
+        td=pd.DataFrame(st.session_state.test_history)
+        show=[c for c in ["timestamp","cmj","sprint_10m","cod","cooper_m","squat_1rm","rotational_throw_m","forehand_throw_m","backhand_throw_m"] if c in td.columns]
+        st.dataframe(td[show],use_container_width=True,hide_index=True)
+        st.caption("Re-test standardized measures under the same protocol before interpreting trends.")
+    if st.button("📌 Save Current Performance Test Snapshot"):
+        st.session_state.test_history.append(test_snapshot(athlete())); st.success("Performance snapshot saved.")
     st.markdown("### Reassessment triggers")
     st.write("• Persistent pain → safety gate remains active.\n• Unexpectedly high session RPE → reduce future volume/intensity.\n• Good performance + acceptable RPE → progression can be considered.\n• End of mesocycle → re-test key performance qualities and regenerate priorities.")
 
@@ -1405,6 +1838,10 @@ elif module=="8. Data / Profiles":
         if st.button("Load Selected Profile"):
             for k,v in st.session_state.profiles[selected].items(): st.session_state[k]=v
             st.session_state.generated_plan=None; st.session_state.decision_state=None; st.rerun()
+    if st.session_state.training_log:
+        st.subheader("Training Session History")
+        st.dataframe(pd.DataFrame(st.session_state.training_log),use_container_width=True,hide_index=True)
+        st.download_button("⬇️ Download Training Log CSV",pd.DataFrame(st.session_state.training_log).to_csv(index=False),"athlete_iq_training_log.csv","text/csv")
     if st.session_state.records:
         st.subheader("Historical Assessment Records"); st.dataframe(pd.DataFrame(st.session_state.records),use_container_width=True,hide_index=True)
         st.download_button("⬇️ Download CSV",pd.DataFrame(st.session_state.records).to_csv(index=False),"athlete_iq_history.csv","text/csv")
@@ -1412,4 +1849,7 @@ elif module=="8. Data / Profiles":
     st.download_button("⬇️ Export Current Athlete JSON",payload,"athlete_iq_profile.json","application/json")
 
 st.markdown("---")
-st.caption("Athlete-IQ v5.3 • Rule-based coaching software. Screening thresholds and performance classifications are heuristics unless explicitly validated. The engine is designed so upstream changes propagate downstream; it does not diagnose or prescribe medical treatment.")
+st.caption("Athlete-IQ v6.0 • Rule-based coaching software. Screening thresholds and performance classifications are heuristics unless explicitly validated. The engine is designed so upstream changes propagate downstream; it does not diagnose or prescribe medical treatment.")
+
+
+
