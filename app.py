@@ -1,106 +1,127 @@
 import streamlit as st
+import pandas as pd
 from engine import generate_plan
-from sports import SPORTS, POSITIONS
+from sports import SPORTS,GOALS,SECONDARY,EQUIPMENT,DAYS
+from screening import POSTURE_FINDINGS,SFMA,INJURIES
 
-st.set_page_config(page_title='Athlete-IQ V9', page_icon='🏋️', layout='wide')
+st.set_page_config(page_title="ATHLETE-IQ PERFORMANCE ENGINE",page_icon="⚡",layout="wide",initial_sidebar_state="expanded")
+st.markdown("""<style>
+.stApp{background:#0d1117;color:#c9d1d9}.block-container{max-width:1450px;padding-top:1rem}
+.title{text-align:center}.title h1{color:#38bdf8;font-size:2.5rem;font-weight:800;letter-spacing:1.5px;margin:0}.title p{color:#a855f7;font-weight:700}
+.banner{background:linear-gradient(90deg,#7c3aed,#ec4899);color:white;padding:14px 20px;border-radius:12px;font-size:1.25rem;font-weight:700;margin:16px 0;box-shadow:0 4px 15px rgba(124,58,237,.3)}
+.card{background:linear-gradient(145deg,#111827,#161b22);border:1px solid #30363d;border-radius:16px;padding:16px;margin:8px 0}.ex{background:linear-gradient(145deg,#111827,#1b1430);border:1px solid #334155;border-left:4px solid #38bdf8;border-radius:14px;padding:14px;margin:8px 0}
+.tag{display:inline-block;background:#172554;border:1px solid #334155;border-radius:999px;padding:4px 9px;margin:2px 4px 2px 0;font-size:.78rem}.small{color:#94a3b8;font-size:.88rem}
+</style>""",unsafe_allow_html=True)
+st.markdown('<div class="title"><h1>⚡ ATHLETE-IQ PERFORMANCE ENGINE</h1><p>Integrated athlete assessment • closed-loop development • automatic periodized programming</p></div>',unsafe_allow_html=True)
 
-st.markdown('''
-<style>
-.stApp {background: radial-gradient(circle at top, #111a33 0%, #060a14 55%, #03050a 100%); color:#f4f7ff;}
-.block-container {max-width:1400px; padding-top:1.2rem;}
-.hero {padding:24px 28px; border-radius:22px; background:linear-gradient(135deg,#172554,#31165e 55%,#111827); border:1px solid #334155; box-shadow:0 15px 45px rgba(0,0,0,.3); margin-bottom:18px;}
-.hero h1 {margin:0; font-size:2.2rem;}
-.hero p {color:#cbd5e1; margin:.45rem 0 0;}
-.card {background:linear-gradient(145deg,#10192d,#0b1222); border:1px solid #263653; border-radius:18px; padding:18px; margin:10px 0; box-shadow:0 8px 24px rgba(0,0,0,.22);}
-.card h3 {margin:0 0 8px;}
-.tag {display:inline-block; padding:4px 9px; border-radius:999px; background:#172554; border:1px solid #334155; margin:2px 4px 2px 0; font-size:.82rem; color:#cbd5e1;}
-.section {font-size:1.35rem; font-weight:800; margin:18px 0 8px;}
-.small {color:#94a3b8; font-size:.9rem;}
-.metric {font-size:1.8rem; font-weight:800;}
-</style>
-''', unsafe_allow_html=True)
-
-st.markdown('''<div class="hero"><h1>ATHLETE-IQ V9</h1><p>Closed-loop sports performance planning engine — screening, strengths, weaknesses, goals, equipment, periodization and training history all influence the plan automatically.</p></div>''', unsafe_allow_html=True)
-
+if "page" not in st.session_state: st.session_state.page="Athlete Profile"
+pages=["Athlete Profile","Sport & Goals","Full Screening","Performance","Club Load","Equipment","Athlete Analysis","Program"]
 with st.sidebar:
-    st.header('Athlete Profile')
-    athlete = st.text_input('Athlete name', 'Athlete')
-    age = st.number_input('Age', 12, 70, 25)
-    level = st.selectbox('Athlete level', ['General', 'Intermediate', 'Advanced', 'Elite'])
-    sport = st.selectbox('Sport', list(SPORTS))
-    positions = POSITIONS.get(sport, ['General'])
-    position = st.multiselect('Position / specialization', positions, default=positions[:1])
-    if not position:
-        position = ['General']
+    st.markdown("## 🧭 ATHLETE-IQ")
+    st.session_state.page=st.radio("Pages",pages,index=pages.index(st.session_state.page))
+    st.caption("No Generate Plan button. The program rebuilds from the current state automatically.")
 
-    st.subheader('Goals')
-    primary = st.selectbox('Primary goal', ['Overall Development','Strength','Max Strength','Hypertrophy','Power','Speed','Agility','Aerobic Capacity','Anaerobic Capacity','Sport Performance','Fat Loss','General Fitness'])
-    secondary = st.multiselect('Secondary goals', ['Strength','Max Strength','Hypertrophy','Power','Speed','Agility','Aerobic Capacity','Anaerobic Capacity','Mobility','Stability','Neuromuscular Coordination'], default=['Mobility'])
+S=st.session_state
+defaults={"name":"Athlete","age":25,"level":"Advanced","sport":"Soccer","positions":["Goalkeeper"],"primary":"Overall Development","secondary":["Strength","Power","Mobility"],"equipment":["Bodyweight","Dumbbells","Barbell","Cable/Machine","Cones","Box/Bench"],"injuries":["None"],"club_days":["Tuesday","Thursday","Saturday"]}
+for k,v in defaults.items():
+    if k not in S:S[k]=v
 
-    st.subheader('Equipment')
-    equipment = st.multiselect('Available equipment', ['Bodyweight','Dumbbells','Kettlebells','Barbell','Cable/Machine','Resistance Bands','Medicine Ball','Landmine','TRX','Sled','Battle Rope','Box/Bench','Cones','Plyo Hurdles','Pull-up Bar','Dip Station','Bike/Row/SkiErg'], default=['Bodyweight','Dumbbells','Barbell','Cable/Machine','Cones','Box/Bench'])
+page=S.page
+if page=="Athlete Profile":
+    st.markdown('<div class="banner">👤 1. ATHLETE PROFILE</div>',unsafe_allow_html=True)
+    c1,c2,c3=st.columns(3)
+    with c1: st.text_input("Athlete name",key="name"); st.number_input("Age",12,80,key="age")
+    with c2: st.selectbox("Athlete level",["General","Intermediate","Advanced","Elite"],key="level"); st.number_input("Height (cm)",100.,230.,175.,key="height")
+    with c3: st.number_input("Weight (kg)",30.,250.,75.,key="weight"); st.selectbox("Context",["Recreational","Competitive","High Performance","Return to Performance"],key="context")
+elif page=="Sport & Goals":
+    st.markdown('<div class="banner">🏟️ 2. SPORT, POSITION & DEVELOPMENT GOALS</div>',unsafe_allow_html=True)
+    st.selectbox("Sport",list(SPORTS),key="sport")
+    st.multiselect("Position / specialization — multiple allowed",SPORTS[S.sport]["positions"],key="positions")
+    st.selectbox("Primary Development Goal",GOALS,key="primary")
+    st.multiselect("Secondary Development Goals",SECONDARY,key="secondary")
+    st.success("Overall Development means the engine develops the complete athlete while still prioritizing the identified needs.")
+elif page=="Full Screening":
+    st.markdown('<div class="banner">🔎 3. FULL ATHLETE SCREENING</div>',unsafe_allow_html=True)
+    st.caption("Anterior + lateral + posterior observation, SFMA-style movement screening and injury context all feed the same decision engine.")
+    for view in ["Anterior","Lateral","Posterior"]:
+        with st.expander(f"{view} View",expanded=True): st.multiselect(f"{view} findings",POSTURE_FINDINGS[view],key="post_"+view)
+    st.markdown("### SFMA / Movement Screen")
+    for i,t in enumerate(SFMA): st.selectbox(t,["Good","Limited","Poor","Pain"],key=f"sfma_{i}")
+    st.markdown("### Injury / Limitation")
+    st.multiselect("Current injury / limitation",INJURIES,key="injuries")
+    st.text_area("Previous injury / relevant history",key="injury_history")
+    a,b,c=st.columns(3)
+    with a: st.slider("Mobility",1,10,7,key="mobility")
+    with b: st.slider("Stability",1,10,7,key="stability")
+    with c: st.slider("Neuromuscular Coordination",1,10,7,key="coordination")
+elif page=="Performance":
+    st.markdown('<div class="banner">📊 4. PERFORMANCE METRICS & TEST BATTERY</div>',unsafe_allow_html=True)
+    a,b,c=st.columns(3)
+    with a:
+        st.number_input("CMJ (cm)",0.,120.,45.,key="cmj"); st.number_input("Approach Vertical (cm)",0.,150.,50.,key="approach")
+        st.number_input("Broad Jump (cm)",0.,400.,220.,key="broad"); st.number_input("Single-Leg Vertical L (cm)",0.,100.,25.,key="vl")
+        st.number_input("Single-Leg Vertical R (cm)",0.,100.,27.,key="vr")
+    with b:
+        st.number_input("5m Sprint (sec)",.5,5.,1.2,key="s5"); st.number_input("10m Sprint (sec)",.8,6.,1.9,key="s10")
+        st.number_input("20m Sprint (sec)",1.,10.,3.2,key="s20"); st.number_input("505 COD (sec)",1.,8.,2.4,key="cod")
+        st.number_input("T-Test (sec)",5.,30.,10.,key="ttest")
+    with c:
+        st.number_input("Back Squat 1RM (kg)",20.,300.,110.,key="squat"); st.number_input("Bench Press 1RM (kg)",20.,250.,75.,key="bench")
+        st.number_input("Overhead Press 1RM (kg)",10.,180.,50.,key="ohp"); st.number_input("Pull-Ups (reps)",0,50,10,key="pullups")
+        st.number_input("Push-Ups (reps)",0,100,30,key="pushups")
+    st.markdown("### Sport-Specific Power")
+    a,b,c,d=st.columns(4)
+    with a: st.number_input("Chest Pass (m)",0.,30.,6.8,key="chest")
+    with b: st.number_input("Overhead Throw (m)",0.,30.,8.5,key="overhead")
+    with c: st.number_input("Forehand Throw (m)",0.,30.,7.2,key="forehand")
+    with d: st.number_input("Backhand Throw (m)",0.,30.,6.9,key="backhand")
+elif page=="Club Load":
+    st.markdown('<div class="banner">📅 5. CLUB / TEAM TRAINING LOAD</div>',unsafe_allow_html=True)
+    st.multiselect("Club training days",DAYS,key="club_days"); st.number_input("Club training hours / week",0.,40.,4.5,key="club_hours")
+    st.multiselect("Competition / match days",DAYS,key="match_days"); st.number_input("Competition hours / week",0.,20.,1.5,key="match_hours")
+    st.text_area("Fixed weekly constraints",key="schedule")
+elif page=="Equipment":
+    st.markdown('<div class="banner">🏋️ 6. AVAILABLE EQUIPMENT</div>',unsafe_allow_html=True)
+    st.multiselect("Equipment available",EQUIPMENT,key="equipment")
+    st.info("Equipment is a hard constraint: an unavailable tool cannot appear in the plan.")
+elif page=="Athlete Analysis":
+    st.markdown('<div class="banner">🧠 7. ATHLETE ANALYSIS</div>',unsafe_allow_html=True)
+    findings=sum([S.get("post_"+v,[]) for v in ["Anterior","Lateral","Posterior"]],[])
+    a,b,c,d=st.columns(4)
+    with a: st.metric("Sport",S.sport)
+    with b: st.metric("Primary",S.primary)
+    with c: st.metric("Positions",len(S.positions))
+    with d: st.metric("Screening Findings",len(findings))
+    st.markdown('<div class="card"><b>Decision model:</b> screening → performance → sport/position → goals → equipment → external club load → training history → exercise selection → warm-up → training → conditioning → feedback.</div>',unsafe_allow_html=True)
+    if findings: st.warning("Active findings: "+", ".join(findings))
+    else: st.success("No postural findings entered.")
+elif page=="Program":
+    st.markdown('<div class="banner">🚀 8. DYNAMIC MULTI-MONTH PERIODIZATION ENGINE</div>',unsafe_allow_html=True)
+    months=st.slider("Program length",1,6,3,key="months"); days=st.slider("Gym days / week",2,6,4,key="days")
+    st.text_area("Recent exercises to avoid unnecessary repetition",key="history")
+    findings=sum([S.get("post_"+v,[]) for v in ["Anterior","Lateral","Posterior"]],[])
+    sf={t:S.get(f"sfma_{i}","Good") for i,t in enumerate(SFMA)}
+    p={"sport":S.sport,"positions":S.positions or ["General"],"primary":S.primary,"secondary":S.secondary,"equipment":S.equipment or ["Bodyweight"],"injuries":S.injuries or ["None"],"posture_findings":findings,"sfma":sf,"cmj":S.get("cmj",45),"sprint10":S.get("s10",1.9),"broad":S.get("broad",220),"cod":S.get("cod",2.4),"mobility":S.get("mobility",7),"stability":S.get("stability",7),"coordination":S.get("coordination",7),"level":S.level,"history":[x.strip() for x in S.get("history","").splitlines() if x.strip()],"months":months,"days_per_week":days}
+    plan=generate_plan(p)
+    a,b,c,d=st.columns(4)
+    with a: st.metric("Readiness",f"{plan['readiness']}/100")
+    with b: st.metric("Development",p["primary"])
+    with c: st.metric("Position",", ".join(p["positions"]))
+    with d: st.metric("Priorities",len(plan["weaknesses"]))
+    if plan["weaknesses"]: st.write("**Development priorities:** "+" • ".join(plan["weaknesses"]))
+    m=st.selectbox("Month",range(1,months+1),format_func=lambda x:f"Month {x}",key="vm")
+    w=st.selectbox("Week",range(1,5),format_func=lambda x:f"Week {x}",key="vw")
+    d=st.selectbox("Day",range(1,days+1),format_func=lambda x:f"Day {x}",key="vd")
+    ses=plan["months"][m-1]["weeks"][w-1]["days"][d-1]
+    st.markdown(f'<div class="card"><h2>Day {d} • {ses["theme"]}</h2><span class="tag">{ses["phase"]}</span><span class="tag">{ses["phase_focus"]}</span><span class="tag">RPE {ses["rpe"]}</span><span class="tag">{ses["energy"]}</span></div>',unsafe_allow_html=True)
+    titles={"warmup":"1. Smart Warm-up","corrective":"2. Corrective / Activation","strength":"3. Muscular Strength","power":"4. Power / Plyometrics","agility":"5. Speed / Agility","coordination":"6. Neuromuscular Coordination","sport":"7. Sport-Specific","metcon":"8. Metabolic Conditioning","recovery":"9. Recovery"}
+    for sec in titles:
+        if not ses[sec]: continue
+        st.markdown("### "+titles[sec])
+        for ex in ses[sec]:
+            html=f"""<div class="ex"><h3>{ex["name"]}</h3><span class="tag">{ex.get("sets","")}</span><span class="tag">{ex.get("reps","")}</span><span class="tag">{ex.get("intensity","")}</span><span class="tag">Tempo {ex.get("tempo","")}</span><span class="tag">Rest {ex.get("rest","")}</span><span class="tag">{ex.get("plane","")}</span><span class="tag">{ex.get("pattern","")}</span><span class="tag">{ex.get("equipment","")}</span><p class="small">{ex.get("purpose","")}</p></div>"""
+            st.markdown(html,unsafe_allow_html=True)
+    st.markdown("### 🔄 Decision Loop")
+    for r in ses["reasons"]: st.write("•",r)
 
-    st.subheader('Screening')
-    posture = st.multiselect('Posture / movement findings', ['Anterior Pelvic Tilt','Rounded Shoulders','Forward Head','Knee Valgus','Limited Ankle Dorsiflexion','Limited T-Spine Rotation','Poor Hip Mobility','Poor Scapular Control'], default=[])
-    injury = st.multiselect('Current injury / limitation', ['None','Knee','Ankle','Hip','Low Back','Shoulder','Elbow/Wrist','Groin/Hamstring'], default=['None'])
-    stability = st.slider('Stability score', 1, 10, 7)
-    mobility = st.slider('Mobility score', 1, 10, 7)
-    coordination = st.slider('Neuromuscular coordination', 1, 10, 7)
-
-    st.subheader('Performance Metrics')
-    cmj = st.number_input('CMJ (cm)', 0.0, 150.0, 45.0)
-    sprint = st.number_input('10 m sprint (sec)', 1.0, 5.0, 1.9)
-    broad = st.number_input('Broad jump (cm)', 0.0, 400.0, 220.0)
-    change_dir = st.number_input('COD / agility score (1-10)', 1.0, 10.0, 7.0)
-
-    st.subheader('Club Schedule')
-    club_days = st.multiselect('Club training days', ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'], default=['Tuesday','Thursday','Saturday'])
-    club_hours = st.number_input('Club training hours / week', 0.0, 30.0, 4.5)
-
-    st.subheader('Planning')
-    months = st.slider('Months', 1, 6, 3)
-    days_per_week = st.slider('Gym days / week', 2, 6, 4)
-    history = st.text_area('Recent exercises to avoid repeating (optional)', 'Rear Foot Elevated Split Squat\nGlute Bridge')
-
-profile = {
-    'name': athlete, 'age': age, 'level': level, 'sport': sport, 'positions': position,
-    'primary': primary, 'secondary': secondary, 'equipment': equipment,
-    'posture': posture, 'injury': injury, 'stability': stability, 'mobility': mobility,
-    'coordination': coordination, 'cmj': cmj, 'sprint': sprint, 'broad': broad,
-    'change_dir': change_dir, 'club_days': club_days, 'club_hours': club_hours,
-    'months': months, 'days_per_week': days_per_week,
-    'history': [x.strip() for x in history.splitlines() if x.strip()]
-}
-
-plan = generate_plan(profile)
-
-c1,c2,c3,c4 = st.columns(4)
-with c1: st.markdown('<div class="card"><div class="small">Readiness</div><div class="metric">%d/100</div></div>' % plan['readiness'], unsafe_allow_html=True)
-with c2: st.markdown('<div class="card"><div class="small">Development focus</div><div class="metric" style="font-size:1.25rem">%s</div></div>' % plan['focus'], unsafe_allow_html=True)
-with c3: st.markdown('<div class="card"><div class="small">Position</div><div class="metric" style="font-size:1.25rem">%s</div></div>' % ', '.join(position), unsafe_allow_html=True)
-with c4: st.markdown('<div class="card"><div class="small">Metcon rotation</div><div class="metric" style="font-size:1.25rem">%s</div></div>' % plan['metcon_rotation'], unsafe_allow_html=True)
-
-st.markdown('<div class="section">Closed-loop decision summary</div>', unsafe_allow_html=True)
-st.markdown('<div class="card">%s</div>' % ' '.join(f'<span class="tag">{x}</span>' for x in plan['decision_tags']), unsafe_allow_html=True)
-
-st.markdown('<div class="section">Training Plan</div>', unsafe_allow_html=True)
-month = st.selectbox('Month', list(range(1, months+1)), format_func=lambda x: f'Month {x}')
-week = st.selectbox('Week', [1,2,3,4], format_func=lambda x: f'Week {x}')
-day = st.selectbox('Day', list(range(1, days_per_week+1)), format_func=lambda x: f'Day {x}')
-
-session = plan['months'][month-1]['weeks'][week-1]['days'][day-1]
-st.markdown(f'<div class="card"><h3>Day {day} • {session["theme"]}</h3><span class="tag">{session["phase"]}</span><span class="tag">RPE {session["rpe"]}</span><span class="tag">{session["energy"]}</span><span class="tag">{session["emphasis"]}</span></div>', unsafe_allow_html=True)
-
-for section_name in ['warmup','corrective','strength','power','agility','coordination','sport','metcon','recovery']:
-    items = session.get(section_name, [])
-    if not items: continue
-    titles = {'warmup':'1. Smart Warm-up','corrective':'2. Corrective / Activation','strength':'3. Muscular Strength','power':'4. Power / Plyometrics','agility':'5. Speed / Agility','coordination':'6. Neuromuscular Coordination','sport':'7. Sport-Specific','metcon':'8. Metabolic / ESD','recovery':'9. Recovery'}
-    st.markdown(f'<div class="section">{titles[section_name]}</div>', unsafe_allow_html=True)
-    for ex in items:
-        st.markdown(f'''<div class="card"><h3>{ex["name"]}</h3><span class="tag">{ex["sets"]}</span><span class="tag">{ex["tempo"]}</span><span class="tag">{ex["rest"]}</span><span class="tag">{ex["plane"]}</span><span class="tag">{ex["pattern"]}</span><span class="tag">{ex["equipment"]}</span><p class="small">Purpose: {ex["purpose"]}</p></div>''', unsafe_allow_html=True)
-
-st.markdown('<div class="section">Why this session was selected</div>', unsafe_allow_html=True)
-for reason in session['reasons']:
-    st.write('•', reason)
-
-st.caption('V9 automatically regenerates whenever a sidebar input changes. Exercise selection uses needs, goals, sport/position, equipment, screening, performance metrics, phase, day and repetition history.')
+st.caption("ATHLETE-IQ • assessment → analysis → plan → warm-up → training → conditioning → feedback → adaptation")
