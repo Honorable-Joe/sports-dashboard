@@ -419,6 +419,37 @@ ACCENT='#38bdf8'
 st.markdown(f'''<style>
 body {{ background:#07111f; }} .block-container {{ padding-top:1.2rem; }}
 
+        st.markdown(f'<div class="card"><b>Month {m} | Week {w} | Day {d}</b><br>Phase: {s["phase"]}<br>{s["load_note"]}</div>',unsafe_allow_html=True)
+        st.subheader('Smart Warm-up')
+        st.write(' -> '.join(f'{n} ({mins} min)' for n,mins in s['warmup']))
+        st.subheader('Resistance / Integrated Work')
+        st.dataframe(pd.DataFrame(s['exercises']),use_container_width=True,hide_index=True)
+        st.subheader('Metabolic Conditioning')
+        st.write(f'**{s["metcon"][0]}** — {s["metcon"][1]}')
+    else: st.info('Generate the program after completing the athlete inputs.')
+
+elif page=='6. Feedback & Reassessment':
+    st.header('06 | Feedback -> Reassessment -> Next Plan')
+    rpe=st.slider('Session RPE',1,10,7); perf=st.slider('Performance change vs expected',-2,2,0); pain_after=st.slider('Pain after session',0,10,0); notes=st.text_area('Coach notes')
+    if st.button('SAVE SESSION FEEDBACK'):
+        names=[]; families=[]
+        if st.session_state.program:
+            names=[e['name'] for e in st.session_state.program if e['month']==1 and e['week']==1 and e['day']==1 for _ in [0]][:7]
+            families=[]
+        rec={'timestamp':datetime.now().isoformat(timespec='seconds'),'session_rpe':rpe,'performance_change':perf,'pain_after':pain_after,'exercise_names':names,'families':families,'notes':notes}
+        st.session_state.feedback.append(rec); update_feedback(st.session_state.feedback); st.session_state.program=None; st.success('Feedback stored. The next generation will use the updated athlete state.')
+    if st.session_state.feedback: st.dataframe(pd.DataFrame(st.session_state.feedback),use_container_width=True,hide_index=True)
+
+elif page=='7. Data / Export':
+    st.header('07 | Data, Profiles & Export')
+    state=build_athlete_state(); payload=json.dumps(state,indent=2,default=str)
+    st.download_button('Download Athlete State JSON',payload,'athlete_iq_v8_state.json','application/json')
+    if st.session_state.feedback: st.download_button('Download Feedback CSV',pd.DataFrame(st.session_state.feedback).to_csv(index=False),'athlete_iq_v8_feedback.csv','text/csv')
+    st.json({'sport':state['profile']['sport'],'position':state['profile']['position'],'goal':state['profile']['primary'],'screening':screen_findings(),'strengths':state['strengths'],'weaknesses':state['weaknesses']})
+
+st.markdown('---')
+st.caption('Athlete-IQ v8.0 | Rule-based adaptive coaching software. Screening observations are not diagnoses. The engine is designed as a closed loop: assess -> prioritize -> plan -> prepare -> train -> measure -> adapt.')
+
 .aiq-title {{text-align:center;font-size:2.2rem;font-weight:900;color:{ACCENT};letter-spacing:1px;}}
 .aiq-sub {{text-align:center;color:#a855f7;font-weight:700;}}
 .card {{background:linear-gradient(135deg,#0d1b2e,#101b30);border:1px solid #223552;border-radius:14px;padding:14px;margin:8px 0;}}
@@ -489,37 +520,6 @@ elif page=='5. Program Generator':
         prog=st.session_state.program
         m=st.selectbox('Month',sorted(set(x['month'] for x in prog))); w=st.selectbox('Week',[1,2,3,4]); d=st.selectbox('Day',sorted(set(x['day'] for x in prog if x['month']==m)))
         s=next(x for x in prog if x['month']==m and x['week']==w and x['day']==d)
-
-        st.markdown(f'<div class="card"><b>Month {m} | Week {w} | Day {d}</b><br>Phase: {s["phase"]}<br>{s["load_note"]}</div>',unsafe_allow_html=True)
-        st.subheader('Smart Warm-up')
-        st.write(' -> '.join(f'{n} ({mins} min)' for n,mins in s['warmup']))
-        st.subheader('Resistance / Integrated Work')
-        st.dataframe(pd.DataFrame(s['exercises']),use_container_width=True,hide_index=True)
-        st.subheader('Metabolic Conditioning')
-        st.write(f'**{s["metcon"][0]}** — {s["metcon"][1]}')
-    else: st.info('Generate the program after completing the athlete inputs.')
-
-elif page=='6. Feedback & Reassessment':
-    st.header('06 | Feedback -> Reassessment -> Next Plan')
-    rpe=st.slider('Session RPE',1,10,7); perf=st.slider('Performance change vs expected',-2,2,0); pain_after=st.slider('Pain after session',0,10,0); notes=st.text_area('Coach notes')
-    if st.button('SAVE SESSION FEEDBACK'):
-        names=[]; families=[]
-        if st.session_state.program:
-            names=[e['name'] for e in st.session_state.program if e['month']==1 and e['week']==1 and e['day']==1 for _ in [0]][:7]
-            families=[]
-        rec={'timestamp':datetime.now().isoformat(timespec='seconds'),'session_rpe':rpe,'performance_change':perf,'pain_after':pain_after,'exercise_names':names,'families':families,'notes':notes}
-        st.session_state.feedback.append(rec); update_feedback(st.session_state.feedback); st.session_state.program=None; st.success('Feedback stored. The next generation will use the updated athlete state.')
-    if st.session_state.feedback: st.dataframe(pd.DataFrame(st.session_state.feedback),use_container_width=True,hide_index=True)
-
-elif page=='7. Data / Export':
-    st.header('07 | Data, Profiles & Export')
-    state=build_athlete_state(); payload=json.dumps(state,indent=2,default=str)
-    st.download_button('Download Athlete State JSON',payload,'athlete_iq_v8_state.json','application/json')
-    if st.session_state.feedback: st.download_button('Download Feedback CSV',pd.DataFrame(st.session_state.feedback).to_csv(index=False),'athlete_iq_v8_feedback.csv','text/csv')
-    st.json({'sport':state['profile']['sport'],'position':state['profile']['position'],'goal':state['profile']['primary'],'screening':screen_findings(),'strengths':state['strengths'],'weaknesses':state['weaknesses']})
-
-st.markdown('---')
-st.caption('Athlete-IQ v8.0 | Rule-based adaptive coaching software. Screening observations are not diagnoses. The engine is designed as a closed loop: assess -> prioritize -> plan -> prepare -> train -> measure -> adapt.')
 
 
 
